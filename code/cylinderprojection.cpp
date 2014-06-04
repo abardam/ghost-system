@@ -10,6 +10,8 @@
 //used for facingHelper
 #include "KinectManager.h"
 
+
+
 cv::Mat cylinder_to_pts(cv::Vec3f a, cv::Vec3f b, float radius, cv::Point voff, PixelPolygon * p, std::vector<cv::Vec3f> * fromPixels, std::vector<cv::Vec3s> * fromPixels_2d_v){
 
 	cv::Mat invCameraMatrix = (getInvCameraMatrix()); //todo: pre-invert
@@ -367,8 +369,8 @@ int colorPixel(cv::Point2i pt, int limbid, CroppedCvMat texture, cv::Scalar * pi
 #endif
 		*pixelColor = (cv::Scalar(texture.mat.at<cv::Vec3b>(pt)));
 
-		if(texture.mat.at<cv::Vec3b>(pt) != cv::Vec3b(255,0,0)){
-			if(texture.mat.at<cv::Vec3b>(pt) != cv::Vec3b(255,255,255)){
+		if(texture.mat.at<cv::Vec3b>(pt) != BLUE){
+			if(texture.mat.at<cv::Vec3b>(pt) != WHITE){
 #if GH_DEBUG_CYLPROJ
 				debugMat.at<cv::Vec3b>(debugPt) = texture.mat.at<cv::Vec3b>(pt);
 				//sourceMat.at<cv::Vec3b>(pt) = cv::Vec3b(0,0,255);
@@ -390,3 +392,6 @@ int colorPixel(cv::Point2i pt, int limbid, CroppedCvMat texture, cv::Scalar * pi
 	}
 
 }
+
+//util
+

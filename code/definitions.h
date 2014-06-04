@@ -34,6 +34,7 @@ cv::Mat uncrop(CroppedCvMat);
 
 
 #define WHITE (IMGPIXEL(0xff, 0xff, 0xff))
+#define BLUE (IMGPIXEL(0xff, 0, 0))
 #define NUMBINS 10.0
 #define MAXUSERS 10
 

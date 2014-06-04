@@ -101,10 +101,15 @@ namespace KINECT{
 		if(!res) return skeleton;
 
 		for(int i=0;i<NUMJOINTS;++i){
-			skeleton.points.at<float>(0,i) = nSkeleton.getJoint((nite::JointType)i).getPosition().x/1000.;
-			skeleton.points.at<float>(1,i) = nSkeleton.getJoint((nite::JointType)i).getPosition().y/1000.;
-			skeleton.points.at<float>(2,i) = nSkeleton.getJoint((nite::JointType)i).getPosition().z/1000.;
-			skeleton.points.at<float>(3,i) = 1;
+			//skeleton.points.at<float>(0,i) = nSkeleton.getJoint((nite::JointType)i).getPosition().x/1000.;
+			//skeleton.points.at<float>(1,i) = nSkeleton.getJoint((nite::JointType)i).getPosition().y/1000.;
+			//skeleton.points.at<float>(2,i) = nSkeleton.getJoint((nite::JointType)i).getPosition().z/1000.;
+			//skeleton.points.at<float>(3,i) = 1;
+
+			skeleton.points.ptr<float>()[NUMJOINTS*0+i] = nSkeleton.getJoint((nite::JointType)i).getPosition().x/1000.;
+			skeleton.points.ptr<float>()[NUMJOINTS*1+i] = nSkeleton.getJoint((nite::JointType)i).getPosition().y/1000.;
+			skeleton.points.ptr<float>()[NUMJOINTS*2+i] = nSkeleton.getJoint((nite::JointType)i).getPosition().z/1000.;
+			skeleton.points.ptr<float>()[NUMJOINTS*3+i] = 1;
 
 			skeleton.states[i] = nSkeleton.getJoint((nite::JointType)i).getPositionConfidence();
 		}

@@ -7,6 +7,8 @@
 #define MAXDEPTH 20000
 #define FLOAT_TO_DEPTH 1000
 
+
+
 typedef std::pair<std::vector<cv::Point>,std::vector<cv::Point>> PixelMap;
 typedef std::pair<std::vector<cv::Vec3s>,std::vector<cv::Scalar>> PixelColorMap;
 
