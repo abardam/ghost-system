@@ -83,9 +83,24 @@ void ghostdraw(int frame, cv::Mat transform, std::vector<SkeleVideoFrame>& vidRe
 			skele.points = transform * skele.points;
 			
 			float facing = tempCalcFacing(i, skele);
-			ScoreList scoreList = sortFrames(skele, &vidRecord, &limbrary, i, TEXTURE_SEARCH_DEPTH, true);
-			PixelColorMap from_color = cylinderMapPixelsColor(a, b, radius, i, facing, scoreList, &source, 
-				&vidRecord, &cylinderBody, &limbrary, CMPC_BLEND_1);
+			PixelColorMap from_color;
+
+			if(options & GD_NOLIMBRARY)
+			{
+				ScoreList scoreList = sortFrames(skele, &vidRecord, &limbrary, i, 1, true);
+				from_color = cylinderMapPixelsColor(a, b, radius, i, facing, scoreList, source.offset, 
+					&vidRecord, &cylinderBody, &limbrary, CMPC_NO_OCCLUSION);
+			}else if(options & GD_NOBLEND)
+			{
+				ScoreList scoreList = sortFrames(skele, &vidRecord, &limbrary, i, TEXTURE_SEARCH_DEPTH, true);
+				from_color = cylinderMapPixelsColor(a, b, radius, i, facing, scoreList, source.offset, 
+					&vidRecord, &cylinderBody, &limbrary, CMPC_BLEND_NONE);
+			}
+			else{
+				ScoreList scoreList = sortFrames(skele, &vidRecord, &limbrary, i, TEXTURE_SEARCH_DEPTH, true);
+				from_color = cylinderMapPixelsColor(a, b, radius, i, facing, scoreList, source.offset, 
+					&vidRecord, &cylinderBody, &limbrary, CMPC_BLEND_1);
+			}
 
 			for(int j=0;j<from_color.first.size();++j){
 

@@ -180,7 +180,7 @@ float tempCalcFacing(int limb, Skeleton s){
 }
 
 //TODO: fix this shitty argument list
-PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float radius, int limbid, float facing, ScoreList scoreList, CroppedCvMat * fromMat, 
+PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float radius, int limbid, float facing, ScoreList scoreList, cv::Point voff, 
 									 std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cylinderBody, Limbrary * limbrary, int blendMode){
 	
 	std::vector<cv::Vec3f> fromPixels;
@@ -193,7 +193,7 @@ PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float r
 
 	PixelPolygon p;
 
-	cylinder_to_pts(from_a, from_b, radius, fromMat->offset, &p, &fromPixels, &fromPixels_2d_v);
+	cylinder_to_pts(from_a, from_b, radius, voff, &p, &fromPixels, &fromPixels_2d_v);
 
 	//sort all the frames accdg to distance from the current skeleton
 
@@ -220,6 +220,9 @@ PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float r
 	unsigned int blendLimit;
 
 	switch(blendMode){
+	case CMPC_NO_OCCLUSION:
+		blendLimit = 1;
+		break;
 	case CMPC_BLEND_NONE:
 		blendLimit = 1;
 		break;
@@ -234,6 +237,14 @@ PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float r
 
 		for(auto it=scoreList.begin(); it!=scoreList.end(); ++it){
 
+			CroppedCvMat texture;
+			
+			if(blendMode == CMPC_NO_OCCLUSION){
+				texture = (*vidRecord)[it->first].videoFrame;
+			}else{
+				texture = (*limbrary).getFrameLimbs(it->first)[limbid];
+			}
+
 			cv::Vec3f _to_a = mat_to_vec((*vidRecord)[it->first].kinectPoints.points.col(f));
 			cv::Vec3f _to_b = mat_to_vec((*vidRecord)[it->first].kinectPoints.points.col(s));
 
@@ -241,19 +252,19 @@ PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float r
 			cv::Vec3f to_b = _to_a + cylinderBody->newRightOffset_cyl[limbid] * (_to_b - _to_a);
 
 			cv::Point2i pt = mapPixel
-				(fromPixels[i+erased], (*limbrary).getFrameLimbs(it->first)[limbid].offset,
+				(fromPixels[i+erased], texture.offset,
 				from_a, from_b, tempCalcFacing(limbid, (*vidRecord)[it->first].kinectPoints), 
 				to_a, to_b, facing);
 
 			cv::Scalar pixelColor;
 
-			int res = colorPixel(pt, it->first, limbid, limbrary, &pixelColor);
-
-			if(res == CP_GOOD){
-				blended.push_back(pixelColor);
-			}else if(res == CP_BG){
+			int res = colorPixel(pt, limbid, texture, &pixelColor);
+			
+			if(res == CP_BG){
 				blended.push_back(cv::Scalar(255,255,255));
-			}
+			}else if(res == CP_GOOD || (blendMode == CMPC_NO_OCCLUSION && res != CP_OVER)){
+				blended.push_back(pixelColor);
+			} 
 
 			if(blended.size() >= blendLimit) break;
 		}
@@ -326,25 +337,25 @@ cv::Point2i mapPixel(cv::Vec3f pixLoc, cv::Point2i pixOffset, cv::Vec3f from_a, 
 	return pt;
 }
 
-int colorPixel(cv::Point2i pt, int frame, int limbid, Limbrary * limbrary, cv::Scalar * pixelColor){
+int colorPixel(cv::Point2i pt, int limbid, CroppedCvMat texture, cv::Scalar * pixelColor){
 
 
-	if(CLAMP_SIZE(pt.x, pt.y, (*limbrary).getFrameLimbs(frame)[limbid].mat.cols, (*limbrary).getFrameLimbs(frame)[limbid].mat.rows)){
+	if(CLAMP_SIZE(pt.x, pt.y, texture.mat.cols, texture.mat.rows)){
 
 #if GH_DEBUG_CYLPROJ
 		cv::Point debugPt(fromPixels_2d_v[i](0), fromPixels_2d_v[i](1));
 		debugPt += fromMat->offset - captureOffset;
 		debugMat.at<cv::Vec3b>(debugPt) = cv::Vec3b(0,0,255);
 
-		cv::Mat sourceMat = (*limbrary).getFrameLimbs(frame)[limbid].mat.clone();
+		cv::Mat sourceMat = texture.mat.clone();
 
 		std::vector<Segment3f> segments = cylinder_to_segments(to_a, to_b, radius, 16);
 
 		for(auto it2=segments.begin(); it2!=segments.end(); ++it2){
 			
 			cv::line(sourceMat, 
-				cv::Point(toScreen(it2->first))-(*limbrary).getFrameLimbs(frame)[limbid].offset, 
-				cv::Point(toScreen(it2->second))-(*limbrary).getFrameLimbs(frame)[limbid].offset, 
+				cv::Point(toScreen(it2->first))-texture.offset, 
+				cv::Point(toScreen(it2->second))-texture.offset, 
 				cv::Scalar(255,255,0));
 		}
 
@@ -354,11 +365,12 @@ int colorPixel(cv::Point2i pt, int frame, int limbid, Limbrary * limbrary, cv::S
 		cv::imshow("source mat", sourceMat);
 		cv::waitKey();
 #endif
-		if((*limbrary).getFrameLimbs(frame)[limbid].mat.at<cv::Vec3b>(pt) != cv::Vec3b(255,0,0)){
-			if((*limbrary).getFrameLimbs(frame)[limbid].mat.at<cv::Vec3b>(pt) != cv::Vec3b(255,255,255)){
-				*pixelColor = (cv::Scalar((*limbrary).getFrameLimbs(frame)[limbid].mat.at<cv::Vec3b>(pt)));
+		*pixelColor = (cv::Scalar(texture.mat.at<cv::Vec3b>(pt)));
+
+		if(texture.mat.at<cv::Vec3b>(pt) != cv::Vec3b(255,0,0)){
+			if(texture.mat.at<cv::Vec3b>(pt) != cv::Vec3b(255,255,255)){
 #if GH_DEBUG_CYLPROJ
-				debugMat.at<cv::Vec3b>(debugPt) = (*limbrary).getFrameLimbs(frame)[limbid].mat.at<cv::Vec3b>(pt);
+				debugMat.at<cv::Vec3b>(debugPt) = texture.mat.at<cv::Vec3b>(pt);
 				//sourceMat.at<cv::Vec3b>(pt) = cv::Vec3b(0,0,255);
 						
 				cv::imshow("debug mat", debugMat);

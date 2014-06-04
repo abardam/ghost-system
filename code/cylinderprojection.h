@@ -4,7 +4,7 @@
 #include "Limbrary.h"
 #include "texturesearch.h"
 
-#define MAXDEPTH 8000
+#define MAXDEPTH 20000
 #define FLOAT_TO_DEPTH 1000
 
 typedef std::pair<std::vector<cv::Point>,std::vector<cv::Point>> PixelMap;
@@ -20,9 +20,10 @@ cv::Mat cylinderFacingTransform(cv::Vec3f a1, cv::Vec3f b1, float f1, cv::Vec3f 
 PixelMap cylinderMapPixels(cv::Vec3f from_a, cv::Vec3f from_b, cv::Vec3f to_a, cv::Vec3f to_b, float radius, CroppedCvMat * fromMat, CroppedCvMat * toMat, cv::Size captureWindow, cv::Point captureOffset);
 
 
+#define CMPC_NO_OCCLUSION 0 //oldskool way. not using limbrary
 #define CMPC_BLEND_NONE 1
 #define CMPC_BLEND_1 2
-PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float radius, int limbid, float facing, ScoreList scoreList, CroppedCvMat * fromMat, 
+PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float radius, int limbid, float facing, ScoreList scoreList, cv::Point voff, 
 									 std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cylinderBody, Limbrary * limbrary, int blendMode);
 
 cv::Point2i mapPixel(cv::Vec3f pixLoc, cv::Point2i pixOffset, cv::Vec3f from_a, cv::Vec3f from_b, float from_facing, cv::Vec3f to_a, cv::Vec3f to_b, float to_facing);
@@ -31,6 +32,6 @@ cv::Point2i mapPixel(cv::Vec3f pixLoc, cv::Point2i pixOffset, cv::Vec3f from_a, 
 #define CP_OCCLUDED 2 //"blue" pixel read
 #define CP_BG 3 //"white" pixel read
 #define CP_GOOD 4
-int colorPixel(cv::Point2i pt, int frame, int limbid, Limbrary * limbrary, cv::Scalar * pixelColors);
+int colorPixel(cv::Point2i pt, int limbid, CroppedCvMat texture, cv::Scalar * pixelColors);
 
 float tempCalcFacing(int limb, Skeleton s);

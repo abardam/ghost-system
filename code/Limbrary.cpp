@@ -288,7 +288,7 @@ FrameLimbs Limbrary::getFrameLimbs(int frame){
 }
 
 void Limbrary::Save(std::string path){
-	std::string filepath = path + "limbrary.xml";
+	std::string filepath = path + "/limbrary.xml";
 	std::string impath = "limbrary/";
 	CreateDirectoryA(path.c_str(), NULL);
 	CreateDirectoryA((path+impath).c_str(), NULL);
