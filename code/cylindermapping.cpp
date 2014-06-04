@@ -1,11 +1,14 @@
 #include <Windows.h>
 
+#include "definitions.h"
+
+#ifdef GH_CMAPPING
+
 #include "cylindermapping.h"
 #include "cvutil.h"
 #include "ghostutil.h"
 #include "loader.h"
 #include "cylinder.h"
-#include "definitions.h"
 #include "CylinderBody.h"
 #include "KinectManager.h"
 #include "ghostcam.h"
@@ -737,3 +740,4 @@ void glTexMat(cv::Mat texmat, bool fullscreen){
 	glPopMatrix();
 }
 
+#endif

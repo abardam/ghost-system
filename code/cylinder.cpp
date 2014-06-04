@@ -23,6 +23,8 @@
   * -- Joost 08/10/2012
 */
 
+#ifdef GH_CMAPPING
+
 #include <gl\glew.h>
 #include <math.h>
 #include "cylinder.h"
@@ -86,3 +88,5 @@ void renderCylinder_convenient(float x1, float y1, float z1, float x2,float y2, 
   renderCylinder(x1,y1,z1,x2,y2,z2,radiusX, radiusY, subdivisions,quadric);
   gluDeleteQuadric(quadric);
 };
+
+#endif

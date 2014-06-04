@@ -1,7 +1,10 @@
 #pragma once
 
-#include <opencv2\opencv.hpp>
 #include "definitions.h"
+
+#ifdef GH_CMAPPING
+
+#include <opencv2\opencv.hpp>
 #include "CylinderBody.h"
 
 
@@ -40,3 +43,5 @@ void depth2points_matarr(const cv::Mat &d, const cv::Mat &r, cv::Mat * mP);
 //inverse projection matrix can be acquired by the glGetFloatv and is 4x4
 //forward projection matrix is 2x3 [fx 0 cx; 0 fy cy]
 cv::Mat projectOnImage(cv::Mat _4D, cv::Mat invProj, cv::Mat forProj);
+
+#endif
