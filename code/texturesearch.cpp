@@ -49,7 +49,7 @@ bool ScoreSort(const std::pair<int, float>& lhs, std::pair<int, float>& rhs)
   return lhs.second < rhs.second; 
 } 
 
-ScoreList sortFrames(Skeleton s, std::vector<SkeleVideoFrame> * vidRecord, Limbrary * limbrary, unsigned int limbid, int limit, bool sort){
+ScoreList sortFrames(Skeleton s, std::vector<SkeleVideoFrame> * vidRecord, Limbrary * limbrary, unsigned int limbid, int limit, bool sort, int weightType){
 	
 	float bestScore = -1;
 	cv::Mat b = normalizeSkeleton(s.points);
@@ -63,9 +63,20 @@ ScoreList sortFrames(Skeleton s, std::vector<SkeleVideoFrame> * vidRecord, Limbr
 	else
 		weights = cv::Mat(1, NUMJOINTS, cv::DataType<float>::type, cv::Scalar(1));
 
-	for(int _i=0; _i<limbrary->getAvailableFramesForLimb(limbid).size(); ++_i){
+	bool useCluster = true;
+	int frames = limbrary->getAvailableFramesForLimb(limbid).size();
+	if(frames == 0){
+		frames = vidRecord->size();
+		useCluster = false;
+	}
 
-		int i=limbrary->getAvailableFramesForLimb(limbid)[_i];
+	for(int _i=0; _i<frames; ++_i){
+
+		int i;
+		if(useCluster)
+			i=limbrary->getAvailableFramesForLimb(limbid)[_i];
+		else
+			i = _i;
 
 		//if(!(*vidRecord)[i].allPartsIn) continue;
 		//if((*vidRecord)[i].videoFrame.mat.empty()) continue;
@@ -92,9 +103,26 @@ ScoreList sortFrames(Skeleton s, std::vector<SkeleVideoFrame> * vidRecord, Limbr
 		//		}
 		//	}
 		//}
+		cv::Mat skelmat_a;
+		cv::Mat skelmat_b;
 
-		cv::Mat skelmat_a = jointbasedSkeletonMatrix(a, limbid);
-		cv::Mat skelmat_b = jointbasedSkeletonMatrix(b, limbid);
+		switch(weightType){
+		case GH_WT_NONE:
+			
+			skelmat_a = jointbasedSkeletonMatrix(a, NUMLIMBS);
+			skelmat_b = jointbasedSkeletonMatrix(b, NUMLIMBS);
+			break;
+		case GH_WT_JOINT:
+
+			skelmat_a = jointbasedSkeletonMatrix(a, limbid);
+			skelmat_b = jointbasedSkeletonMatrix(b, limbid);
+			break;
+		case GH_WT_LIMB:
+			
+			skelmat_a = limbbasedSkeletonMatrix(a, limbid);
+			skelmat_b = limbbasedSkeletonMatrix(b, limbid);
+			break;
+		}
 
 		bst += sqrSum(skelmat_a - skelmat_b);
 

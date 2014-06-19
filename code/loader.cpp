@@ -85,7 +85,7 @@ std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoF
 				if(temp.videoFrame.mat.empty()) {
 					std::cout << "unable to read " << ffilename << "; skipping\n";
 				}
-				double ox, oy;
+				double ox=0, oy=0;
 				if(elem->Attribute("offsetX") != NULL) elem->QueryDoubleAttribute("offsetX", &ox);
 				if(elem->Attribute("offsetY") != NULL) elem->QueryDoubleAttribute("offsetY", &oy);
 
@@ -128,8 +128,8 @@ std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoF
 					kinPointElem->QueryFloatAttribute("Z", &(skpoints[i+2*NUMJOINTS]));
 					skpoints[i+3*NUMJOINTS] = 1;
 
-					int tempstate;
-					kinPointElem->QueryIntAttribute("state", &tempstate);
+					float tempstate;
+					kinPointElem->QueryFloatAttribute("state", &tempstate);
 					temp.kinectPoints.states[i] = tempstate;
 					++i;
 			}
@@ -254,7 +254,7 @@ void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, std::string path){
 			kinectPointNode->SetDoubleAttribute("Y", (*vidRecord)[i].kinectPoints.points.at<float>(1,j));
 			kinectPointNode->SetDoubleAttribute("Z", (*vidRecord)[i].kinectPoints.points.at<float>(2,j));
 			kinectPointNode->SetDoubleAttribute("W", 1);
-			kinectPointNode->SetAttribute("state",   (*vidRecord)[i].kinectPoints.states[j]);
+			kinectPointNode->SetDoubleAttribute("state",   (*vidRecord)[i].kinectPoints.states[j]);
 		}
 
 		if(!(*vidRecord)[i].cam2World.empty())

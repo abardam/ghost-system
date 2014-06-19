@@ -6,6 +6,9 @@
 #include "texturesearch.h"
 #include "Limbrary.h"
 
+//parallelization
+#include <ppl.h>
+
 //remove later
 //used for facingHelper
 #include "KinectManager.h"
@@ -203,9 +206,7 @@ PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float r
 	int f = getLimbmap()[limbid].first;
 	int s = getLimbmap()[limbid].second;
 
-	std::vector<cv::Scalar> pixelColors;
 
-	int erased = 0; //shitty hack
 
 #if GH_DEBUG_CYLPROJ
 	cv::Mat debugMat(captureWindow,CV_8UC3,cv::Scalar(255,255,255));
@@ -233,8 +234,13 @@ PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float r
 		break;
 	}
 
-	for(int i=0;i<fromPixels_2d_v.size();++i){
-		
+	size_t fromsize = fromPixels_2d_v.size();
+	std::vector<bool> erasevector(fromsize, false);
+	std::vector<cv::Scalar> pixelColors(fromsize);
+
+	//concurrency::parallel_for(size_t(0), fromsize, [&](size_t i)
+	for(int i=0;i<fromsize;++i)
+	{
 		std::vector<cv::Scalar> blended;
 
 		for(auto it=scoreList.begin(); it!=scoreList.end(); ++it){
@@ -254,7 +260,7 @@ PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float r
 			cv::Vec3f to_b = _to_a + cylinderBody->newRightOffset_cyl[limbid] * (_to_b - _to_a);
 
 			cv::Point2i pt = mapPixel
-				(fromPixels[i+erased], texture.offset,
+				(fromPixels[i], texture.offset,
 				from_a, from_b, tempCalcFacing(limbid, (*vidRecord)[it->first].kinectPoints), 
 				to_a, to_b, facing);
 
@@ -272,9 +278,7 @@ PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float r
 		}
 		
 		if(blended.size() == 0){
-			fromPixels_2d_v.erase(fromPixels_2d_v.begin() + i);
-			--i;
-			++erased;
+			erasevector[i] = true;
 		}else{
 			//pixelColors.push_back(blended[0]);
 
@@ -301,16 +305,26 @@ PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float r
 
 			//blend threshold; if alpha adds up to 0.5 or less, does not render the pixel
 			if(totalAlpha > 0.5){
-				pixelColors.push_back(blendPixel);
+				pixelColors[i] = (blendPixel);
 			}else{
-				
-				fromPixels_2d_v.erase(fromPixels_2d_v.begin() + i);
-				--i;
-				++erased;
+				erasevector[i] = true;
 			}
 		}
 
 		
+	}
+
+	
+	auto fromptr = fromPixels_2d_v.begin();
+	auto pixptr = pixelColors.begin();
+	for(int i=0;i<fromsize;++i){
+		if(erasevector[i]){
+			fromptr = fromPixels_2d_v.erase(fromptr);
+			pixptr = pixelColors.erase(pixptr);
+		}else{
+			++fromptr;
+			++pixptr;
+		}
 	}
 
 	return PixelColorMap(fromPixels_2d_v, pixelColors);

@@ -22,7 +22,6 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 
 	if(verbose) std::cout << "Building limbrary...\n";
 
-	removeBadFrames();
 
 	cv::Mat cameraMatrix = getCameraMatrix(); //for 3D pt -> 2D pt
 	cv::Mat invCameraMatrix = invertCameraMatrix(cameraMatrix); //for 2D pt -> 3D ray
@@ -73,7 +72,7 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 
 					cv::Point2i zBufferLocalPixLoc(x,y);
 					cv::Point2i zBufferPixLoc = zBufferLocalPixLoc - voff + offset;
-					unsigned short new_depth = zBufferLocal.at<unsigned short>(zBufferLocalPixLoc);
+					unsigned short new_depth = zBufferLocal.at<unsigned short>(zBufferLocalPixLoc); //zBufferLocal.ptr<unsigned short>(zBufferLocalPixLoc.y)[zBufferLocalPixLoc.x]; //zBufferLocal.at<unsigned short>(zBufferLocalPixLoc);
 
 					if(new_depth == MAXDEPTH) continue;
 
@@ -141,7 +140,8 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 		if(verbose) std::cout << frames.size() << std::endl;
 
 	}
-
+	
+	removeBadFrames();
 }
 
 void Limbrary::cluster(std::vector<SkeleVideoFrame> * vidRecord, unsigned int K, unsigned int iterations){
@@ -259,14 +259,26 @@ void Limbrary::removeBadFrames(){
 			int numpix = 0, numgood = 0;
 			cv::Mat m = (*it)[l].mat;
 			for(int r=0;r<m.rows;++r){
+				const cv::Vec3b * rowPtr = m.ptr<cv::Vec3b>(r);
 				for(int c=0;c<m.cols;++c){
+					const cv::Vec3b& pt = rowPtr[c];
+
+					if(pt != cv::Vec3b(255,255,255)){
+						++numpix;
+
+						if(pt != cv::Vec3b(255,0,0)){
+							++numgood;
+						}
+					}
+
+					/*
 					if(m.at<cv::Vec3b>(r,c) != cv::Vec3b(255,255,255)){
 						++numpix;
 
 						if(m.at<cv::Vec3b>(r,c) != cv::Vec3b(255,0,0)){
 							++numgood;
 						}
-					}
+					}*/
 				}
 			}
 

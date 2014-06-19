@@ -39,17 +39,18 @@ std::vector<cv::Point> cloudOutline(cv::Mat _2D, int wd, int ht){
 	return outline;
 }
 
+//changed from Mat.at
 void cvDrawPoint(cv::Mat im, cv::Point p, cv::Scalar color){
 	if(CLAMP_SIZE(p.x, p.y, im.cols, im.rows)){
 		int nc = im.channels();
 		if(nc == 1){
-			im.at<unsigned char>(p) = color(0);
+			im.ptr<unsigned char>(p.y)[p.x] = color(0);
 		}else if(nc == 2){
-			im.at<cv::Vec2b>(p) = cv::Vec2b(color(0), color(1));
+			im.ptr<cv::Vec2b>(p.y)[p.x] = cv::Vec2b(color(0), color(1));
 		}else if(nc == 3){
-			im.at<cv::Vec3b>(p) = cv::Vec3b(color(0), color(1), color(2));
+			im.ptr<cv::Vec3b>(p.y)[p.x] = cv::Vec3b(color(0), color(1), color(2));
 		}else if(nc == 4){
-			im.at<cv::Vec4b>(p) = cv::Vec4b(color(0), color(1), color(2), color(3));
+			im.ptr<cv::Vec4b>(p.y)[p.x] = cv::Vec4b(color(0), color(1), color(2), color(3));
 		}
 	}
 }

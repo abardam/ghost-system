@@ -12,6 +12,8 @@
 #include "texturesearch.h"
 #include "motionsmooth.h"
 #include "process.h"
+#include "skeletonstatus.h"
+#include "skeletoninterpolate.h"
 
 #include "ghostutil.h"
 #include "loader.h"

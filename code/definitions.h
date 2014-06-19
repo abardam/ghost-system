@@ -9,6 +9,7 @@
 #define GH_MF_CYLPROJ 1
 #define GH_MODELFITTING GH_MF_CYLPROJ
 
+
 #define IMAGE_CHANNELS 3
 typedef cv::Vec<unsigned char, IMAGE_CHANNELS> IMGPIXEL;
 

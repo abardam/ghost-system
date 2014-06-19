@@ -192,8 +192,13 @@ void initDefinitions(){
 	defInit = true;
 }
 
+const cv::Mat equalWeight(1, NUMJOINTS, cv::DataType<float>::type, cv::Scalar(1));
+
 cv::Mat getPartWeights(int i){
-	return mapping.partWeights[i];
+	if(i >=0 && i<NUMLIMBS)
+		return mapping.partWeights[i];
+	else
+		return equalWeight;
 }
 
 cv::Scalar getLimbColor(int limb, int numChannels){

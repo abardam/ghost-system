@@ -85,35 +85,51 @@ void ghostdraw(int frame, cv::Mat transform, std::vector<SkeleVideoFrame>& vidRe
 			float facing = tempCalcFacing(i, skele);
 			PixelColorMap from_color;
 
+			int wtType = GH_WT_JOINT;
+
+			if(options & GD_NOWEIGHT){
+				wtType = GH_WT_NONE;
+			}
+
+			int texSearchDepth;
+			int blendType;
+
 			if(options & GD_NOLIMBRARY)
 			{
-				ScoreList scoreList = sortFrames(skele, &vidRecord, &limbrary, i, 1, true);
-				from_color = cylinderMapPixelsColor(a, b, radius, i, facing, scoreList, source.offset, 
-					&vidRecord, &cylinderBody, &limbrary, CMPC_NO_OCCLUSION);
+				texSearchDepth = 1;
+				blendType = CMPC_NO_OCCLUSION;
 			}else if(options & GD_NOBLEND)
 			{
-				ScoreList scoreList = sortFrames(skele, &vidRecord, &limbrary, i, TEXTURE_SEARCH_DEPTH, true);
-				from_color = cylinderMapPixelsColor(a, b, radius, i, facing, scoreList, source.offset, 
-					&vidRecord, &cylinderBody, &limbrary, CMPC_BLEND_NONE);
+				texSearchDepth = TEXTURE_SEARCH_DEPTH;
+				blendType = CMPC_BLEND_NONE;
 			}
 			else{
-				ScoreList scoreList = sortFrames(skele, &vidRecord, &limbrary, i, TEXTURE_SEARCH_DEPTH, true);
-				from_color = cylinderMapPixelsColor(a, b, radius, i, facing, scoreList, source.offset, 
-					&vidRecord, &cylinderBody, &limbrary, CMPC_BLEND_1);
+				texSearchDepth = TEXTURE_SEARCH_DEPTH;
+				blendType = CMPC_BLEND_1;
 			}
+
+			ScoreList scoreList = sortFrames(skele, &vidRecord, &limbrary, i, texSearchDepth, true, wtType);
+			from_color = cylinderMapPixelsColor(a, b, radius, i, facing, scoreList, source.offset, 
+				&vidRecord, &cylinderBody, &limbrary, blendType);
 
 			for(int j=0;j<from_color.first.size();++j){
 
 				cv::Point pt(from_color.first[j](0), from_color.first[j](1));
 				pt += source.offset;
+				unsigned short& ptDepth = zBuf.ptr<unsigned short>(pt.y)[pt.x];
 
 				unsigned short new_depth = from_color.first[j](2);
-				unsigned short old_depth = zBuf.at<unsigned short>(pt);
+				unsigned short old_depth = ptDepth;
 
 				if(new_depth < old_depth && new_depth > 0){
 
-					cvDrawPoint(draw, pt, from_color.second[j]);
-					zBuf.at<unsigned short>(pt) = new_depth;
+					//cvDrawPoint(draw, pt, from_color.second[j]); //changed to UNSAFE version (below)
+					cv::Vec3b& ptColor = draw.ptr<cv::Vec3b>(pt.y)[pt.x];
+					for(int k=0;k<3;++k){
+						ptColor(k) = from_color.second[j](k);
+					}
+					
+					ptDepth = new_depth;
 				
 					//cv::imshow("pic", draw);
 					//cv::waitKey(10);
