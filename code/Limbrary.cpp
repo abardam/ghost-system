@@ -43,8 +43,8 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 			int f = getLimbmap()[i].first;
 			int s = getLimbmap()[i].second;
 
-			cv::Vec3f _a = mat_to_vec(it->kinectPoints.points.col(f));
-			cv::Vec3f _b = mat_to_vec(it->kinectPoints.points.col(s));
+			cv::Vec3f _a = mat_to_vec3(it->kinectPoints.points.col(f));
+			cv::Vec3f _b = mat_to_vec3(it->kinectPoints.points.col(s));
 
 			cv::Vec3f a = _b + cylinderBody->newLeftOffset_cyl[i] * (_a-_b);
 			cv::Vec3f b = _a + cylinderBody->newRightOffset_cyl[i] * (_b-_a);
@@ -140,8 +140,6 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 		if(verbose) std::cout << frames.size() << std::endl;
 
 	}
-	
-	removeBadFrames();
 }
 
 void Limbrary::cluster(std::vector<SkeleVideoFrame> * vidRecord, unsigned int K, unsigned int iterations){
@@ -249,7 +247,15 @@ void Limbrary::clean(){
 				frames[f][i].clear();
 			}
 		}
+		for(int f=0;f<framesForLimb[i].size();++f){
+			//check if frames[framesForLimb[i][f]] for i exists
+			if(frames[framesForLimb[i][f]][i].mat.empty()){
+				framesForLimb[i].erase(framesForLimb[i].begin()+f);
+				--f;
+			}
+		}
 	}
+
 }
 
 //right now, counts number of colored pixels vs number of occluded pixels; if its more than half occluded, discards that image
@@ -290,12 +296,12 @@ void Limbrary::removeBadFrames(){
 	}
 }
 
-std::vector<int> Limbrary::getAvailableFramesForLimb(int limbid){
+std::vector<int> Limbrary::getAvailableFramesForLimb(int limbid) const {
 	return framesForLimb[limbid];
 }
 
 
-FrameLimbs Limbrary::getFrameLimbs(int frame){
+FrameLimbs Limbrary::getFrameLimbs(int frame) const{
 	return frames[frame];
 }
 

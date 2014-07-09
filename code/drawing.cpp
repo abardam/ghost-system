@@ -40,7 +40,7 @@ std::vector<cv::Point> cloudOutline(cv::Mat _2D, int wd, int ht){
 }
 
 //changed from Mat.at
-void cvDrawPoint(cv::Mat im, cv::Point p, cv::Scalar color){
+void cvDrawPoint(cv::Mat& im, cv::Point p, cv::Scalar color){
 	if(CLAMP_SIZE(p.x, p.y, im.cols, im.rows)){
 		int nc = im.channels();
 		if(nc == 1){

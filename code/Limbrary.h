@@ -4,7 +4,7 @@
 #include "CylinderBody.h"
 
 #define MIN_DELTA 10
-#define FL_GOOD_RATIO 0.5
+#define FL_GOOD_RATIO 0.65
 
 typedef std::vector<CroppedCvMat> FrameLimbs;
 
@@ -15,11 +15,11 @@ public:
 	void Save(std::string path);
 	void Load(std::string path);
 
-	FrameLimbs getFrameLimbs(int frame);
+	FrameLimbs getFrameLimbs(int frame) const;
 
 	//after clustering, we will delete every non-cluster limb image;
 	//use this function to get a list of all the valid frame indices per limb id
-	std::vector<int> getAvailableFramesForLimb(int limbid);
+	std::vector<int> getAvailableFramesForLimb(int limbid) const;
 
 	//should be the same vidRecord used to build
 	//maybe its safer to put this as private

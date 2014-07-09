@@ -138,13 +138,13 @@ std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoF
 			temp.kinectPoints2P = normalizeSkeleton(K2P * temp.kinectPoints.points);
 
 			//old ver
-			if (kinPtsElem->Attribute("Cam2World") == NULL){
+			if (elem->Attribute("Cam2World") == NULL){
 				Skeleton wcSkeleton = temp.kinectPoints;
 				wcSkeleton.points = cam2World * K2P * wcSkeleton.points;
 				(*wcSkeletons).push_back(wcSkeleton);
 			}
 			else {
-				std::string cfilename = path + kinPtsElem->Attribute("Cam2World");
+				std::string cfilename = path + elem->Attribute("Cam2World");
 
 				cv::FileStorage fs(cfilename.c_str(), cv::FileStorage::READ);
 				fs["cam2world"] >> temp.cam2World;

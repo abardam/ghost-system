@@ -115,8 +115,8 @@ std::vector<BodyPartParam> rectFitting(Skeleton skeletonPositions, CroppedCvMat 
 		int p1 = getLimbmap()[i].first;
 		int p2 = getLimbmap()[i].second;
 
-		cv::Vec3f v1 = mat_to_vec(skeletonPositions.points.col(p1));
-		cv::Vec3f v2 = mat_to_vec(skeletonPositions.points.col(p2));
+		cv::Vec3f v1 = mat_to_vec3(skeletonPositions.points.col(p1));
+		cv::Vec3f v2 = mat_to_vec3(skeletonPositions.points.col(p2));
 
 		//hardcoded body part lengths
 		cv::Vec3f lv1 = v2 + (v1 - v2)*bpLengthsLeft[i];
@@ -204,6 +204,17 @@ std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f off
 	return pts2;
 }
 
+
+std::vector<cv::Vec2f> vec3f_to_2f(std::vector<cv::Vec3f> pts, cv::Vec2f offset){
+	std::vector<cv::Vec2f> pts2(pts.size());
+	for(int i=0;i<pts.size();++i){
+		if(pts[i](2) < NEAR ) return std::vector<cv::Vec2f>(); //opencv bugs out when things are clip thru
+
+		pts2[i] = toScreen(pts[i]) - offset;
+	}
+	return pts2;
+}
+
 static int countPixels_cyl(cv::Mat im, Cylinder cyl, bool (*cmpFnc)(cv::Vec3b), cv::Vec2f offset){
 	std::vector<Segment3f> pts = cylinder_to_segments(cyl.pt1, cyl.pt2, cyl.radius);
 	std::vector<Segment2f> pts2 = segment3f_to_2f(pts, offset);
@@ -267,8 +278,8 @@ std::vector<Cylinder> projectedCylinderFitting(Skeleton skeletonPositions, Cropp
 		int p1 = getLimbmap()[i].first;
 		int p2 = getLimbmap()[i].second;
 
-		cv::Vec3f v1 = mat_to_vec(skeletonPositions.points.col(p1));
-		cv::Vec3f v2 = mat_to_vec(skeletonPositions.points.col(p2));
+		cv::Vec3f v1 = mat_to_vec3(skeletonPositions.points.col(p1));
+		cv::Vec3f v2 = mat_to_vec3(skeletonPositions.points.col(p2));
 
 		//hardcoded body part lengths
 		cv::Vec3f lv1 = v2 + (v1 - v2)*bpLengthsLeft[i];
@@ -364,14 +375,14 @@ std::vector<Segment3f> cylinder_to_segments(cv::Vec3f a, cv::Vec3f b, float radi
 
 	cv::Vec3f cylaxis = b - a;
 	cv::Vec3f originpt = -a;
-	cv::Vec3f cross = cylaxis.cross(originpt);
-	cv::Vec3f cross2 = cylaxis.cross(cross);
+	cv::Vec3f cross = cv::normalize(cylaxis.cross(originpt));
+	cv::Vec3f cross2 = cv::normalize(cylaxis.cross(cross));
 
 	//draw the rect:
-	cv::Vec3f a1 = a + radius * cv::normalize(cross);
-	cv::Vec3f a2 = a - radius * cv::normalize(cross);
-	cv::Vec3f b1 = b + radius * cv::normalize(cross);
-	cv::Vec3f b2 = b - radius * cv::normalize(cross);
+	cv::Vec3f a1 = a + radius * (cross);
+	cv::Vec3f a2 = a - radius * (cross);
+	cv::Vec3f b1 = b + radius * (cross);
+	cv::Vec3f b2 = b - radius * (cross);
 
 	cv::Vec3f center_a = (a1+a2)/2;
 	cv::Vec3f center_b = (b1+b2)/2;
@@ -386,10 +397,10 @@ std::vector<Segment3f> cylinder_to_segments(cv::Vec3f a, cv::Vec3f b, float radi
 	std::vector<Segment3f> ret_a;
 	std::vector<Segment3f> ret_b;
 
-	cv::Vec3f a3 = a + radius * cv::normalize(cross2);
-	cv::Vec3f a4 = a - radius * cv::normalize(cross2);
-	cv::Vec3f b3 = b + radius * cv::normalize(cross2);
-	cv::Vec3f b4 = b - radius * cv::normalize(cross2);
+	cv::Vec3f a3 = a + radius * (cross2);
+	cv::Vec3f a4 = a - radius * (cross2);
+	cv::Vec3f b3 = b + radius * (cross2);
+	cv::Vec3f b4 = b - radius * (cross2);
 	
 	ret_a.push_back(Segment3f(a1,a3));
 	ret_a.push_back(Segment3f(a2,a3));
@@ -409,6 +420,46 @@ std::vector<Segment3f> cylinder_to_segments(cv::Vec3f a, cv::Vec3f b, float radi
 		ret.push_back(ret_a[i]);
 		ret.push_back(ret_b[i]);
 	}
+
+	return ret;
+}
+
+
+std::vector<cv::Vec3f> cylinder_to_vertices(cv::Vec3f a, cv::Vec3f b, float radius, int numsegments){
+	std::vector<cv::Vec3f> ret;
+
+	cv::Vec3f cylaxis = b - a;
+	cv::Vec3f originpt = -a;
+	cv::Vec3f cross = cv::normalize(cylaxis.cross(originpt));
+	cv::Vec3f cross2 = cv::normalize(cylaxis.cross(cross));
+
+	//draw the rect:
+	cv::Vec3f a1 = a + radius * (cross);
+	cv::Vec3f a2 = a - radius * (cross);
+	cv::Vec3f b1 = b + radius * (cross);
+	cv::Vec3f b2 = b - radius * (cross);
+
+	cv::Vec3f center_a = (a1+a2)/2;
+	cv::Vec3f center_b = (b1+b2)/2;
+
+	ret.push_back(a1);
+	ret.push_back(a2);
+	ret.push_back(b1);
+	ret.push_back(b2);
+
+	int ndiv = std::log(numsegments+0.0)/CV_LOG2;
+
+	//caps
+
+	cv::Vec3f a3 = a + radius * (cross2);
+	cv::Vec3f a4 = a - radius * (cross2);
+	cv::Vec3f b3 = b + radius * (cross2);
+	cv::Vec3f b4 = b - radius * (cross2);
+	
+	ret.push_back(a3);
+	ret.push_back(a4);
+	ret.push_back(b3);
+	ret.push_back(b4);
 
 	return ret;
 }
@@ -474,6 +525,39 @@ PixelPolygon polygon_contains_pixels(std::vector<Segment2f> polygon){
 	return p;
 }
 
+
+//PixelPolygon polygon_contains_pixels(std::vector<cv::Vec2f> polygon){
+//	PixelPolygon p;
+//
+//	if(polygon.empty()) return p;
+//
+//	cv::Rect bb = cv::boundingRect(polygon);
+//	p.hi.resize(bb.width);
+//	p.lo.resize(bb.width);
+//	p.hi_y=-1;
+//	p.lo_y=-1;
+//
+//	for(int c=bb.x;c<bb.x+bb.width;++c){
+//		float y_hi=bb.y, y_lo=bb.y+bb.height;
+//		bool on;
+//		for(int i=0;i<polygon.size();++i){
+//			float y = point_on_segment(polygon[i].first, polygon[i].second, c, &on);
+//			if(on){
+//				if(y > y_hi) y_hi = y;
+//				if(y < y_lo) y_lo = y;
+//			}
+//		}
+//		p.hi[c-bb.x] = y_hi;
+//		p.lo[c-bb.x] = y_lo;
+//
+//		if(p.hi_y == -1 || p.hi_y < y_hi) p.hi_y = y_hi;
+//		if(p.lo_y == -1 || p.lo_y > y_lo) p.lo_y = y_lo;
+//	}
+//
+//	(p.x_offset) = bb.x;
+//
+//	return p;
+//}
 
 // this used to be in loader.cpp
 
@@ -722,7 +806,7 @@ bool buildDepth(Skeleton skeletonPositions, cv::Mat depthIm, CroppedCvMat colorI
 
 	cv::Vec2f skeletonPositions2[NUMJOINTS];
 	for(int bp=0;bp<NUMJOINTS;++bp){
-		skeletonPositions2[bp] = toScreen(mat_to_vec(skeletonPositions.points.col(bp)));
+		skeletonPositions2[bp] = toScreen(mat_to_vec3(skeletonPositions.points.col(bp)));
 	}
 
 	cv::Vec4f skeletonPositions4[NUMJOINTS];

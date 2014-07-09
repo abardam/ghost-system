@@ -1,6 +1,7 @@
 #include "ghostcam.h"
 #include "KinectManager.h"
 #include "cvutil.h"
+#include "camlerp.h"
 
 cv::Mat cameraMatrix;
 cv::Mat invCameraMatrix;
@@ -22,6 +23,7 @@ void setCameraMatrix(float param0, float param1, float param2, float param3, flo
 void setCameraMatrix(cv::Mat mat){
 	cameraMatrix = mat.rowRange(0,3).colRange(0,4).clone();
 	invCameraMatrix = invertCameraMatrix(cameraMatrix);
+	initLerp(CAPTURE_SIZE_X, CAPTURE_SIZE_Y);
 }
 
 /*

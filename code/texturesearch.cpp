@@ -8,14 +8,17 @@
 
 cv::Mat normalizeSkeleton(cv::Mat skel){
 	cv::Mat retval(3,NUMJOINTS,cv::DataType<float>::type);
+	float * retptr = retval.ptr<float>();
 
 	for(int i=0; i<NUMJOINTS; ++i){
 		cv::Mat tempcol;
 		//cv::normalize(skel.col(i) - skel.col(KINECT::getCenterJoint()), tempcol);
 		tempcol = skel.col(i) - skel.col(KINECT::getCenterJoint());
-
+		float * colptr = tempcol.ptr<float>();
 		for(int j=0;j<3;++j){
-			retval.at<float>(j, i) = tempcol.at<float>(j);
+			//retval.at<float>(j, i) = tempcol.at<float>(j);
+			*(retptr+j*NUMJOINTS+i) = *colptr;
+			++colptr;
 		}
 	}
 
@@ -49,24 +52,17 @@ bool ScoreSort(const std::pair<int, float>& lhs, std::pair<int, float>& rhs)
   return lhs.second < rhs.second; 
 } 
 
-ScoreList sortFrames(Skeleton s, std::vector<SkeleVideoFrame> * vidRecord, Limbrary * limbrary, unsigned int limbid, int limit, bool sort, int weightType){
+ScoreList sortFrames(Skeleton s, const std::vector<SkeleVideoFrame>& vidRecord, const Limbrary& limbrary, unsigned int limbid, int limit, bool sort, int weightType){
 	
 	float bestScore = -1;
 	cv::Mat b = normalizeSkeleton(s.points);
 
 	ScoreList scoreArray;
 
-	cv::Mat weights;
-
-	if(limbid < NUMLIMBS)
-		weights = getPartWeights(limbid);
-	else
-		weights = cv::Mat(1, NUMJOINTS, cv::DataType<float>::type, cv::Scalar(1));
-
 	bool useCluster = true;
-	int frames = limbrary->getAvailableFramesForLimb(limbid).size();
+	int frames = limbrary.getAvailableFramesForLimb(limbid).size();
 	if(frames == 0){
-		frames = vidRecord->size();
+		frames = vidRecord.size();
 		useCluster = false;
 	}
 
@@ -74,7 +70,7 @@ ScoreList sortFrames(Skeleton s, std::vector<SkeleVideoFrame> * vidRecord, Limbr
 
 		int i;
 		if(useCluster)
-			i=limbrary->getAvailableFramesForLimb(limbid)[_i];
+			i=limbrary.getAvailableFramesForLimb(limbid)[_i];
 		else
 			i = _i;
 
@@ -82,7 +78,7 @@ ScoreList sortFrames(Skeleton s, std::vector<SkeleVideoFrame> * vidRecord, Limbr
 		//if((*vidRecord)[i].videoFrame.mat.empty()) continue;
 
 		float bst=0;
-		cv::Mat a = ((*vidRecord)[i].kinectPoints2P);
+		cv::Mat a = ((vidRecord)[i].kinectPoints2P);
 		//for(int j=0; j<NUMJOINTS; ++j){
 		//	cv::Mat tmp = b.col(j)-a.col(j);
 		//	for(int k=0;k<3;++k){
@@ -156,12 +152,15 @@ cv::Mat limbbasedSkeletonMatrix(cv::Mat skelMat, int limbid){
 }
 
 cv::Mat jointbasedSkeletonMatrix(cv::Mat skelMat, int limbid){
-	cv::Mat weights = getPartWeights(limbid);
+	float * weights = getPartWeights(limbid);
 	cv::Mat ret(3,NUMJOINTS,CV_32F);
-	for(int i=0;i<NUMJOINTS;++i){
-		float wt = weights.at<float>(i);
-		for(int j=0;j<3;++j){
-			ret.at<float>(j,i) = skelMat.at<float>(j,i) * wt;
+	for(int j=0;j<3;++j){
+		float * retptr = ret.ptr<float>(j);
+		float * skelptr = skelMat.ptr<float>(j);
+		for(int i=0;i<NUMJOINTS;++i){
+			float wt = weights!=0?weights[i]:1;
+			
+			*(retptr+i) = *(skelptr+i) * wt;
 		}
 	}
 	return ret;

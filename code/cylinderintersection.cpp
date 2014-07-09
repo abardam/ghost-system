@@ -5,7 +5,7 @@
 
 cv::Vec3f raycast(cv::Vec2f pt, cv::Mat invCameraMatrix){
 	cv::Vec3f pt3(pt(0), pt(1), 1);
-	cv::Vec3f repro = mat_to_vec(invCameraMatrix * cv::Mat(pt3));
+	cv::Vec3f repro = mat_to_vec3(invCameraMatrix * cv::Mat(pt3));
 	return cv::normalize(repro);
 }
 
@@ -75,7 +75,7 @@ std::vector<std::pair<float,cv::Vec3f>> rayCylinderIntersectionPoints(cv::Vec3f 
 	//ray = origin + (ray-origin) * -100;
 	//ray = ray / cv::norm(ray);
 
-	ray = cv::normalize(ray - origin);
+	ray = (ray - origin);
 
 	float a = ray(0)*ray(0) + ray(1)*ray(1);
 	float b = 2*origin(0)*ray(0)+2*origin(1)*ray(1);
@@ -93,26 +93,111 @@ std::vector<std::pair<float,cv::Vec3f>> rayCylinderIntersectionPoints(cv::Vec3f 
 	if(vplus(2) > 0 && vplus(2) < height)
 	{
 		ret.push_back(std::pair<float,cv::Vec3f>(plus,vplus));
+		//ghlog.q.push_back(0);
 	}
 
 	if(vminus(2) > 0 && vminus(2) < height)
 	{
 		ret.push_back(std::pair<float,cv::Vec3f>(minus,vminus));
+		return ret;
+		//ghlog.q.push_back(1);
 	}
 
 	if( (vplus(2) <= 0 && vminus(2) > 0) || (vminus(2) <= 0 && vplus(2) > 0)){
 		float extra = -origin(2)/ray(2);
 		cv::Vec3f vextra(origin(0)+extra*ray(0), origin(1)+extra*ray(1), origin(2)+extra*ray(2));
 		ret.push_back(std::pair<float,cv::Vec3f>(extra,vextra));
+		return ret;
+		//ghlog.q.push_back(2);
 	}
 
 	if( (vplus(2) >= height && vminus(2) < height) || (vminus(2) >= height && vplus(2) < height)){
 		float extra = (height-origin(2))/ray(2);
 		cv::Vec3f vextra(origin(0)+extra*ray(0), origin(1)+extra*ray(1), origin(2)+extra*ray(2));
 		ret.push_back(std::pair<float,cv::Vec3f>(extra,vextra));
+		//ghlog.q.push_back(3);
 	}
 
+
+
 	return ret;
+}
+
+bool rayCylinderClosestIntersectionPoint(float * origin, float * ray_, const float& radius, const float& height, float out[3]){
+	//ray = origin + (ray-origin) * -100;
+	//ray = ray / cv::norm(ray);
+
+	float ray[3];
+	for(int i=0;i<3;++i){
+		ray[i] = ray_[i]-origin[i];
+	}
+
+	//cv::Vec3f ray = (ray_ - origin);
+
+	float a = ray[0]*ray[0] + ray[1]*ray[1];
+	float b = 2*origin[0]*ray[0]+2*origin[1]*ray[1];
+	float c = origin[0]*origin[0] + origin[1]*origin[1] -radius*radius;
+
+
+	float plus = (-b + sqrt(b*b-4*a*c))/(2*a);
+	float minus = (-b - sqrt(b*b-4*a*c))/(2*a);
+
+	float vplus2 =  origin[2]+plus*ray[2];
+	float vminus2 = origin[2]+minus*ray[2];
+
+	
+	if(vminus2 > 0 && vminus2 < height)
+	{
+
+		for(int i=0;i<3;++i){
+			out[i] = origin[i]+minus*ray[i];
+		}
+
+		return true;
+	}
+
+	if( (vplus2 <= 0 && vminus2 > 0) || (vminus2 <= 0 && vplus2 > 0)){
+		float extra = -origin[2]/ray[2];
+		for(int i=0;i<3;++i){
+			out[i] = origin[i]+extra*ray[i];
+		}
+		return true;
+	}
+
+
+	return false;
+}
+
+
+bool rayCylinderClosestIntersectionPoint2(float * origin, float * ray, const float& a, const float& b, const float& c, const float& height, float out[3]){
+	
+	float plus = (-b + sqrt(b*b-4*a*c))/(2*a);
+	float minus = (-b - sqrt(b*b-4*a*c))/(2*a);
+
+	float vplus2 =  origin[2]+plus*ray[2];
+	float vminus2 = origin[2]+minus*ray[2];
+
+	
+	if(vminus2 > 0 && vminus2 < height)
+	{
+
+		for(int i=0;i<3;++i){
+			out[i] = origin[i]+minus*ray[i];
+		}
+
+		return true;
+	}
+
+	if( (vplus2 <= 0 && vminus2 > 0) || (vminus2 <= 0 && vplus2 > 0)){
+		float extra = -origin[2]/ray[2];
+		for(int i=0;i<3;++i){
+			out[i] = origin[i]+extra*ray[i];
+		}
+		return true;
+	}
+
+
+	return false;
 }
 
 int rayCylinder(cv::Vec3f ray, cv::Vec3f cyl_a, cv::Vec3f cyl_b, float radius, cv::Vec3f * out){
@@ -149,8 +234,8 @@ int rayCylinder(cv::Vec3f ray, cv::Vec3f cyl_a, cv::Vec3f cyl_b, float radius, c
 //should be a copy of rayCylinder but with all transformations being done at the start so its more efficient
 int rayCylinder2(cv::Mat transformation, cv::Vec3f ray, float radius, float height, cv::Vec3f * out){
 	
-	cv::Vec3f origin = mat_to_vec(transformation * cv::Mat(cv::Vec4f(0,0,0,1)));
-	cv::Vec3f ray_trans = mat_to_vec(transformation * vec3_to_mat4(ray));
+	cv::Vec3f origin = mat_to_vec3(transformation * cv::Mat(cv::Vec4f(0,0,0,1)));
+	cv::Vec3f ray_trans = mat_to_vec3(transformation * vec3_to_mat4(ray));
 
 	std::vector<std::pair<float,cv::Vec3f>> ret = rayCylinderIntersectionPoints(origin, ray_trans, radius, height);
 
@@ -158,10 +243,45 @@ int rayCylinder2(cv::Mat transformation, cv::Vec3f ray, float radius, float heig
 		return 0;
 	}else{
 		if(ret[0].first < ret[1].first){
-			*out = mat_to_vec(transformation.inv()*vec3_to_mat4(ret[0].second));
+			*out = mat_to_vec3(transformation.inv()*vec3_to_mat4(ret[0].second));
 		}else{
-			*out = mat_to_vec(transformation.inv()*vec3_to_mat4(ret[1].second));
+			*out = mat_to_vec3(transformation.inv()*vec3_to_mat4(ret[1].second));
 		}
 		return 1;
 	}
+}
+
+//should be a copy of rayCylinder2 but the transformations are pre-done
+int rayCylinder3(float * origin_trans, float * ray_trans, cv::Mat transformation_inv, float radius, float height, cv::Vec3f * out){
+	
+	//ghlog.q.clear();
+	
+	//cv::Vec3f origin_trans_v(origin_trans[0], origin_trans[1], origin_trans[2]);
+	//cv::Vec3f ray_trans_v(ray_trans[0], ray_trans[1], ray_trans[2]);
+	//
+	//std::vector<std::pair<float,cv::Vec3f>> ret = rayCylinderIntersectionPoints(origin_trans_v, ray_trans_v, radius, height);
+	//
+	//if(ret.empty()){
+	//	return 0;
+	//}else if(ret.size() == 1){
+	//	*out = mat_to_vec3(transformation_inv*vec3_to_mat4(ret[0].second));
+	//	return 1;
+	//}else if(ret.size() == 2)
+	//{
+	//	if(ret[0].first < ret[1].first){
+	//		*out = mat_to_vec3(transformation_inv*vec3_to_mat4(ret[0].second));
+	//	}else{
+	//		*out = mat_to_vec3(transformation_inv*vec3_to_mat4(ret[1].second));
+	//	}
+	//	return 1;
+	//}
+
+	float retf[4];
+	bool res = rayCylinderClosestIntersectionPoint(origin_trans, ray_trans, radius, height, retf);
+	if(res){
+		retf[3] = 1;
+		*out = mat_to_vec3(transformation_inv*cv::Mat(4,1,CV_32F,retf));
+		return 1;
+	}
+	else return 0;
 }

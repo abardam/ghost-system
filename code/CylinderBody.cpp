@@ -102,7 +102,7 @@ int CylinderBody::getBestFrame(cv::Mat s, bool writeim){
 
 		for(int i=0; i<vidRecord->size(); ++i){ //NOTE: find a way to exclude invalid skeletons
 		
-			if(!(*vidRecord)[i].allPartsIn) continue;
+			//if(!(*vidRecord)[i].allPartsIn) continue;
 			if((*vidRecord)[i].videoFrame.mat.empty()) continue;
 			
 			cv::Mat a = /*normalizeSkeleton*/((*vidRecord)[i].kinectPoints2P); //should be normalized na
@@ -170,17 +170,13 @@ void CylinderBody::getBestFrames(cv::Mat points, int arr[NUMLIMBS]){
 			float bst=0;
 			cv::Mat a = ((*vidRecord)[i].kinectPoints2P);
 
-			cv::Mat prodArray(NUMJOINTS, 1, cv::DataType<float>::type);
+			float * weights = getPartWeights(part);
 
 			for(int j=0; j<NUMJOINTS; ++j){
 				float d = cv::norm(b.col(j)-a.col(j));
-				prodArray.at<float>(j) = d;
+				bst += weights[j] * d;
 			}
 
-			cv::Mat temp = (getPartWeights(part) * prodArray);
-
-			bst = temp.at<float>(0);
-		
 			if(bestScore == -1 || bst < bestScore){
 				bestScore = bst;
 				bestFrame = i;
@@ -306,7 +302,7 @@ IMGPIXEL CylinderBody::getColorAtPartAndPixel(int frame, int part, cv::Vec4f pix
 
 	SkeleVideoFrame * targetFrame = &(*vidRecord)[frame];
 	
-	cv::Vec2f pix =  toScreen( mat_to_vec( limbTransforms[part][frame] * cv::Mat(pixel) ));
+	cv::Vec2f pix =  toScreen( mat_to_vec3( limbTransforms[part][frame] * cv::Mat(pixel) ));
 	cv::Point2d offset = targetFrame->videoFrame.offset;
 	pix[0] -= offset.x;
 	pix[1] -= offset.y;
@@ -329,8 +325,8 @@ cv::Mat CylinderBody::getCylinderTransform(int part, int frame){
 
 	SkeleVideoFrame * targetFrame = &(*vidRecord)[frame];
 
-	cv::Vec3f v3A = mat_to_vec(targetFrame->kinectPoints.points.col(getLimbmap()[part].first));
-	cv::Vec3f v3B = mat_to_vec(targetFrame->kinectPoints.points.col(getLimbmap()[part].second));
+	cv::Vec3f v3A = mat_to_vec3(targetFrame->kinectPoints.points.col(getLimbmap()[part].first));
+	cv::Vec3f v3B = mat_to_vec3(targetFrame->kinectPoints.points.col(getLimbmap()[part].second));
 
 	cv::Vec3f first = v3A; // + (v3A - v3B) * -getLeftOffset()[part];
 	cv::Vec3f second = v3B; // + (v3B - v3A) * getRightOffset()[part];
@@ -438,7 +434,7 @@ void CylinderBody::colorsAtPixels(std::vector<cv::Vec4f> * pt3d, cv::Mat unrotma
 
 		cv::Vec3f tempVec;
 
-		tempVec = mat_to_vec(temp);
+		tempVec = mat_to_vec3(temp);
 
 		IMGPIXEL color;
 
@@ -483,7 +479,7 @@ void CylinderBody::colorsAtPixels(std::vector<VecPart> * pt3d, cv::Mat unrotmat2
 
 		cv::Vec3f tempVec;
 
-		tempVec = mat_to_vec(temp);
+		tempVec = mat_to_vec3(temp);
 
 		int realpart = getCombinePartsMap()[it->part];
 		if(realpart == -1) continue;

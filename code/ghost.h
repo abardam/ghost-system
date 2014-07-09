@@ -21,3 +21,4 @@
 #include "ghostcam.h"
 #include "drawing.h"
 #include "ghostdraw.h"
+#include "ghostmapping.h"

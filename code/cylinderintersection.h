@@ -13,3 +13,10 @@ int rayCylinder(cv::Vec3f ray, cv::Vec3f cyl_a, cv::Vec3f cyl_b, float radius, c
 
 //same as raycylinder but u have to pre-do the transformations
 int rayCylinder2(cv::Mat transformation, cv::Vec3f ray, float radius, float height, cv::Vec3f * out);
+
+
+//should be a copy of rayCylinder2 but the transformations are pre-done AND pre-applied
+int rayCylinder3(float * origin_trans, float * ray_trans, cv::Mat transformation_inv, float radius, float height, cv::Vec3f * out);
+
+
+bool rayCylinderClosestIntersectionPoint(float * origin, float * ray_, const float& radius, const float& height, float out[3]);

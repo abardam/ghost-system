@@ -26,7 +26,7 @@ void interpolate(std::vector<std::vector<char>> &estimRecord, std::vector<Skelet
 				}
 
 				float dist = nextGood-i;
-				cv::Vec3f interp = mat_to_vec(interpPoints[nextGood].points.col(j) -
+				cv::Vec3f interp = mat_to_vec3(interpPoints[nextGood].points.col(j) -
 					interpPoints[i-1].points.col(j))/dist;
 				cv::Mat base = interpPoints[i-1].points(cv::Rect(j,0,1,3));
 				for(int i2=i;i2<nextGood;++i2){

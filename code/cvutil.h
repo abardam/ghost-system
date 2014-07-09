@@ -1,8 +1,7 @@
 #pragma once
 #include <opencv2\opencv.hpp>
-#include "definitions.h"
 
-float calculateScore(cv::Mat a, cv::Mat b);
+
 cv::Mat depth2BGR(cv::Mat depthMat);
 
 
@@ -11,9 +10,6 @@ cv::Mat vec3_to_mat4(cv::Vec3f vec);
 
 //3x3 matrix to 4x4 homogenous matrix
 cv::Mat mat3_to_mat4(cv::Mat mat);
-
-//not sure what the difference between this and vec3 is
-cv::Vec3f mat_to_vec(cv::Mat mat);
 
 //4x1 or 3x1 mat to 3-vec
 cv::Vec3f mat_to_vec3(cv::Mat mat);
@@ -38,18 +34,19 @@ cv::Mat getTransformMatrix(cv::Vec2f a, cv::Vec2f b);
 cv::Mat getTransformMatrix_r(cv::Vec2f a, cv::Vec2f b);
 cv::Mat getScaleMatrix(float x, float y, float z);
 
-void lineAt(cv::Mat img, cv::Vec2f a, cv::Vec2f b, IMGPIXEL color);
-
 cv::Mat getRotationMatrix(cv::Vec3f vector, cv::Vec3f baseVector = cv::Vec3f(0,0,1));
 
 
 //axis-angle. returns a 3x3 mat
 cv::Mat getRotationMatrix(cv::Vec3f axis, float angle);
 
+//axis-angle. returns a 4x4 mat
+cv::Mat getRotationMatrix4(cv::Vec3f axis, float angle);
+
 cv::Mat calcTransform_r(cv::Vec3f a, cv::Vec3f b);
 cv::Mat calcTransform(cv::Vec3f a, cv::Vec3f b);
 
-cv::Vec3f vectorProject(cv::Vec3f A, cv::Vec3f B);
+cv::Vec3f vectorProject(cv::Vec3f A, cv::Vec3f B, cv::Vec3f Bhat = cv::Vec3f(0,0,0));
 
 //assuming: from an origin (0,0,0), to main point (0,0,1), with direction vector (0,0,0)-(0,-1,0),
 //get transformation matrix to points tarA (new origin), tarB (new main point), with facing toward the screen
@@ -59,7 +56,6 @@ float angleBetweenTwoVectors(cv::Vec3f A, cv::Vec3f B);
 
 cv::Vec3f getBestFacingVector(cv::Vec3f A, cv::Vec3f B);
 
-int calcBinFromFacing(cv::Vec3f facing);
 
 bool calculateIntersection(cv::Vec2f a1, cv::Vec2f b1, cv::Vec2f a2, cv::Vec2f b2, float * lambda1, float * lambda2);
 
@@ -68,7 +64,7 @@ cv::Mat invertCameraMatrix(cv::Mat cameraMatrix);
 
 //a -> (0,0,0) , b-> (0,0,1)
 //4x4 transformation matrix
-cv::Mat segmentZeroTransformation(cv::Vec3f a, cv::Vec3f b);
+cv::Mat segmentZeroTransformation(cv::Vec3f a, cv::Vec3f b, cv::Mat * inverse = 0);
 
 //a1 -> a2, b1 -> b2
 //4x4 transformation matrix
@@ -78,5 +74,11 @@ cv::Mat segmentTransformation(cv::Vec3f a1, cv::Vec3f b1, cv::Vec3f a2, cv::Vec3
 //to get the actual 3d point, add it to point a
 //facing 0 will give a facing into the screen (e.g. given vertical cylinder, [0;0;1] )
 cv::Vec3f cylinderFacingVector(cv::Vec3f a, cv::Vec3f b, float facing);
+
+//precomputed version
+cv::Vec3f cylinderFacingVector(cv::Vec3f axis, cv::Mat facingVec, float facing);
+
+//helper for cylidnerFacingVector(precomputed)
+std::pair<cv::Vec3f, cv::Mat> cylinderFacingHelper(cv::Vec3f a, cv::Vec3f b);
 
 float sqrSum(cv::Mat m);

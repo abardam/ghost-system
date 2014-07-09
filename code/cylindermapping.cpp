@@ -245,6 +245,9 @@ float currAveFPS = 0;
 void drawSkeletonCylinder(cv::Mat rotmat, int frame, std::vector<SkeleVideoFrame> * vidRecord, std::vector<Skeleton> * wcSkeletons, CylinderBody * cb, int * chosenBest, std::string * outstring){
 	
 	if(vidRecord->size() < 1) return;
+	if(window_height == 0 || window_width == 0){
+		std::cerr << "error: run calcInvProjMat() first!\n";
+	}
 
 	//npixsize = pixsize;
 	npixsize = 1;

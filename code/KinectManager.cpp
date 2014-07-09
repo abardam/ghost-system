@@ -207,31 +207,30 @@ namespace KINECT{
 
 		
 		for(int i=0; i<NUMLIMBS; ++i){
-			mapping->partWeights[i] = cv::Mat(1, NUMJOINTS, cv::DataType<float>::type, cv::Scalar(0));
-			mapping->partWeights[i].at<float>(getLimbmap()[i].first) = 1;
-			mapping->partWeights[i].at<float>(getLimbmap()[i].second) = 1;
+			mapping->partWeights[i][getLimbmap()[i].first] = 1;
+			mapping->partWeights[i][getLimbmap()[i].second] = 1;
 		}
 
-		mapping->partWeights[HEAD].at<float>(nite::JOINT_LEFT_SHOULDER) = 1;
-		mapping->partWeights[HEAD].at<float>(nite::JOINT_RIGHT_SHOULDER) = 1;
+		mapping->partWeights[HEAD][nite::JOINT_LEFT_SHOULDER] = 1;
+		mapping->partWeights[HEAD][nite::JOINT_RIGHT_SHOULDER] = 1;
 
-		mapping->partWeights[UPPERARM_LEFT].at<float>(nite::JOINT_LEFT_HAND) = 1;
-		mapping->partWeights[UPPERARM_RIGHT].at<float>(nite::JOINT_RIGHT_HAND) = 1;
-		mapping->partWeights[LOWERARM_LEFT].at<float>(nite::JOINT_LEFT_SHOULDER) = 1;
-		mapping->partWeights[LOWERARM_RIGHT].at<float>(nite::JOINT_RIGHT_SHOULDER) = 1;
+		mapping->partWeights[UPPERARM_LEFT]	[nite::JOINT_LEFT_HAND] = 1;
+		mapping->partWeights[UPPERARM_RIGHT][nite::JOINT_RIGHT_HAND] = 1;
+		mapping->partWeights[LOWERARM_LEFT]	[nite::JOINT_LEFT_SHOULDER] = 1;
+		mapping->partWeights[LOWERARM_RIGHT][nite::JOINT_RIGHT_SHOULDER] = 1;
 		
 
-		mapping->partWeights[CHEST].at<float>(nite::JOINT_LEFT_SHOULDER) = 1;
-		mapping->partWeights[CHEST].at<float>(nite::JOINT_RIGHT_SHOULDER) = 1;
-		mapping->partWeights[CHEST].at<float>(nite::JOINT_LEFT_HIP) = 1;
-		mapping->partWeights[CHEST].at<float>(JOINT_CENTER_HIP) = 1;
-		mapping->partWeights[CHEST].at<float>(nite::JOINT_RIGHT_HIP) = 1;
+		mapping->partWeights[CHEST][nite::JOINT_LEFT_SHOULDER] = 1;
+		mapping->partWeights[CHEST][nite::JOINT_RIGHT_SHOULDER] = 1;
+		mapping->partWeights[CHEST][nite::JOINT_LEFT_HIP] = 1;
+		mapping->partWeights[CHEST][JOINT_CENTER_HIP] = 1;
+		mapping->partWeights[CHEST][nite::JOINT_RIGHT_HIP] = 1;
 
-		mapping->partWeights[ABS].at<float>(nite::JOINT_LEFT_SHOULDER) = 1;
-		mapping->partWeights[ABS].at<float>(nite::JOINT_NECK) = 1;
-		mapping->partWeights[ABS].at<float>(nite::JOINT_RIGHT_SHOULDER) = 1;
-		mapping->partWeights[ABS].at<float>(nite::JOINT_LEFT_HIP) = 1;
-		mapping->partWeights[ABS].at<float>(nite::JOINT_RIGHT_HIP) = 1;
+		mapping->partWeights[ABS][nite::JOINT_LEFT_SHOULDER] = 1;
+		mapping->partWeights[ABS][nite::JOINT_NECK] = 1;
+		mapping->partWeights[ABS][nite::JOINT_RIGHT_SHOULDER] = 1;
+		mapping->partWeights[ABS][nite::JOINT_LEFT_HIP] = 1;
+		mapping->partWeights[ABS][nite::JOINT_RIGHT_HIP] = 1;
 	}
 
 	cv::Vec3f calculateFacing(Skeleton * _s){
@@ -285,9 +284,9 @@ namespace KINECT{
 	int initSkeletonScore(Skeleton kinectPoints){
 		//return a score of how good this skeleton is for building from
 
-		cv::Vec3f torsoV = mat_to_vec(kinectPoints.points.col(JOINT_CENTER_HIP) - kinectPoints.points.col(nite::JOINT_NECK) );
-		cv::Vec3f larmV = mat_to_vec(kinectPoints.points.col(nite::JOINT_LEFT_HAND) - kinectPoints.points.col(nite::JOINT_LEFT_SHOULDER));
-		cv::Vec3f rarmV = mat_to_vec(kinectPoints.points.col(nite::JOINT_RIGHT_HAND) - kinectPoints.points.col(nite::JOINT_RIGHT_SHOULDER));
+		cv::Vec3f torsoV = mat_to_vec3(kinectPoints.points.col(JOINT_CENTER_HIP) - kinectPoints.points.col(nite::JOINT_NECK) );
+		cv::Vec3f larmV = mat_to_vec3(kinectPoints.points.col(nite::JOINT_LEFT_HAND) - kinectPoints.points.col(nite::JOINT_LEFT_SHOULDER));
+		cv::Vec3f rarmV = mat_to_vec3(kinectPoints.points.col(nite::JOINT_RIGHT_HAND) - kinectPoints.points.col(nite::JOINT_RIGHT_SHOULDER));
 
 		double torsoVA = atan2(torsoV[1], torsoV[0]);
 		double larmVA = atan2(larmV[1], larmV[0]);
@@ -304,10 +303,10 @@ namespace KINECT{
 		//double cleg = ((llegVA > rlegVA)?-1000:1000);
 
 		//convert to 2D
-		cv::Vec2f a1 = toScreen(mat_to_vec(kinectPoints.points.col(nite::JOINT_LEFT_FOOT)));
-		cv::Vec2f b1 = toScreen(mat_to_vec(kinectPoints.points.col(nite::JOINT_LEFT_HIP)));
-		cv::Vec2f a2 = toScreen(mat_to_vec(kinectPoints.points.col(nite::JOINT_RIGHT_FOOT)));
-		cv::Vec2f b2 = toScreen(mat_to_vec(kinectPoints.points.col(nite::JOINT_RIGHT_HIP)));
+		cv::Vec2f a1 = toScreen(mat_to_vec3(kinectPoints.points.col(nite::JOINT_LEFT_FOOT)));
+		cv::Vec2f b1 = toScreen(mat_to_vec3(kinectPoints.points.col(nite::JOINT_LEFT_HIP)));
+		cv::Vec2f a2 = toScreen(mat_to_vec3(kinectPoints.points.col(nite::JOINT_RIGHT_FOOT)));
+		cv::Vec2f b2 = toScreen(mat_to_vec3(kinectPoints.points.col(nite::JOINT_RIGHT_HIP)));
 
 		float lambda1, lambda2;
 

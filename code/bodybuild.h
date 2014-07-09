@@ -57,11 +57,13 @@ std::vector<Cylinder> projectedCylinderFitting(Skeleton skeletonPositions, Cropp
 
 //convenience function
 std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f offset);
+std::vector<cv::Vec2f> vec3f_to_2f(std::vector<cv::Vec3f> pts, cv::Vec2f offset);
 
 //returns a rectangle version of the cylinder. note: transform the points beforehand.
 std::vector<cv::Vec3f> cylinder_to_rectangle(cv::Vec3f a, cv::Vec3f b, float radius);
 
 std::vector<Segment3f> cylinder_to_segments(cv::Vec3f a, cv::Vec3f b, float radius, int numsegments=4);
+std::vector<cv::Vec3f> cylinder_to_vertices(cv::Vec3f a, cv::Vec3f b, float radius, int numsegments=4);
 
 //returns y given x, and the 2 segment endpoints
 float point_on_segment(cv::Vec2f a, cv::Vec2f b, float x, bool * on);

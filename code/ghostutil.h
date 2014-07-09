@@ -7,6 +7,8 @@
 #include <opencv2\opencv.hpp>
 #include "definitions.h"
 
+#include <GL\glew.h>
+
 
 #define WIDTH 640
 #define HEIGHT 480
@@ -20,6 +22,7 @@ using TooN::Vector;
 
 	std::array<Vector<4>, NUMJOINTS> convertArrayOfCVintoTooN(cv::Mat arr);
 	
+#ifdef GH_CMAPPING
 	void glVertex(cv::Mat m);
 
 	
@@ -39,5 +42,13 @@ using TooN::Vector;
 				std::cout << "glVertex: wrong size vector!\n";
 		}
 	};
+#endif
+	
+void lineAt(cv::Mat img, cv::Vec2f a, cv::Vec2f b, IMGPIXEL color);
+
+int calcBinFromFacing(cv::Vec3f facing);
+
+float calculateScore(cv::Mat a, cv::Mat b);
 
 #endif 
+

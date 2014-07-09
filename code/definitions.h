@@ -9,6 +9,7 @@
 #define GH_MF_CYLPROJ 1
 #define GH_MODELFITTING GH_MF_CYLPROJ
 
+#define GH_CMAPPING
 
 #define IMAGE_CHANNELS 3
 typedef cv::Vec<unsigned char, IMAGE_CHANNELS> IMGPIXEL;
@@ -120,7 +121,7 @@ struct Mapping{
 	std::vector<int> jointmap[NUMJOINTS];
 	std::vector<std::vector<int>> combineParts;
 	int combinePartsMap[NUMLIMBS];
-	cv::Mat partWeights[NUMLIMBS];
+	float partWeights[NUMLIMBS][NUMJOINTS];
 };
 
 void initDefinitions();
@@ -129,7 +130,7 @@ lmap * getLimbmap();
 std::vector<int> * getJointmap();
 std::vector<std::vector<int>> getCombineParts();
 int * getCombinePartsMap();
-cv::Mat getPartWeights(int i);
+float * getPartWeights(int i);
 unsigned int getLimbWeight(unsigned int jt, unsigned int jt2);
 
 //for debugging

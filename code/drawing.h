@@ -5,4 +5,4 @@
 std::vector<cv::Point> cloudOutline(cv::Mat _2D, int width, int height);
 
 //i draw a lot of points
-void cvDrawPoint(cv::Mat im, cv::Point p, cv::Scalar color);
+void cvDrawPoint(cv::Mat& im, cv::Point p, cv::Scalar color);

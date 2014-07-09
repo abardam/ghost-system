@@ -3,24 +3,37 @@
 #include "cvutil.h"
 #include "bodybuild.h"
 #include "ghostcam.h"
-#include "texturesearch.h"
-#include "Limbrary.h"
+
+#include "camlerp.h"
 
 //parallelization
-#include <ppl.h>
-
-//remove later
-//used for facingHelper
-#include "KinectManager.h"
+//#include <ppl.h>
+//#include "parallel_projection.h"
 
 
 
-cv::Mat cylinder_to_pts(cv::Vec3f a, cv::Vec3f b, float radius, cv::Point voff, PixelPolygon * p, std::vector<cv::Vec3f> * fromPixels, std::vector<cv::Vec3s> * fromPixels_2d_v){
+cv::Mat cylinder_to_pts(cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff, PixelPolygon * p, std::vector<cv::Vec3f> * fromPixels, std::vector<cv::Vec3s> * fromPixels_2d_v){
+	
+	cv::Mat ret(4, 0, CV_32F, cv::Scalar(1));
+	cv::Mat invCameraMatrix = (getInvCameraMatrix()); 
 
-	cv::Mat invCameraMatrix = (getInvCameraMatrix()); //todo: pre-invert
+	cv::Vec3f a,b;
 
-	std::vector<Segment3f> pts = cylinder_to_segments(a, b, radius,16);
+	if(a_(2) < b_(2)){
+		a = a_;
+		b = b_;
+	}else{
+		a = b_;
+		b = a_;
+	}
+
+	//std::vector<cv::Vec3f> pts = cylinder_to_vertices(a, b, radius,8);
+	//std::vector<cv::Vec2f> pts2 = vec3f_to_2f(pts, cv::Vec2f(voff.x, voff.y));
+	//*p = polygon_contains_pixels(pts2);
+
+	std::vector<Segment3f> pts = cylinder_to_segments(a, b, radius,8);
 	std::vector<Segment2f> pts2 = segment3f_to_2f(pts, cv::Vec2f(voff.x, voff.y));
+	if(pts2.empty()) return ret;
 	*p = polygon_contains_pixels(pts2);
 			
 	//transform the space:
@@ -28,37 +41,273 @@ cv::Mat cylinder_to_pts(cv::Vec3f a, cv::Vec3f b, float radius, cv::Point voff, 
 
 	float height = cv::norm(cyl_axis);
 	cv::Mat transformation = segmentZeroTransformation(a,b);
+	cv::Mat transformation_inv = transformation.inv();
+
+	//cv::Vec3f origin_trans = mat_to_vec(transformation.col(3)); //mat_to_vec3(transformation * vec3_to_mat4(cv::Vec3f(0,0,0)));
+	float origin_trans[3];
+	for(int i=0;i<3;++i){
+		origin_trans[i] = *(transformation.ptr<float>(i)+3);
+	}
 
 	int limbpicWidth = p->hi.size();
+	int limbpicHeight = p->hi_y-p->lo_y;
+	
+	//std::cout << p->x_offset << " " << limbpicWidth << " " << p->lo_y << " " << limbpicHeight << std::endl;
 
-	fromPixels->clear();
-	fromPixels_2d_v->clear();
+	cv::Rect boundingBox(0,0,WIDTH,HEIGHT);
+	LerpCorners lc = generateLerpCorners(boundingBox);
 
 	for(int _x = 0; _x < limbpicWidth; ++_x){
-		for(int y = p->lo[_x]; y < p->hi[_x]; ++y){
+		for(int _y = 0; _y < limbpicHeight; ++_y){
+			int y = _y + p->lo_y;
 			int x = _x + p->x_offset;
 
-			cv::Vec3f pt(x+voff.x,y+voff.y,1);
-			cv::Vec3f ray = mat_to_vec(invCameraMatrix * cv::Mat(pt));
+			//cv::Vec3f pt(x+voff.x,y+voff.y,1);
+			//cv::Vec3f ray = mat_to_vec(invCameraMatrix * cv::Mat(pt)); replaced with lerp
+			cv::Vec3f ray = lerpPoint(x+voff.x,y+voff.y,boundingBox,lc);
+			cv::Mat ray_trans = transformation * vec3_to_mat4(ray);
 			cv::Vec3f ptProj;
 
-			int res = rayCylinder2(transformation, ray, radius, height, &ptProj);
+			//int res = rayCylinder2(transformation, ray, radius, height, &ptProj);
+			int res = rayCylinder3(origin_trans, ray_trans.ptr<float>(), transformation_inv, radius, height, &ptProj);
 			if(res == 1){
 				fromPixels->push_back(ptProj);
-				cv::Vec3s xyDepth(pt(0)-voff.x, pt(1)-voff.y, ptProj(2) * FLOAT_TO_DEPTH);
+				//cv::Vec3s xyDepth(pt(0)-voff.x, pt(1)-voff.y, ptProj(2) * FLOAT_TO_DEPTH);
+				cv::Vec3s xyDepth(x, y, ptProj(2) * FLOAT_TO_DEPTH);
 				fromPixels_2d_v->push_back(xyDepth);
 			}
 		}
 	}
 
-	cv::Mat ret(4, fromPixels->size(), CV_32F, cv::Scalar(1));
-	for(int i=0;i<fromPixels->size();++i){
-		for(int j=0;j<3;++j){
-			ret.at<float>(j,i) = (*fromPixels)[i](j);
+	ret.create(4,fromPixels->size(),CV_32F);
+	for(int j=0;j<4;++j){
+		float * retptr = ret.ptr<float>(j);
+		for(int i=0;i<fromPixels->size();++i){
+			//ret.at<float>(j,i) = (*fromPixels)[i](j);
+			if(j<3)
+				*(retptr+i) = (*fromPixels)[i](j);
+			else
+				*(retptr+i) = 1;
+		}
+	}
+	
+
+	return ret;
+}
+
+#define CYLAPPROXPOINT 8
+
+//NOTE: this version of cylinder_to_pts has a BIG BUG
+//depth values are WRONG; fix
+
+cv::Mat cylinder_to_pts(cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff, std::vector<cv::Vec3f> * fromPixels, std::vector<cv::Vec3s> * fromPixels_2d_v){
+
+	cv::Mat invCameraMatrix = (getInvCameraMatrix()); 
+
+	cv::Vec3f a,b;
+
+	if(a_(2) < b_(2)){
+		a = a_;
+		b = b_;
+	}else{
+		a = b_;
+		b = a_;
+	}
+
+	int xmin=voff.x+1, ymin=voff.y+1, xmax=WIDTH-1, ymax=HEIGHT-1;
+
+	cv::Vec3f cross(0, radius*2, 0);
+	cv::Vec3f cross2(radius*2, 0, 0);
+
+	cv::Vec3f vecs[CYLAPPROXPOINT];
+
+	vecs[0] = a + (cross);
+	vecs[1] = a - (cross);
+	vecs[2] = b + (cross);
+	vecs[3] = b - (cross);
+	vecs[4] = a + (cross2);
+	vecs[5] = a - (cross2);
+	vecs[6] = b + (cross2);
+	vecs[7] = b - (cross2);
+
+	cv::Mat vecm(4,CYLAPPROXPOINT,CV_32F);
+	for(int i=0;i<4;++i){
+		float * vecmptr = vecm.ptr<float>(i);
+		if(i<3){
+			for(int j=0;j<CYLAPPROXPOINT;++j){
+				*(vecmptr+j) = vecs[j](i);
+			}
+		}else{
+			for(int j=0;j<CYLAPPROXPOINT;++j){
+				*(vecmptr+j) = 1;
+			}
 		}
 	}
 
-	return ret;
+	cv::Mat vecm2d = getCameraMatrix() * vecm;
+
+	for(int i=0;i<CYLAPPROXPOINT;++i){
+		float z = *(vecm2d.ptr<float>(2)+i);
+		float x = (*(vecm2d.ptr<float>(0)+i)/z);
+		float y = (*(vecm2d.ptr<float>(1)+i)/z);
+
+		if(x < xmin) xmin = x;
+		if(x > xmax) xmax = x;
+		if(y < ymin) ymin = y;
+		if(y > ymax) ymax = y;
+	}
+
+	xmin -= voff.x;
+	xmax -= voff.x;
+	ymin -= voff.y;
+	ymax -= voff.y;
+
+	//transform the space:
+	cv::Vec3f cyl_axis = b - a;
+
+	float height = cv::norm(cyl_axis);
+	cv::Mat transformation_inv;
+	cv::Mat transformation = segmentZeroTransformation(a,b,&transformation_inv);
+
+	//cv::Vec3f origin_trans = mat_to_vec(transformation.col(3)); //mat_to_vec3(transformation * vec3_to_mat4(cv::Vec3f(0,0,0)));
+	float origin_trans[3];
+	origin_trans[0] = *(transformation.ptr<float>(0)+3);
+	origin_trans[1] = *(transformation.ptr<float>(1)+3);
+	origin_trans[2] = *(transformation.ptr<float>(2)+3);
+
+	int pwidth = xmax - xmin;
+	int pheight = ymax - ymin;
+
+	//std::cout << xmin << " " << pwidth << " " << ymin << " " <<  pheight << std::endl;
+
+
+	int psize = pwidth*pheight;
+
+	cv::Mat points(4, psize, CV_32F);
+
+	for(int _x = 0; _x < pwidth; ++_x){
+		for(int _y = 0; _y < pheight; ++_y){
+			int y = _y + ymin;
+			int x = _x + xmin;
+
+			//cv::Vec3f pt(x+voff.x,y+voff.y,1);
+			//cv::Vec3f ray = mat_to_vec(invCameraMatrix * cv::Mat(pt)); replaced with lerp
+			cv::Vec3f ray = lerpPoint(x+voff.x,y+voff.y,lerpBoundingBox,lerpCorners);
+			
+			for(int c=0;c<3;++c){
+				points.ptr<float>(c)[_y*pwidth+_x] = ray(c);
+			}
+			points.ptr<float>(3)[_y*pwidth+_x] = 1;
+
+			//int i = _y*pwidth+_x;
+			//points.ptr<float>(0)[i] = x;
+			//points.ptr<float>(1)[i] = y;
+			//points.ptr<float>(2)[i] = 1;
+			//points.ptr<float>(3)[i] = 1;
+
+		}
+	}
+
+	//points = mat3_to_mat4(invCameraMatrix) * points;
+
+	*(transformation.ptr<float>(0)+3) = 0;
+	*(transformation.ptr<float>(1)+3) = 0;
+	*(transformation.ptr<float>(2)+3) = 0;
+
+	cv::Mat points_trans = transformation * points;
+
+	float C = origin_trans[0]*origin_trans[0] + origin_trans[1]*origin_trans[1] -radius*radius;
+
+	//cv::Mat A_sq = points.t() * points;
+
+	for(int i=0;i<psize;++i){
+		int _y = i/pwidth;
+		int _x = i%pwidth;
+
+		int y = _y + ymin;
+		int x = _x + xmin;
+		float ray_trans[3] = {points_trans.ptr<float>(0)[i], points_trans.ptr<float>(1)[i], points_trans.ptr<float>(2)[i]};
+
+#if 0
+		//int res = rayCylinder2(transformation, ray, radius, height, &ptProj);
+
+		cv::Vec3f ptProj;
+		int res = rayCylinder3(origin_trans, ray_trans, transformation_inv, radius, height, &ptProj);
+		if(res == 1){
+			fromPixels->push_back(ptProj);
+			//cv::Vec3s xyDepth(pt(0)-voff.x, pt(1)-voff.y, ptProj(2) * FLOAT_TO_DEPTH);
+			cv::Vec3s xyDepth(x, y, ptProj(2) * FLOAT_TO_DEPTH);
+			fromPixels_2d_v->push_back(xyDepth);
+		}
+
+		//float retf[4];
+		//bool res = rayCylinderClosestIntersectionPoint(origin_trans, ray_trans, radius, height, retf);
+
+#else if 1
+		float A = ray_trans[0]*ray_trans[0] + ray_trans[1]*ray_trans[1];
+		//float A = A_sq.ptr<float>(i)[i] - 2;
+		float B = 2*origin_trans[0]*ray_trans[0]+2*origin_trans[1]*ray_trans[1];
+
+		float sqrtval = sqrt(B*B-4*A*C);
+
+		float minus = (-B - sqrtval)/(2*A);
+
+		float vminus2 = origin_trans[2]+minus*ray_trans[2];
+
+		bool res = false;
+		float retf[4];
+
+		if(vminus2 > 0 && vminus2 < height)
+		{
+
+			retf[0] = origin_trans[0]+minus*ray_trans[0];
+			retf[1] = origin_trans[1]+minus*ray_trans[1];
+			retf[2] = origin_trans[2]+minus*ray_trans[2];
+
+			res = true;
+		}
+		else{
+			//float plus = (-B + sqrtval)/(2*A);
+			//float vplus2 =  origin_trans[2]+plus*ray_trans[2];
+			//if( (vplus2 <= 0 && vminus2 > 0) || (vminus2 <= 0 && vplus2 > 0)){
+			//	float extra = -origin_trans[2]/ray_trans[2];
+			//	retf[0] = origin_trans[0]+extra*ray_trans[0];
+			//	retf[1] = origin_trans[1]+extra*ray_trans[1];
+			//	retf[2] = origin_trans[2]+extra*ray_trans[2];
+			//	res = true;
+			//}
+		}
+
+		if(res){
+			retf[3] = 1;
+			//ptProj = mat_to_vec3(transformation_inv*cv::Mat(4,1,CV_32F,retf));
+			cv::Vec3f ptProj(retf[0], retf[1], retf[2]);
+			fromPixels->push_back(ptProj);
+			//cv::Vec3s xyDepth(pt(0)-voff.x, pt(1)-voff.y, ptProj(2) * FLOAT_TO_DEPTH);
+			cv::Vec3s xyDepth(x, y, ptProj(2) * FLOAT_TO_DEPTH);
+			fromPixels_2d_v->push_back(xyDepth);
+		}
+#endif
+	}
+
+	cv::Mat ret(4, fromPixels->size(), CV_32F);
+
+	if(!fromPixels->empty()){
+		for(int i=0;i<fromPixels->size();++i){
+			//for(int j=0;j<3;++j){
+			//	float * retptr = ret.ptr<float>(j);
+			//	//ret.at<float>(j,i) = (*fromPixels)[i](j);
+			//	ret.ptr<float>(j)[i] = (*fromPixels)[i](j);
+			//}
+			
+			ret.ptr<float>(0)[i] = (*fromPixels)[i](0);
+			ret.ptr<float>(1)[i] = (*fromPixels)[i](1);
+			ret.ptr<float>(2)[i] = (*fromPixels)[i](2);
+			ret.ptr<float>(3)[i] = 1;
+		}
+	}
+
+	return transformation_inv * ret;
 }
 
 cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigned int width, unsigned int height){
@@ -67,7 +316,7 @@ cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigne
 	cv::Mat zBufferLocal(height, width, CV_16U, cv::Scalar(MAXDEPTH));
 
 	for(int i=0;i<cylPts.cols;++i){
-		cv::Vec3f ptProj = mat_to_vec(cylPts.col(i));
+		cv::Vec3f ptProj = mat_to_vec3(cylPts.col(i));
 
 		cv::Vec2f ptProj2d = mat4_to_vec2(cameraMatrix * vec3_to_mat4(ptProj));
 						
@@ -120,14 +369,15 @@ PixelMap cylinderMapPixels(cv::Vec3f from_a, cv::Vec3f from_b, cv::Vec3f to_a, c
 	//this would be useful as a function maybe
 	cv::Mat fromPixels_mat(4, fromPixels.size(), CV_32F, cv::Scalar(1));
 	for(int i=0;i<fromPixels.size();++i){
-		for(int j=0;j<3;++j)
+		for(int j=0;j<3;++j){
 			fromPixels_mat.at<float>(j, i) = fromPixels[i](j);
+		}
 	}
 
 
 	cv::Vec3f from_facing = cylinderFacingVector(from_a, from_b, 0);
 	cv::Vec3f to_facing = cylinderFacingVector(to_a, to_b, 0);
-	cv::Vec3f pre_to_facing = mat_to_vec(segmentTransform * vec3_to_mat4(from_a + from_facing));
+	cv::Vec3f pre_to_facing = mat_to_vec3(segmentTransform * vec3_to_mat4(from_a + from_facing));
 
 	cv::Mat pre_rot_transform = segmentTransformation(to_a, pre_to_facing, to_a, to_a+to_facing);
 
@@ -152,183 +402,55 @@ cv::Mat cylinderFacingTransform(cv::Vec3f a1, cv::Vec3f b1, float f1, cv::Vec3f 
 	cv::Vec3f facing = cylinderFacingVector(a1,b1,f1);
 	cv::Vec3f facing2 = cylinderFacingVector(a2,b2,f2);
 
-	cv::Vec3f pre_facing2 = mat_to_vec(segTrans * vec3_to_mat4(a1 + facing));
+	cv::Vec3f pre_facing2 = mat_to_vec3(segTrans * vec3_to_mat4(a1 + facing));
 
 	cv::Vec3f calc_axis = (facing2.cross(pre_facing2-a2));
 
 	float angle = -acos(facing2.dot(pre_facing2-a2)/cv::norm(facing2)*cv::norm(pre_facing2-a2));
 
-	cv::Mat rtrans = getTranslationMatrix(a2) * mat3_to_mat4(getRotationMatrix(calc_axis, angle)) * getTranslationMatrix(-a2);
+	cv::Mat rtrans = getTranslationMatrix(a2) * (getRotationMatrix4(calc_axis, angle)) * getTranslationMatrix(-a2);
 
 	return rtrans * segTrans;
 }
 
-float tempCalcFacing(int limb, Skeleton s){
-	if(limb == HEAD || limb == CHEST || limb == ABS){
-		std::pair<int,int> p = KINECT::facingHelper(limb==ABS?2:1);
-		cv::Mat a = s.points.col(p.first);
-		cv::Mat b = s.points.col(p.second);
 
-		cv::Vec3f perp = mat_to_vec(b-a);
+cv::Mat cylinderFacingTransform2(cv::Vec3f a1, cv::Vec3f b1, float f1, cv::Vec3f a2, cv::Vec3f b2, float f2){
+	cv::Mat F(4,5,CV_32F);
+	cv::Mat T(4,5,CV_32F);
 
-		cv::Vec3f a2 = mat_to_vec(s.points.col(getLimbmap()[limb].first));
-		cv::Vec3f b2 = mat_to_vec(s.points.col(getLimbmap()[limb].second));
+	cv::Vec3f facing = cylinderFacingVector(a1,b1,f1);
+	cv::Vec3f facing2 = cylinderFacingVector(a2,b2,f2);
 
-		cv::Vec3f axis_facing = cylinderFacingVector(a2,b2,0);
+	cv::Vec3f f1_1 = a1 + facing;
+	cv::Vec3f f2_1 = a1 - facing;
+	cv::Vec3f f3_1 = b1 + facing;
+	
+	cv::Vec3f f1_2 = a2 + facing2;
+	cv::Vec3f f2_2 = a2 - facing2;
+	cv::Vec3f f3_2 = b2 + facing2;
 
-		cv::Vec3f true_facing = (b2-a2).cross(perp);
+	for(int i=0;i<3;++i){
+		float * Fptr = F.ptr<float>(i);
+		Fptr[0] = a1(i);
+		Fptr[1] = b1(i);
+		Fptr[2] = f1_1(i);
+		Fptr[3] = f2_1(i);
+		Fptr[4] = f2_1(i);
+		float * Tptr = T.ptr<float>(i);
+		Tptr[0] = a2(i);
+		Tptr[1] = b2(i);
+		Tptr[2] = f1_2(i);
+		Tptr[3] = f2_2(i);
+		Tptr[4] = f2_2(i);
+	}
 
-		return axis_facing.dot(true_facing);
+	cv::Mat F_inv;
+	cv::invert(F, F_inv, cv::DECOMP_SVD);
+	cv::Mat M = T * F_inv;
 
-	}else
-		return 0;
+	return M;
 }
 
-//TODO: fix this shitty argument list
-PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float radius, int limbid, float facing, ScoreList scoreList, cv::Point voff, 
-									 std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cylinderBody, Limbrary * limbrary, int blendMode){
-	
-	std::vector<cv::Vec3f> fromPixels;
-	std::vector<cv::Vec3s> fromPixels_2d_v;
-
-	//for(int r=0;r<fromMat->mat.rows;++r){
-	//	for(int c=0;c<fromMat->mat.cols;++c){
-	
-	//calculateCylinderPoints(captureWindow, captureOffset, from_a, from_b, radius, fromMat->offset, &fromPixels, &fromPixels_2d_v);
-
-	PixelPolygon p;
-
-	cylinder_to_pts(from_a, from_b, radius, voff, &p, &fromPixels, &fromPixels_2d_v);
-
-	//sort all the frames accdg to distance from the current skeleton
-
-
-	int f = getLimbmap()[limbid].first;
-	int s = getLimbmap()[limbid].second;
-
-
-
-#if GH_DEBUG_CYLPROJ
-	cv::Mat debugMat(captureWindow,CV_8UC3,cv::Scalar(255,255,255));
-	cv::namedWindow("source mat", CV_WINDOW_NORMAL);
-
-	std::vector<Segment3f> segments = cylinder_to_segments(from_a, from_b, radius, 16);
-
-	for(auto it=segments.begin(); it!=segments.end(); ++it){
-			
-		cv::line(debugMat, cv::Point(toScreen(it->first))-captureOffset, cv::Point(toScreen(it->second))-captureOffset, cv::Scalar(255,255,0));
-	}
-#endif
-
-	unsigned int blendLimit;
-
-	switch(blendMode){
-	case CMPC_NO_OCCLUSION:
-		blendLimit = 1;
-		break;
-	case CMPC_BLEND_NONE:
-		blendLimit = 1;
-		break;
-	case CMPC_BLEND_1:
-		blendLimit = 5;
-		break;
-	}
-
-	size_t fromsize = fromPixels_2d_v.size();
-	std::vector<bool> erasevector(fromsize, false);
-	std::vector<cv::Scalar> pixelColors(fromsize);
-
-	//concurrency::parallel_for(size_t(0), fromsize, [&](size_t i)
-	for(int i=0;i<fromsize;++i)
-	{
-		std::vector<cv::Scalar> blended;
-
-		for(auto it=scoreList.begin(); it!=scoreList.end(); ++it){
-
-			CroppedCvMat texture;
-			
-			if(blendMode == CMPC_NO_OCCLUSION){
-				texture = (*vidRecord)[it->first].videoFrame;
-			}else{
-				texture = (*limbrary).getFrameLimbs(it->first)[limbid];
-			}
-
-			cv::Vec3f _to_a = mat_to_vec((*vidRecord)[it->first].kinectPoints.points.col(f));
-			cv::Vec3f _to_b = mat_to_vec((*vidRecord)[it->first].kinectPoints.points.col(s));
-
-			cv::Vec3f to_a = _to_b + cylinderBody->newLeftOffset_cyl[limbid] * (_to_a - _to_b);
-			cv::Vec3f to_b = _to_a + cylinderBody->newRightOffset_cyl[limbid] * (_to_b - _to_a);
-
-			cv::Point2i pt = mapPixel
-				(fromPixels[i], texture.offset,
-				from_a, from_b, tempCalcFacing(limbid, (*vidRecord)[it->first].kinectPoints), 
-				to_a, to_b, facing);
-
-			cv::Scalar pixelColor;
-
-			int res = colorPixel(pt, limbid, texture, &pixelColor);
-			
-			if(res == CP_BG){
-				blended.push_back(cv::Scalar(255,255,255));
-			}else if(res == CP_GOOD || (blendMode == CMPC_NO_OCCLUSION && res != CP_OVER)){
-				blended.push_back(pixelColor);
-			} 
-
-			if(blended.size() >= blendLimit) break;
-		}
-		
-		if(blended.size() == 0){
-			erasevector[i] = true;
-		}else{
-			//pixelColors.push_back(blended[0]);
-
-			std::vector<float> blendAlpha(blended.size());
-			std::fill(blendAlpha.begin(), blendAlpha.end(), 0);
-
-			for(int i2=0;i2<blended.size();++i2){
-				blendAlpha[i2] += 1.f/pow(2, i2+1);
-			}
-			blendAlpha[blended.size()-1] += 1.f/pow(2, blended.size());
-
-			cv::Scalar blendPixel(0,0,0);
-
-			float totalAlpha = 0;
-			for(int i2=0;i2<blended.size();++i2){
-				if(blended[i2] != cv::Scalar(255,255,255)){
-					cv::Vec4b temp = blended[i2] * blendAlpha[i2];
-					blendPixel += cv::Scalar(temp(0), temp(1), temp(2));
-					totalAlpha += blendAlpha[i2];
-				}
-			}
-
-			blendPixel *= 1.f/totalAlpha;
-
-			//blend threshold; if alpha adds up to 0.5 or less, does not render the pixel
-			if(totalAlpha > 0.5){
-				pixelColors[i] = (blendPixel);
-			}else{
-				erasevector[i] = true;
-			}
-		}
-
-		
-	}
-
-	
-	auto fromptr = fromPixels_2d_v.begin();
-	auto pixptr = pixelColors.begin();
-	for(int i=0;i<fromsize;++i){
-		if(erasevector[i]){
-			fromptr = fromPixels_2d_v.erase(fromptr);
-			pixptr = pixelColors.erase(pixptr);
-		}else{
-			++fromptr;
-			++pixptr;
-		}
-	}
-
-	return PixelColorMap(fromPixels_2d_v, pixelColors);
-}
 
 cv::Point2i mapPixel(cv::Vec3f pixLoc, cv::Point2i pixOffset, cv::Vec3f from_a, cv::Vec3f from_b, float from_facing, cv::Vec3f to_a, cv::Vec3f to_b, float to_facing){
 
@@ -353,59 +475,6 @@ cv::Point2i mapPixel(cv::Vec3f pixLoc, cv::Point2i pixOffset, cv::Vec3f from_a, 
 	return pt;
 }
 
-int colorPixel(cv::Point2i pt, int limbid, CroppedCvMat texture, cv::Scalar * pixelColor){
-
-
-	if(CLAMP_SIZE(pt.x, pt.y, texture.mat.cols, texture.mat.rows)){
-
-#if GH_DEBUG_CYLPROJ
-		cv::Point debugPt(fromPixels_2d_v[i](0), fromPixels_2d_v[i](1));
-		debugPt += fromMat->offset - captureOffset;
-		debugMat.at<cv::Vec3b>(debugPt) = cv::Vec3b(0,0,255);
-
-		cv::Mat sourceMat = texture.mat.clone();
-
-		std::vector<Segment3f> segments = cylinder_to_segments(to_a, to_b, radius, 16);
-
-		for(auto it2=segments.begin(); it2!=segments.end(); ++it2){
-			
-			cv::line(sourceMat, 
-				cv::Point(toScreen(it2->first))-texture.offset, 
-				cv::Point(toScreen(it2->second))-texture.offset, 
-				cv::Scalar(255,255,0));
-		}
-
-		cv::rectangle(sourceMat,pt-cv::Point(1,1),pt+cv::Point(1,1),cv::Scalar(0,0,255));
-						
-		cv::imshow("debug mat", debugMat);
-		cv::imshow("source mat", sourceMat);
-		cv::waitKey();
-#endif
-		*pixelColor = (cv::Scalar(texture.mat.at<cv::Vec3b>(pt)));
-
-		if(texture.mat.at<cv::Vec3b>(pt) != BLUE){
-			if(texture.mat.at<cv::Vec3b>(pt) != WHITE){
-#if GH_DEBUG_CYLPROJ
-				debugMat.at<cv::Vec3b>(debugPt) = texture.mat.at<cv::Vec3b>(pt);
-				//sourceMat.at<cv::Vec3b>(pt) = cv::Vec3b(0,0,255);
-						
-				cv::imshow("debug mat", debugMat);
-				cv::imshow("source mat", sourceMat);
-				cv::waitKey();
-#endif
-
-				return CP_GOOD;
-			}else{
-				return CP_BG;
-			}
-		}else{
-			return CP_OCCLUDED;
-		}
-	}else{
-		return CP_OVER;
-	}
-
-}
 
 //util
 

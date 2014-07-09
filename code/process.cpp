@@ -107,9 +107,18 @@ void calculateWorldCoordinateSkeletons(cv::Mat K2P, std::vector<SkeleVideoFrame>
 	for(int i=0;i<vidRecord->size();++i){
 		if(!(*vidRecord)[i].cam2World.empty()){
 
-			(*outputSkeletons)[i] = (*vidRecord)[i].kinectPoints;
+			(*outputSkeletons)[i] = Skeleton((*vidRecord)[i].kinectPoints);
 			(*outputSkeletons)[i].points = (*vidRecord)[i].cam2World * K2P * (*outputSkeletons)[i].points;
 		}
 	}
 }
 
+void zeroWorldCoordinateSkeletons(cv::Mat K2P, std::vector<SkeleVideoFrame> * vidRecord, std::vector<Skeleton> * outputSkeletons){
+	outputSkeletons->resize(vidRecord->size());
+
+	for(int i=0;i<vidRecord->size();++i){
+
+		(*outputSkeletons)[i] = Skeleton((*vidRecord)[i].kinectPoints);
+		(*outputSkeletons)[i].points = K2P * (*outputSkeletons)[i].points;
+	}
+}
