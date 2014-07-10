@@ -49,6 +49,8 @@ cv::Mat cylinder_to_pts(cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff
 		origin_trans[i] = *(transformation.ptr<float>(i)+3);
 	}
 
+	float C = origin_trans[0]*origin_trans[0] + origin_trans[1]*origin_trans[1] - radius*radius;
+
 	int limbpicWidth = p->hi.size();
 	int limbpicHeight = p->hi_y-p->lo_y;
 	
@@ -56,6 +58,24 @@ cv::Mat cylinder_to_pts(cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff
 
 	cv::Rect boundingBox(0,0,WIDTH,HEIGHT);
 	LerpCorners lc = generateLerpCorners(boundingBox);
+	
+	cv::Mat rayMat(4, limbpicHeight*limbpicWidth, CV_32F);
+
+	for(int _x = 0; _x < limbpicWidth; ++_x){
+		for(int _y = 0; _y < limbpicHeight; ++_y){
+			int y = _y + p->lo_y;
+			int x = _x + p->x_offset;
+			cv::Vec3f ray = lerpPoint(x+voff.x,y+voff.y,boundingBox,lc);
+
+			rayMat.ptr<float>(0)[_y*limbpicWidth+_x] = ray(0);
+			rayMat.ptr<float>(1)[_y*limbpicWidth+_x] = ray(1);
+			rayMat.ptr<float>(2)[_y*limbpicWidth+_x] = 1;
+			rayMat.ptr<float>(3)[_y*limbpicWidth+_x] = 1;
+
+		}
+	}
+
+	rayMat = transformation * rayMat;
 
 	for(int _x = 0; _x < limbpicWidth; ++_x){
 		for(int _y = 0; _y < limbpicHeight; ++_y){
@@ -64,12 +84,13 @@ cv::Mat cylinder_to_pts(cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff
 
 			//cv::Vec3f pt(x+voff.x,y+voff.y,1);
 			//cv::Vec3f ray = mat_to_vec(invCameraMatrix * cv::Mat(pt)); replaced with lerp
-			cv::Vec3f ray = lerpPoint(x+voff.x,y+voff.y,boundingBox,lc);
-			cv::Mat ray_trans = transformation * vec3_to_mat4(ray);
+			//cv::Vec3f ray = lerpPoint(x+voff.x,y+voff.y,boundingBox,lc);
+			//cv::Mat ray_trans1 = transformation * vec3_to_mat4(ray);
+			cv::Mat ray_trans = rayMat.col(_y*limbpicWidth+_x).clone();
 			cv::Vec3f ptProj;
 
 			//int res = rayCylinder2(transformation, ray, radius, height, &ptProj);
-			int res = rayCylinder3(origin_trans, ray_trans.ptr<float>(), transformation_inv, radius, height, &ptProj);
+			int res = rayCylinder3_c(origin_trans, ray_trans.ptr<float>(), transformation_inv, C, height, &ptProj);
 			if(res == 1){
 				fromPixels->push_back(ptProj);
 				//cv::Vec3s xyDepth(pt(0)-voff.x, pt(1)-voff.y, ptProj(2) * FLOAT_TO_DEPTH);
@@ -97,6 +118,8 @@ cv::Mat cylinder_to_pts(cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff
 
 #define CYLAPPROXPOINT 8
 
+
+#if 0
 //NOTE: this version of cylinder_to_pts has a BIG BUG
 //depth values are WRONG; fix
 
@@ -243,7 +266,7 @@ cv::Mat cylinder_to_pts(cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff
 		//float retf[4];
 		//bool res = rayCylinderClosestIntersectionPoint(origin_trans, ray_trans, radius, height, retf);
 
-#else if 1
+#elseif 1
 		float A = ray_trans[0]*ray_trans[0] + ray_trans[1]*ray_trans[1];
 		//float A = A_sq.ptr<float>(i)[i] - 2;
 		float B = 2*origin_trans[0]*ray_trans[0]+2*origin_trans[1]*ray_trans[1];
@@ -309,6 +332,130 @@ cv::Mat cylinder_to_pts(cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff
 
 	return transformation_inv * ret;
 }
+
+#elseif 0
+
+//actually this is really slow, idk why
+
+cv::Mat cylinder_to_pts(cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff, std::vector<cv::Vec3f> * fromPixels, std::vector<cv::Vec3s> * fromPixels_2d_v){
+	
+	cv::Mat ret(4, 0, CV_32F, cv::Scalar(1));
+	cv::Mat invCameraMatrix = (getInvCameraMatrix()); 
+
+	cv::Vec3f a,b;
+
+	if(a_(2) < b_(2)){
+		a = a_;
+		b = b_;
+	}else{
+		a = b_;
+		b = a_;
+	}
+
+	int xmin=voff.x+1, ymin=voff.y+1, xmax=WIDTH-1, ymax=HEIGHT-1;
+
+	cv::Vec3f cross(0, radius*2, 0);
+	cv::Vec3f cross2(radius*2, 0, 0);
+
+	cv::Vec3f vecs[CYLAPPROXPOINT];
+
+	vecs[0] = a + (cross);
+	vecs[1] = a - (cross);
+	vecs[2] = b + (cross);
+	vecs[3] = b - (cross);
+	vecs[4] = a + (cross2);
+	vecs[5] = a - (cross2);
+	vecs[6] = b + (cross2);
+	vecs[7] = b - (cross2);
+
+	cv::Mat vecm(4,CYLAPPROXPOINT,CV_32F);
+	for(int i=0;i<4;++i){
+		float * vecmptr = vecm.ptr<float>(i);
+		if(i<3){
+			for(int j=0;j<CYLAPPROXPOINT;++j){
+				*(vecmptr+j) = vecs[j](i);
+			}
+		}else{
+			for(int j=0;j<CYLAPPROXPOINT;++j){
+				*(vecmptr+j) = 1;
+			}
+		}
+	}
+
+	cv::Mat vecm2d = getCameraMatrix() * vecm;
+
+	for(int i=0;i<CYLAPPROXPOINT;++i){
+		float z = *(vecm2d.ptr<float>(2)+i);
+		float x = (*(vecm2d.ptr<float>(0)+i)/z);
+		float y = (*(vecm2d.ptr<float>(1)+i)/z);
+
+		if(x < xmin) xmin = x;
+		if(x > xmax) xmax = x;
+		if(y < ymin) ymin = y;
+		if(y > ymax) ymax = y;
+	}
+
+	xmin -= voff.x;
+	xmax -= voff.x;
+	ymin -= voff.y;
+	ymax -= voff.y;
+
+	int limbpicWidth = xmax - xmin;
+	int limbpicHeight = ymax - ymin;
+	
+	cv::Vec3f cyl_axis = b - a;
+
+	float height = cv::norm(cyl_axis);
+	cv::Mat transformation = segmentZeroTransformation(a,b);
+	cv::Mat transformation_inv = transformation.inv();
+
+	//cv::Vec3f origin_trans = mat_to_vec(transformation.col(3)); //mat_to_vec3(transformation * vec3_to_mat4(cv::Vec3f(0,0,0)));
+	float origin_trans[3];
+	for(int i=0;i<3;++i){
+		origin_trans[i] = *(transformation.ptr<float>(i)+3);
+	}
+
+	cv::Rect boundingBox(0,0,WIDTH,HEIGHT);
+	LerpCorners lc = generateLerpCorners(boundingBox);
+
+	for(int _x = 0; _x < limbpicWidth; ++_x){
+		for(int _y = 0; _y < limbpicHeight; ++_y){
+			int y = _y + ymin;
+			int x = _x + xmin;
+
+			//cv::Vec3f pt(x+voff.x,y+voff.y,1);
+			//cv::Vec3f ray = mat_to_vec(invCameraMatrix * cv::Mat(pt)); replaced with lerp
+			cv::Vec3f ray = lerpPoint(x+voff.x,y+voff.y,boundingBox,lc);
+			cv::Mat ray_trans = transformation * vec3_to_mat4(ray);
+			cv::Vec3f ptProj;
+
+			//int res = rayCylinder2(transformation, ray, radius, height, &ptProj);
+			int res = rayCylinder3(origin_trans, ray_trans.ptr<float>(), transformation_inv, radius, height, &ptProj);
+			if(res == 1){
+				fromPixels->push_back(ptProj);
+				//cv::Vec3s xyDepth(pt(0)-voff.x, pt(1)-voff.y, ptProj(2) * FLOAT_TO_DEPTH);
+				cv::Vec3s xyDepth(x, y, ptProj(2) * FLOAT_TO_DEPTH);
+				fromPixels_2d_v->push_back(xyDepth);
+			}
+		}
+	}
+
+	ret.create(4,fromPixels->size(),CV_32F);
+	for(int j=0;j<4;++j){
+		float * retptr = ret.ptr<float>(j);
+		for(int i=0;i<fromPixels->size();++i){
+			//ret.at<float>(j,i) = (*fromPixels)[i](j);
+			if(j<3)
+				*(retptr+i) = (*fromPixels)[i](j);
+			else
+				*(retptr+i) = 1;
+		}
+	}
+	
+
+	return ret;
+}
+#endif
 
 cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigned int width, unsigned int height){
 	cv::Mat cameraMatrix = getCameraMatrix();

@@ -139,13 +139,10 @@ bool rayCylinderClosestIntersectionPoint(float * origin, float * ray_, const flo
 	float c = origin[0]*origin[0] + origin[1]*origin[1] -radius*radius;
 
 
-	float plus = (-b + sqrt(b*b-4*a*c))/(2*a);
 	float minus = (-b - sqrt(b*b-4*a*c))/(2*a);
 
-	float vplus2 =  origin[2]+plus*ray[2];
 	float vminus2 = origin[2]+minus*ray[2];
 
-	
 	if(vminus2 > 0 && vminus2 < height)
 	{
 
@@ -155,6 +152,53 @@ bool rayCylinderClosestIntersectionPoint(float * origin, float * ray_, const flo
 
 		return true;
 	}
+
+	float plus = (-b + sqrt(b*b-4*a*c))/(2*a);
+	float vplus2 =  origin[2]+plus*ray[2];
+
+	if( (vplus2 <= 0 && vminus2 > 0) || (vminus2 <= 0 && vplus2 > 0)){
+		float extra = -origin[2]/ray[2];
+		for(int i=0;i<3;++i){
+			out[i] = origin[i]+extra*ray[i];
+		}
+		return true;
+	}
+
+
+	return false;
+}
+
+
+bool rayCylinderClosestIntersectionPoint_c(float * origin, float * ray_, float c, const float& height, float out[3]){
+	//ray = origin + (ray-origin) * -100;
+	//ray = ray / cv::norm(ray);
+
+	float ray[3];
+	for(int i=0;i<3;++i){
+		ray[i] = ray_[i]-origin[i];
+	}
+
+	//cv::Vec3f ray = (ray_ - origin);
+
+	float a = ray[0]*ray[0] + ray[1]*ray[1];
+	float b = 2*origin[0]*ray[0]+2*origin[1]*ray[1];
+
+	float minus = (-b - sqrt(b*b-4*a*c))/(2*a);
+
+	float vminus2 = origin[2]+minus*ray[2];
+
+	if(vminus2 > 0 && vminus2 < height)
+	{
+
+		for(int i=0;i<3;++i){
+			out[i] = origin[i]+minus*ray[i];
+		}
+
+		return true;
+	}
+
+	float plus = (-b + sqrt(b*b-4*a*c))/(2*a);
+	float vplus2 =  origin[2]+plus*ray[2];
 
 	if( (vplus2 <= 0 && vminus2 > 0) || (vminus2 <= 0 && vplus2 > 0)){
 		float extra = -origin[2]/ray[2];
@@ -278,6 +322,20 @@ int rayCylinder3(float * origin_trans, float * ray_trans, cv::Mat transformation
 
 	float retf[4];
 	bool res = rayCylinderClosestIntersectionPoint(origin_trans, ray_trans, radius, height, retf);
+	if(res){
+		retf[3] = 1;
+		*out = mat_to_vec3(transformation_inv*cv::Mat(4,1,CV_32F,retf));
+		return 1;
+	}
+	else return 0;
+}
+
+int rayCylinder3_c(float * origin_trans, float * ray_trans, cv::Mat transformation_inv, float c, float height, cv::Vec3f * out){
+	
+	//ghlog.q.clear();
+
+	float retf[4];
+	bool res = rayCylinderClosestIntersectionPoint_c(origin_trans, ray_trans, c, height, retf);
 	if(res){
 		retf[3] = 1;
 		*out = mat_to_vec3(transformation_inv*cv::Mat(4,1,CV_32F,retf));
