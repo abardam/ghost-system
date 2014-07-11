@@ -2,6 +2,7 @@
 #include "CylinderBody.h"
 #include "Limbrary.h"
 #include "KinectManager.h"
+#include "Skeleton.h"
 #include "OpenNIStarter.h"
 
 #include "cylindermapping.h"

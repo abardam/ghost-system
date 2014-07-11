@@ -3,6 +3,7 @@
 #include <opencv2\opencv.hpp>
 
 #include "definitions.h"
+#include "Skeleton.h"
 
 #define WINDOW 5
 #define EXP_A 0.1

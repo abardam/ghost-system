@@ -16,19 +16,29 @@
 
 void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int wtType, const std::vector<SkeleVideoFrame>& vidRecord, const std::vector<Skeleton>& wcSkeletons, const CylinderBody& cylinderBody, const Limbrary& limbrary, cv::Vec3f a[NUMLIMBS], cv::Vec3f b[NUMLIMBS], float facing[NUMLIMBS], ScoreList scoreList[NUMLIMBS], cv::Point offsets[NUMLIMBS], cv::Mat fromPixels[NUMLIMBS], std::vector<cv::Vec3s>& fromPixels_2d_v, int limits[NUMLIMBS]){
 
+	if(!wcSkeletons[frame].offsetPointsCalculated){
+		std::cerr << "error! offset points not calculated\n";
+		throw;
+	}
+
+	cv::Mat transformedOffsetPoints = transform * wcSkeletons[frame].offsetPoints;
+
 	for(int i=0;i<NUMLIMBS;++i){
 
-		int f = getLimbmap()[i].first;
-		int s = getLimbmap()[i].second;
+		//int f = getLimbmap()[i].first;
+		//int s = getLimbmap()[i].second;
+		//
+		//cv::Mat _a = wcSkeletons[frame].points.col(f);
+		//cv::Mat _b = wcSkeletons[frame].points.col(s);
+		//
+		//cv::Mat __a = _b + cylinderBody.newLeftOffset_cyl[i] * (_a - _b);
+		//cv::Mat __b = _a + cylinderBody.newRightOffset_cyl[i] * (_b - _a);
+		//
+		//a[i] = mat_to_vec3(transform * __a);
+		//b[i] = mat_to_vec3(transform * __b);
 
-		cv::Mat _a = wcSkeletons[frame].points.col(f);
-		cv::Mat _b = wcSkeletons[frame].points.col(s);
-
-		cv::Mat __a = _b + cylinderBody.newLeftOffset_cyl[i] * (_a - _b);
-		cv::Mat __b = _a + cylinderBody.newRightOffset_cyl[i] * (_b - _a);
-
-		a[i] = mat_to_vec3(transform * __a);
-		b[i] = mat_to_vec3(transform * __b);
+		a[i] = mat_to_vec3(transformedOffsetPoints.col(i*2+0));
+		b[i] = mat_to_vec3(transformedOffsetPoints.col(i*2+1));
 
 		float radius = cylinderBody.newPartRadii_cyl[i];
 
@@ -68,11 +78,11 @@ void ghostdraw_parallel(int frame, cv::Mat transform, std::vector<SkeleVideoFram
 		blendType = CMPC_NO_OCCLUSION;
 	}else if(options & GD_NOBLEND)
 	{
-		texSearchDepth = TEXTURE_SEARCH_DEPTH;
+		texSearchDepth = TEXTURE_SEARCH_DEPTH_SMALL;
 		blendType = CMPC_BLEND_NONE;
 	}
 	else{
-		texSearchDepth = TEXTURE_SEARCH_DEPTH;
+		texSearchDepth = TEXTURE_SEARCH_DEPTH_SMALL;
 		blendType = CMPC_BLEND_1;
 	}
 
@@ -106,20 +116,30 @@ void ghostdraw_parallel(int frame, cv::Mat transform, std::vector<SkeleVideoFram
 
 	if(options & GD_CYL){
 
+		if(!wcSkeletons[frame].offsetPointsCalculated){
+			std::cerr << "error! offset points not calculated\n";
+			throw;
+		}
+
+		cv::Mat transformedOffsetPoints = transform * wcSkeletons[frame].offsetPoints;
+
 		for(int i=0;i<NUMLIMBS;++i){
 			
 
-			int f = getLimbmap()[i].first;
-			int s = getLimbmap()[i].second;
+			//int f = getLimbmap()[i].first;
+			//int s = getLimbmap()[i].second;
+			//
+			//cv::Mat _a = (wcSkeletons[frame].points.col(f));
+			//cv::Mat _b = (wcSkeletons[frame].points.col(s));
+			//
+			//cv::Mat __a = _b + cylinderBody.newLeftOffset_cyl[i] * (_a - _b);
+			//cv::Mat __b = _a + cylinderBody.newRightOffset_cyl[i] * (_b - _a);
+			//
+			//cv::Vec3f a = mat_to_vec3(transform * (__a));
+			//cv::Vec3f b = mat_to_vec3(transform * (__b));
 
-			cv::Mat _a = (wcSkeletons[frame].points.col(f));
-			cv::Mat _b = (wcSkeletons[frame].points.col(s));
-
-			cv::Mat __a = _b + cylinderBody.newLeftOffset_cyl[i] * (_a - _b);
-			cv::Mat __b = _a + cylinderBody.newRightOffset_cyl[i] * (_b - _a);
-
-			cv::Vec3f a = mat_to_vec3(transform * (__a));
-			cv::Vec3f b = mat_to_vec3(transform * (__b));
+			cv::Vec3f a = mat_to_vec3(transformedOffsetPoints.col(i*2+0));
+			cv::Vec3f b = mat_to_vec3(transformedOffsetPoints.col(i*2+1));
 
 			float radius = cylinderBody.newPartRadii_cyl[i];
 

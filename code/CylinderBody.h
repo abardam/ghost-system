@@ -6,6 +6,7 @@
 #include <array>
 
 #include "definitions.h"
+#include "Skeleton.h"
 
 #define MAXFRAMES 10000
 

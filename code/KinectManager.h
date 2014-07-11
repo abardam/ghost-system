@@ -4,6 +4,7 @@
 
 #include <opencv2\opencv.hpp>
 #include "definitions.h"
+#include "Skeleton.h"
 
 #include <TooN\se3.h>
 

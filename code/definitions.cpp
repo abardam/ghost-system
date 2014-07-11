@@ -18,6 +18,7 @@ cv::Mat uncrop(CroppedCvMat ccm){
 	return u;
 }
 
+
 Mapping mapping;
 cv::Scalar colors[NUMLIMBS+1];
 bool defInit = false;

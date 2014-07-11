@@ -2,6 +2,7 @@
 #include <opencv2\opencv.hpp>
 
 #define TEXTURE_SEARCH_DEPTH 25
+#define TEXTURE_SEARCH_DEPTH_SMALL 12
 
 //2d point to 3d ray, given a 3x3 inverse camera matrix
 cv::Vec3f raycast(cv::Vec2f pt, cv::Mat invCameraMatrix);

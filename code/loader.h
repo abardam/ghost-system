@@ -6,6 +6,7 @@
 
 #include "definitions.h"
 #include "CylinderBody.h"
+#include "Skeleton.h"
 
 #include <opencv2\opencv.hpp>
 #include <TooN\TooN.h>

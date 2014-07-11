@@ -60,48 +60,6 @@ typedef std::pair<int,int> lmap;
 
 #define CLAMP_SIZE(x,y,w,h) (x>=0 && x < w && y>=0 && y < h)
 
-struct Skeleton{
-	cv::Mat points;
-	std::array<float, NUMJOINTS> states;
-	int initSkeleton;
-
-	Skeleton():points(4,NUMJOINTS,cv::DataType<float>::type){
-		initSkeleton = 0;
-	}
-
-	Skeleton(const Skeleton& s){
-		points = s.points.clone();
-		states = s.states;
-		initSkeleton = s.initSkeleton;
-	}
-};
-
-
-struct SkeleVideoFrame{
-	//Skeleton skeleton; //skeleton should be separate from SkeleVideoFrame; SkeleVideoFrame is for UNPROCESSED capture
-	cv::Mat cam2World; //multiply this with kinectPoints in order to get the skeleton
-	Skeleton kinectPoints; //4xNUMJOINTS matrix
-	cv::Mat kinectPoints2P; //should be normalized na
-	cv::Vec3f facing;
-	CroppedCvMat videoFrame; //image of the actor only; cropped to save space, contains offset
-	cv::Mat depthFrame; //depth frame, usually emptied to save space
-	cv::Mat fullVideoFrame;
-	int cluster;
-	bool allPartsIn;
-
-	SkeleVideoFrame(){}
-	SkeleVideoFrame(const SkeleVideoFrame& svf){
-		cam2World = svf.cam2World.clone();
-		kinectPoints = svf.kinectPoints;
-		kinectPoints2P = svf.kinectPoints2P.clone();
-		facing = svf.facing;
-		videoFrame = svf.videoFrame;
-		depthFrame = svf.depthFrame;
-		fullVideoFrame = svf.fullVideoFrame;
-		cluster = svf.cluster;
-		allPartsIn = svf.allPartsIn;
-	}
-};
 
 struct FrameSkeletonDepth{
 	cv::Mat frame;

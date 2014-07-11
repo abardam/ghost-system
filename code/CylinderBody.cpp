@@ -14,6 +14,7 @@
 #include <list>
 #include <cstdlib>
 
+
 void CylinderBody::Reset(){
 	vidRecordBins.clear();
 	for(int i=0;i<NUMLIMBS;++i){

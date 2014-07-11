@@ -9,3 +9,4 @@ void initAndLoad(cv::Mat mse3CfW, cv::Mat K2P, std::vector<SkeleVideoFrame> * vi
 void buildCylinderBody(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cb);
 void calculateWorldCoordinateSkeletons(cv::Mat K2P, std::vector<SkeleVideoFrame> * vidRecord, std::vector<Skeleton> * outputSkeletons);
 void zeroWorldCoordinateSkeletons(cv::Mat K2P, std::vector<SkeleVideoFrame> * vidRecord, std::vector<Skeleton> * outputSkeletons);
+void calculateSkeletonOffsetPoints(std::vector<SkeleVideoFrame>& vidRecord, std::vector<Skeleton>& wcSkeletons, const CylinderBody& cylinderBody);

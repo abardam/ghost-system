@@ -2,6 +2,7 @@
 #include "opencv2\opencv.hpp"
 #include "definitions.h"
 #include "CylinderBody.h"
+#include "Skeleton.h"
 
 #define IDEAL_MULT_TORSO 1.5
 #define IDEAL_MULT_LIMB 0.5

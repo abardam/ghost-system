@@ -1,5 +1,6 @@
 #include "motionsmooth.h"
 #include "ghostutil.h"
+#include "Skeleton.h"
 
 std::vector<double> calc_velocity(const std::vector<double>& x){
 	std::vector<double> v(x.size());

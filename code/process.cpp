@@ -23,6 +23,14 @@ void initAndLoad(cv::Mat mse3CfW, cv::Mat K2P, std::vector<SkeleVideoFrame> * vi
 	setCameraMatrix(expGetCameraMatrix());
 }
 
+void calculateSkeletonOffsetPoints(std::vector<SkeleVideoFrame>& vidRecord, std::vector<Skeleton>& wcSkeletons, const CylinderBody& cylinderBody){
+
+	for(int i=0;i<vidRecord.size();++i){
+		vidRecord[i].kinectPoints.calculateOffsetPoints(cylinderBody);
+		wcSkeletons[i].calculateOffsetPoints(cylinderBody);
+	}
+}
+
 
 void buildCylinderBody(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cb){
 

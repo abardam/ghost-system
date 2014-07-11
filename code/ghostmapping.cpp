@@ -78,11 +78,19 @@ PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float r
 				texture = (*limbrary).getFrameLimbs(it->first)[limbid];
 			}
 
-			cv::Vec3f _to_a = mat_to_vec3((*vidRecord)[it->first].kinectPoints.points.col(f));
-			cv::Vec3f _to_b = mat_to_vec3((*vidRecord)[it->first].kinectPoints.points.col(s));
+			//cv::Vec3f _to_a = mat_to_vec3((*vidRecord)[it->first].kinectPoints.points.col(f));
+			//cv::Vec3f _to_b = mat_to_vec3((*vidRecord)[it->first].kinectPoints.points.col(s));
+			//
+			//cv::Vec3f to_a = _to_b + cylinderBody->newLeftOffset_cyl[limbid] * (_to_a - _to_b);
+			//cv::Vec3f to_b = _to_a + cylinderBody->newRightOffset_cyl[limbid] * (_to_b - _to_a);
 
-			cv::Vec3f to_a = _to_b + cylinderBody->newLeftOffset_cyl[limbid] * (_to_a - _to_b);
-			cv::Vec3f to_b = _to_a + cylinderBody->newRightOffset_cyl[limbid] * (_to_b - _to_a);
+			if(!(*vidRecord)[it->first].kinectPoints.offsetPointsCalculated){
+				std::cerr << "error: offset points not calculated!\n";
+				throw;
+			}
+
+			cv::Vec3f to_a = mat_to_vec3((*vidRecord)[it->first].kinectPoints.offsetPoints.col(limbid+0));
+			cv::Vec3f to_b = mat_to_vec3((*vidRecord)[it->first].kinectPoints.offsetPoints.col(limbid+1));
 
 			cv::Point2i pt = mapPixel
 				(fromPixels[i], texture.offset,
@@ -390,19 +398,29 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 		transformedPixels[i].reserve(scoreList[i].size());
 		for(auto it=scoreList[i].begin(); it!=scoreList[i].end(); ++it){
 			
-			int f = limbmap[i].first;
-			int s = limbmap[i].second;
+			//int f = limbmap[i].first;
+			//int s = limbmap[i].second;
 
-			cv::Mat _to_a = ((*vidRecord)[*it].kinectPoints.points.col(f));
-			cv::Mat _to_b = ((*vidRecord)[*it].kinectPoints.points.col(s));
-			cv::Vec3f to_a = mat_to_vec3(_to_b + cylinderBody->newLeftOffset_cyl[i] * (_to_a - _to_b) );
-			cv::Vec3f to_b = mat_to_vec3(_to_a + cylinderBody->newRightOffset_cyl[i] * (_to_b - _to_a));
+			//cv::Mat _to_a = ((*vidRecord)[*it].kinectPoints.points.col(f));
+			//cv::Mat _to_b = ((*vidRecord)[*it].kinectPoints.points.col(s));
+			//cv::Vec3f to_a = mat_to_vec3(_to_b + cylinderBody->newLeftOffset_cyl[i] * (_to_a - _to_b) );
+			//cv::Vec3f to_b = mat_to_vec3(_to_a + cylinderBody->newRightOffset_cyl[i] * (_to_b - _to_a));
+
+			
+			if(!(*vidRecord)[*it].kinectPoints.offsetPointsCalculated){
+				std::cerr << "error: offset points not calculated!\n";
+				throw;
+			}
+
+			cv::Vec3f to_a = mat_to_vec3((*vidRecord)[*it].kinectPoints.offsetPoints.col(i*2+0));
+			cv::Vec3f to_b = mat_to_vec3((*vidRecord)[*it].kinectPoints.offsetPoints.col(i*2+1));
 
 			//candidateTextureTransformMatrices[i].push_back(getCameraMatrix() * cylinderFacingTransform(from_a[i], from_b[i], tempCalcFacing(i, (*vidRecord)[it->first].kinectPoints), to_a, to_b, facing[i]));
 			cv::Mat transformedPixelsMat = getCameraMatrix() * cylinderFacingTransform(from_a[i], from_b[i], tempCalcFacing(i, (*vidRecord)[*it].kinectPoints), to_a, to_b, facing[i]) * fromPixels[i];
 
-			//cv::divide(transformedPixelsMat.row(0), transformedPixelsMat.row(2), transformedPixelsMat.row(0));
-			//cv::divide(transformedPixelsMat.row(1), transformedPixelsMat.row(2), transformedPixelsMat.row(1));
+			//predivide
+			cv::divide(transformedPixelsMat.row(0), transformedPixelsMat.row(2), transformedPixelsMat.row(0));
+			cv::divide(transformedPixelsMat.row(1), transformedPixelsMat.row(2), transformedPixelsMat.row(1));
 
 			transformedPixels[i].push_back(transformedPixelsMat);
 		}
@@ -528,8 +546,8 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 
 			int ind = i-(limbid==0?0:limits[limbid-1]);
 
-			cv::Point2i pt_tex = mat4_to_vec2(transformedPixels[limbid][scoreCand].col(ind)); //shitty compensation
-			//cv::Point2i pt_tex(transformedPixels[limbid][scoreCand].ptr<float>(0)[ind], transformedPixels[limbid][scoreCand].ptr<float>(1)[ind]); //we predivided it up there
+			//cv::Point2i pt_tex = mat4_to_vec2(transformedPixels[limbid][scoreCand].col(ind)); //shitty compensation
+			cv::Point2i pt_tex(transformedPixels[limbid][scoreCand].ptr<float>(0)[ind], transformedPixels[limbid][scoreCand].ptr<float>(1)[ind]); //we predivided it up there
 			pt_tex -= texture.offset;
 
 			//int c = i-lastlimit+scoreCand*fromPixels[limbid].cols+lastlimit2;
