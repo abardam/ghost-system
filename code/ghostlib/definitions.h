@@ -5,6 +5,28 @@
 #include <array>
 #include "ghostsettings.h"
 
+
+#include <ctime>
+
+struct ctimer{
+	clock_t c;
+	clock_t c1;
+	clock_t c2;
+
+	ctimer():c(0){
+	}
+
+	void start(){
+		c1 = clock();
+	}
+
+	void end(){
+		c2 = clock();
+		c += c2-c1;
+	}
+
+};
+
 #define GH_MF_OLD 0
 #define GH_MF_CYLPROJ 1
 #define GH_MODELFITTING GH_MF_CYLPROJ

@@ -75,7 +75,7 @@ PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float r
 			if(blendMode == CMPC_NO_OCCLUSION){
 				texture = (*vidRecord)[it->first].videoFrame;
 			}else{
-				texture = (*limbrary).getFrameLimbs(it->first)[limbid];
+				texture = (*limbrary).frames[it->first][limbid];
 			}
 
 			//cv::Vec3f _to_a = mat_to_vec3((*vidRecord)[it->first].kinectPoints.points.col(f));
@@ -356,6 +356,12 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 										cv::Mat& zBuf)
 {
 	
+	//check draw format
+	if(draw.channels() != 4){
+		std::cerr << "draw channels is not 4!\n";
+		throw;
+	}
+
 	//convert from list to vector
 	std::vector<int> scoreList[NUMLIMBS];
 	for(int i=0;i<NUMLIMBS;++i){
@@ -364,6 +370,8 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 			scoreList[i].push_back(it->first);
 		}
 	}
+
+
 
 
 	unsigned int bl;
@@ -394,6 +402,9 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 
 	std::vector<cv::Mat> transformedPixels[NUMLIMBS];
 	//std::vector<std::vector<cv::Mat>> candidateTextureTransformMatrices(NUMLIMBS);
+
+	ctimer prediv;
+	prediv.start();
 	for(int i=0;i<NUMLIMBS;++i){
 		transformedPixels[i].reserve(scoreList[i].size());
 		for(auto it=scoreList[i].begin(); it!=scoreList[i].end(); ++it){
@@ -425,6 +436,8 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 			transformedPixels[i].push_back(transformedPixelsMat);
 		}
 	}
+	prediv.end();
+	std::cout << "predivide: " << prediv.c << std::endl;
 
 	//SUPER PARALLEL:
 	//int transformedPixelsWidth=0;
@@ -504,10 +517,13 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 #pragma omp barrier
 
 		int tnum = omp_get_thread_num();
-		colorMatrices[tnum] = cv::Mat(HEIGHT,WIDTH,CV_8UC3,cv::Scalar(255,255,255));
+		colorMatrices[tnum] = cv::Mat(HEIGHT,WIDTH,CV_8UC4,cv::Scalar(255,255,255,0));
 		depthMatrices[tnum] = cv::Mat(HEIGHT, WIDTH, CV_16U, cv::Scalar(MAXDEPTH));
 		
 		limbid = 0;
+
+	ctimer cblend, crender, cgfl;
+
 #pragma omp for
 	for(i=0;i<fromsize;++i){
 
@@ -538,10 +554,13 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 		float div = 1;
 		unsigned int blends = 0;
 
+		cblend.start();
 		for(int scoreCand=0;scoreCand<scoreList[limbid].size();++scoreCand){
 
-			CroppedCvMat texture = blendMode==CMPC_NO_OCCLUSION? (*vidRecord)[scoreList[limbid][scoreCand]].videoFrame : (limbrary)->getFrameLimbs(scoreList[limbid][scoreCand])[limbid];
-			
+			cgfl.start();
+			CroppedCvMat texture = blendMode==CMPC_NO_OCCLUSION? (*vidRecord)[scoreList[limbid][scoreCand]].videoFrame : (limbrary)->frames[scoreList[limbid][scoreCand]][limbid];
+			cgfl.end();
+
 			//cv::Point2i pt = mat4_to_vec2(candidateTextureTransformMatrices[limbid][scoreCand] * vec3_to_mat4(fromPixels[i]));
 
 			int ind = i-(limbid==0?0:limits[limbid-1]);
@@ -595,7 +614,9 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 
 			if(blends >= blendLimit) break;
 		}
+		cblend.end();
 		
+		crender.start();
 		if(blends == 0){
 			erasevector[i] = true;
 		}else{
@@ -628,10 +649,11 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 					if(CLAMP_SIZE(pt.x, pt.y, WIDTH, HEIGHT)){
 						if(fromPixels_2d_v[i](2) < depthMatrices[tnum].ptr<unsigned short>(pt.y)[pt.x] && fromPixels_2d_v[i](2) > 0){
 						int tnum = omp_get_thread_num();
-							cv::Vec3b& ptColor = colorMatrices[tnum].ptr<cv::Vec3b>(pt.y)[pt.x];
+							cv::Vec4b& ptColor = colorMatrices[tnum].ptr<cv::Vec4b>(pt.y)[pt.x];
 							for(int k=0;k<3;++k){
 								ptColor(k) = blendPixel(k);
 							}
+							ptColor(4) = 255;
 			
 							depthMatrices[tnum].ptr<unsigned short>(pt.y)[pt.x] = fromPixels_2d_v[i](2);
 						}
@@ -641,9 +663,12 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 				erasevector[i] = true;
 			}
 		}
+		crender.end();
 
 		
 	}
+
+	std::cout << "  getframelimbs: " << cgfl.c << "\n  blend: " << cblend.c << "\n  render: " << crender.c << std::endl;
 
 #pragma omp barrier
 #pragma omp for
@@ -652,7 +677,7 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 			unsigned short& zvalue = zBuf.ptr<unsigned short>()[i];
 			if(zvalue > depthMatrices[j].ptr<unsigned short>()[i]){
 				zvalue = depthMatrices[j].ptr<unsigned short>()[i];
-				draw.ptr<cv::Vec3b>()[i] = colorMatrices[j].ptr<cv::Vec3b>()[i];
+				draw.ptr<cv::Vec4b>()[i] = colorMatrices[j].ptr<cv::Vec4b>()[i];
 			}
 		}
 	}

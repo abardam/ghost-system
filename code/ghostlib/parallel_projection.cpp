@@ -49,7 +49,7 @@ void parallel_pixelMapping::operator()(const cv::Range& r) const{
 			if(blendMode == CMPC_NO_OCCLUSION){
 				texture = (*vidRecord)[it->first].videoFrame;
 			}else{
-				texture = (*limbrary).getFrameLimbs(it->first)[limbid];
+				texture = (*limbrary).frames[it->first][limbid];
 			}
 
 			cv::Vec3f _to_a = mat_to_vec3((*vidRecord)[it->first].kinectPoints.points.col(f));

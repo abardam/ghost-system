@@ -301,10 +301,6 @@ std::vector<int> Limbrary::getAvailableFramesForLimb(int limbid) const {
 }
 
 
-FrameLimbs Limbrary::getFrameLimbs(int frame) const{
-	return frames[frame];
-}
-
 void Limbrary::Save(std::string path){
 	std::string filepath = path + "/limbrary.xml";
 	std::string impath = "limbrary/";

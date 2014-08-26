@@ -1,7 +1,9 @@
 #include "ghostcam.h"
-#include "KinectManager.h"
 #include "cvutil.h"
 #include "camlerp.h"
+
+#define CAPTURE_SIZE_X 640
+#define CAPTURE_SIZE_Y 480
 
 cv::Mat cameraMatrix;
 cv::Mat invCameraMatrix;

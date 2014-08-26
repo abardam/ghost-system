@@ -174,9 +174,9 @@ bool rayCylinderClosestIntersectionPoint_c(float * origin, float * ray_, float c
 	//ray = ray / cv::norm(ray);
 
 	float ray[3];
-	for(int i=0;i<3;++i){
-		ray[i] = ray_[i]-origin[i];
-	}
+	ray[0] = ray_[0]-origin[0];
+	ray[1] = ray_[1]-origin[1];
+	ray[2] = ray_[2]-origin[2];
 
 	//cv::Vec3f ray = (ray_ - origin);
 
@@ -189,10 +189,9 @@ bool rayCylinderClosestIntersectionPoint_c(float * origin, float * ray_, float c
 
 	if(vminus2 > 0 && vminus2 < height)
 	{
-
-		for(int i=0;i<3;++i){
-			out[i] = origin[i]+minus*ray[i];
-		}
+		out[0] = origin[0]+minus*ray[0];
+		out[1] = origin[1]+minus*ray[1];
+		out[2] = origin[2]+minus*ray[2];
 
 		return true;
 	}
@@ -202,9 +201,11 @@ bool rayCylinderClosestIntersectionPoint_c(float * origin, float * ray_, float c
 
 	if( (vplus2 <= 0 && vminus2 > 0) || (vminus2 <= 0 && vplus2 > 0)){
 		float extra = -origin[2]/ray[2];
-		for(int i=0;i<3;++i){
-			out[i] = origin[i]+extra*ray[i];
-		}
+		
+		out[0] = origin[0]+extra*ray[0];
+		out[1] = origin[1]+extra*ray[1];
+		out[2] = origin[2]+extra*ray[2];
+
 		return true;
 	}
 

@@ -15,7 +15,8 @@ public:
 	void Save(std::string path);
 	void Load(std::string path);
 
-	FrameLimbs getFrameLimbs(int frame) const;
+	//index = frame. FrameLimbs is a vector with index = limb id
+	std::vector<FrameLimbs> frames;
 
 	//after clustering, we will delete every non-cluster limb image;
 	//use this function to get a list of all the valid frame indices per limb id
@@ -32,8 +33,6 @@ public:
 	void removeBadFrames();
 
 private:
-	//index = frame. FrameLimbs is a vector with index = limb id
-	std::vector<FrameLimbs> frames;
 
 	//index = limb id. contains list of all valid frames. if empty, assume all vidRecord frames are valid
 	std::vector<std::vector<int>> framesForLimb;
