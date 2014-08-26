@@ -25,9 +25,6 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 	cv::Mat transformedOffsetPoints = transform * wcSkeletons[frame].offsetPoints;
 
-
-	ctimer cintersect, cclone, ccylinder, cres;
-
 	for(int i=0;i<NUMLIMBS;++i){
 
 		//int f = getLimbmap()[i].first;
@@ -55,8 +52,8 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 		offsets[i] = source.offset;
 
 			//fromPixels_v.clear(); //not using it
-			std::vector<cv::Vec3f> fromPixels_v;
-			fromPixels_v.reserve(2048);
+			//std::vector<cv::Vec3f> fromPixels_v;
+			//fromPixels_v.reserve(2048);
 
 			scoreList[i] = sortFrames(skele, vidRecord, limbrary, i, texSearchDepth, true, wtType); //105.311 us
 
@@ -65,7 +62,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 			{
 				//fromPixels[i] = cylinder_to_pts(a[i],b[i],radius,source.offset,&p,&fromPixels_v,&(fromPixels_2d_v)); 
-				cv::Mat ret(4, 0, CV_32F, cv::Scalar(1));
+				//cv::Mat ret(4, 0, CV_32F, cv::Scalar(1));
 				cv::Mat invCameraMatrix = (getInvCameraMatrix()); 
 
 				cv::Vec3f a,b;
@@ -86,7 +83,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 				std::vector<Segment3f> pts = cylinder_to_segments(a, b, radius,8);
 				std::vector<Segment2f> pts2 = segment3f_to_2f(pts, cv::Vec2f(source.offset.x, source.offset.y));
 				if(pts2.empty()){
-					fromPixels[i] = ret;
+					fromPixels[i] = cv::Mat(4, 0, CV_32F, cv::Scalar(1));;
 					break;
 				}
 				cv::Rect r = cv::boundingRect(segments_to_points(pts2));
@@ -134,7 +131,9 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 				rayMat = transformation * rayMat;
 
-				cintersect.start();
+				std::vector<float> fromPixels_f(limbpicHeight*limbpicWidth*4);
+				int valid_count = 0;
+
 				for(int _x = 0; _x < limbpicWidth; ++_x){
 					for(int _y = 0; _y < limbpicHeight; ++_y){
 						int y = _y + r.y;
@@ -145,57 +144,78 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 						//cv::Vec3f ray = lerpPoint(x+voff.x,y+voff.y,boundingBox,lc);
 						//cv::Mat ray_trans1 = transformation * vec3_to_mat4(ray);
 
-						cclone.start();
 						//cv::Mat ray_trans = rayMat.col(_y*limbpicWidth+_x).clone();
 						int ind = _y*limbpicWidth+_x;
 						float ray_trans_f[] = {rayMat.ptr<float>(0)[ind], rayMat.ptr<float>(1)[ind], rayMat.ptr<float>(2)[ind], rayMat.ptr<float>(3)[ind]};
-						cclone.end();
-						cv::Vec3f ptProj;
+						//cv::Vec3f ptProj; //it's inefficient to project the points individually; better to put em all in a big matrix before multiplying the inverse transformation
+						float retf[4];
 
 						//int res = rayCylinder2(transformation, ray, radius, height, &ptProj);
 
 						int res;
 						{
-							ccylinder.start();
 							//int res = rayCylinder3_c(origin_trans, /*ray_trans.ptr<float>()*/ray_trans_f, transformation_inv, C, height, &ptProj);
 
-							float retf[4];
 							bool res2 = rayCylinderClosestIntersectionPoint_c(origin_trans, ray_trans_f, C, height, retf);
-							ccylinder.end();
 
 
-							cres.start();
 							if(res2){
 								retf[3] = 1;
-								ptProj = mat_to_vec3(transformation_inv*cv::Mat(4,1,CV_32F,retf));
+								//ptProj = mat_to_vec3(transformation_inv*cv::Mat(4,1,CV_32F,retf));
 								res = 1;
 							}
 							else res = 0;
-							cres.end();
 
 						}
 
 						if(res == 1){
-							fromPixels_v.push_back(ptProj);
-							//cv::Vec3s xyDepth(pt(0)-voff.x, pt(1)-voff.y, ptProj(2) * FLOAT_TO_DEPTH);
-							cv::Vec3s xyDepth(x, y, ptProj(2) * FLOAT_TO_DEPTH);
+							//see above note on ptProj
+							//fromPixels_v.push_back(ptProj);
+							////cv::Vec3s xyDepth(pt(0)-voff.x, pt(1)-voff.y, ptProj(2) * FLOAT_TO_DEPTH);
+							//cv::Vec3s xyDepth(x, y, ptProj(2) * FLOAT_TO_DEPTH);
+							cv::Vec3s xyDepth(x, y, 0);
 							fromPixels_2d_v.push_back(xyDepth);
+
+							fromPixels_f[valid_count*4+0] = retf[0];
+							fromPixels_f[valid_count*4+1] = retf[1];
+							fromPixels_f[valid_count*4+2] = retf[2];
+							fromPixels_f[valid_count*4+3] = retf[3];
+
+							++valid_count;
 						}
 					}
 				}
-				cintersect.end();
 
-				ret.create(4,fromPixels_v.size(),CV_32F);
-				for(int j=0;j<4;++j){
-					float * retptr = ret.ptr<float>(j);
-					for(int i=0;i<fromPixels_v.size();++i){
-						//ret.at<float>(j,i) = (*fromPixels)[i](j);
-						if(j<3)
-							*(retptr+i) = fromPixels_v[i](j);
-						else
-							*(retptr+i) = 1;
-					}
+				cv::Mat ret(valid_count, 4, CV_32F, fromPixels_f.data());
+				//for(int j=0;j<4;++j){
+				//	float * retptr = ret.ptr<float>(j);
+				//	for(int i=0;i<fromPixels_f.size();++i){
+				//		*(retptr+i) = fromPixels_f[i][j];
+				//	}
+				//}
+
+				ret = transformation_inv * ret.t();
+
+				//cv::divide(ret.row(0), ret.row(3), ret.row(0)); //somehow the last row is already 1
+				//cv::divide(ret.row(1), ret.row(3), ret.row(1));
+				//cv::divide(ret.row(2), ret.row(3), ret.row(2));
+				//cv::divide(ret.row(3), ret.row(3), ret.row(3));
+
+				for(int j=0;j<ret.cols;++j){
+					fromPixels_2d_v[j+limits[i-1]](2) = ret.ptr<float>(2)[j] * FLOAT_TO_DEPTH;
 				}
+				
+				//ret.create(4,fromPixels_v.size(),CV_32F);
+				//for(int j=0;j<4;++j){
+				//	float * retptr = ret.ptr<float>(j);
+				//	for(int i=0;i<fromPixels_v.size();++i){
+				//		//ret.at<float>(j,i) = (*fromPixels)[i](j);
+				//		if(j<3)
+				//			*(retptr+i) = fromPixels_v[i](j);
+				//		else
+				//			*(retptr+i) = 1;
+				//	}
+				//}
 
 				fromPixels[i] = ret;
 			}
@@ -203,7 +223,6 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 			limits[i] = fromPixels_2d_v.size();
 	}
-			std::cout << "  clone: " << cclone.c << "\n  cylinder: " << ccylinder.c << "\n  res: " << cres.c <<  "\n  intersect: " << cintersect.c << std::endl;
 
 }
 
@@ -254,16 +273,10 @@ void ghostdraw_parallel(int frame, cv::Mat transform, std::vector<SkeleVideoFram
 
 	if(options & GD_DRAW)
 	{
-		clock_t t1 = clock();
 		ghostdraw_prep(frame, transform, texSearchDepth, wtType, vidRecord, wcSkeletons, cylinderBody, limbrary, a, b, facing, scoreList, offsets, fromPixels, fromPixels_2d_v, limits);
-		clock_t t2 = clock();
-		std::cout << "ghostdraw_prep: " <<  t2-t1 << std::endl;
 
-		t1 = clock();
 		cylinderMapPixelsColor_parallel_orig(a, b, facing, scoreList, offsets, 
 			&vidRecord, &cylinderBody, &limbrary, blendType, fromPixels, fromPixels_2d_v, limits, draw, zBuf /*from_color*/);
-		t2 = clock();
-		std::cout << "cylinderMapPixelsColor_parallel_orig: " <<  t2-t1 << std::endl;
 	}
 
 

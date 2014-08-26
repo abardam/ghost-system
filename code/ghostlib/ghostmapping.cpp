@@ -403,8 +403,6 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 	std::vector<cv::Mat> transformedPixels[NUMLIMBS];
 	//std::vector<std::vector<cv::Mat>> candidateTextureTransformMatrices(NUMLIMBS);
 
-	ctimer prediv;
-	prediv.start();
 	for(int i=0;i<NUMLIMBS;++i){
 		transformedPixels[i].reserve(scoreList[i].size());
 		for(auto it=scoreList[i].begin(); it!=scoreList[i].end(); ++it){
@@ -436,8 +434,6 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 			transformedPixels[i].push_back(transformedPixelsMat);
 		}
 	}
-	prediv.end();
-	std::cout << "predivide: " << prediv.c << std::endl;
 
 	//SUPER PARALLEL:
 	//int transformedPixelsWidth=0;
@@ -522,7 +518,6 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 		
 		limbid = 0;
 
-	ctimer cblend, crender, cgfl;
 
 #pragma omp for
 	for(i=0;i<fromsize;++i){
@@ -554,12 +549,9 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 		float div = 1;
 		unsigned int blends = 0;
 
-		cblend.start();
 		for(int scoreCand=0;scoreCand<scoreList[limbid].size();++scoreCand){
 
-			cgfl.start();
 			CroppedCvMat texture = blendMode==CMPC_NO_OCCLUSION? (*vidRecord)[scoreList[limbid][scoreCand]].videoFrame : (limbrary)->frames[scoreList[limbid][scoreCand]][limbid];
-			cgfl.end();
 
 			//cv::Point2i pt = mat4_to_vec2(candidateTextureTransformMatrices[limbid][scoreCand] * vec3_to_mat4(fromPixels[i]));
 
@@ -614,9 +606,7 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 
 			if(blends >= blendLimit) break;
 		}
-		cblend.end();
-		
-		crender.start();
+
 		if(blends == 0){
 			erasevector[i] = true;
 		}else{
@@ -653,7 +643,7 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 							for(int k=0;k<3;++k){
 								ptColor(k) = blendPixel(k);
 							}
-							ptColor(4) = 255;
+							ptColor(3) = 255;
 			
 							depthMatrices[tnum].ptr<unsigned short>(pt.y)[pt.x] = fromPixels_2d_v[i](2);
 						}
@@ -663,12 +653,10 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 				erasevector[i] = true;
 			}
 		}
-		crender.end();
 
 		
 	}
 
-	std::cout << "  getframelimbs: " << cgfl.c << "\n  blend: " << cblend.c << "\n  render: " << crender.c << std::endl;
 
 #pragma omp barrier
 #pragma omp for
