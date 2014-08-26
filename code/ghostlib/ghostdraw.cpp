@@ -26,7 +26,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 	cv::Mat transformedOffsetPoints = transform * wcSkeletons[frame].offsetPoints;
 
 
-	ctimer crect, ctransform, clerp, clerp2, cintersect, cend;
+	ctimer cintersect, cclone, ccylinder, cres;
 
 	for(int i=0;i<NUMLIMBS;++i){
 
@@ -82,7 +82,6 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 				//std::vector<cv::Vec2f> pts2 = vec3f_to_2f(pts, cv::Vec2f(voff.x, voff.y));
 				//*p = polygon_contains_pixels(pts2);
 
-				crect.start();
 
 				std::vector<Segment3f> pts = cylinder_to_segments(a, b, radius,8);
 				std::vector<Segment2f> pts2 = segment3f_to_2f(pts, cv::Vec2f(source.offset.x, source.offset.y));
@@ -92,9 +91,6 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 				}
 				cv::Rect r = cv::boundingRect(segments_to_points(pts2));
 
-				crect.end();
-				
-				ctransform.start();
 
 				//transform the space:
 				cv::Vec3f cyl_axis = b - a;
@@ -103,7 +99,6 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 				cv::Mat transformation = segmentZeroTransformation(a,b);
 				cv::Mat transformation_inv = transformation.inv();
 
-				ctransform.end();
 
 				//cv::Vec3f origin_trans = mat_to_vec(transformation.col(3)); //mat_to_vec3(transformation * vec3_to_mat4(cv::Vec3f(0,0,0)));
 				float origin_trans[3];
@@ -118,14 +113,11 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 	
 				//std::cout << p->x_offset << " " << limbpicWidth << " " << p->lo_y << " " << limbpicHeight << std::endl;
 
-				clerp.start();
 				cv::Rect boundingBox(0,0,WIDTH,HEIGHT);
 				LerpCorners lc = generateLerpCorners(boundingBox);
-				clerp.end();
 	
 				cv::Mat rayMat(4, limbpicHeight*limbpicWidth, CV_32F);
 
-				clerp2.start();
 				for(int _x = 0; _x < limbpicWidth; ++_x){
 					for(int _y = 0; _y < limbpicHeight; ++_y){
 						int y = _y + r.y;
@@ -139,7 +131,6 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 					}
 				}
-				clerp2.end();
 
 				rayMat = transformation * rayMat;
 
@@ -153,11 +144,37 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 						//cv::Vec3f ray = mat_to_vec(invCameraMatrix * cv::Mat(pt)); replaced with lerp
 						//cv::Vec3f ray = lerpPoint(x+voff.x,y+voff.y,boundingBox,lc);
 						//cv::Mat ray_trans1 = transformation * vec3_to_mat4(ray);
-						cv::Mat ray_trans = rayMat.col(_y*limbpicWidth+_x).clone();
+
+						cclone.start();
+						//cv::Mat ray_trans = rayMat.col(_y*limbpicWidth+_x).clone();
+						int ind = _y*limbpicWidth+_x;
+						float ray_trans_f[] = {rayMat.ptr<float>(0)[ind], rayMat.ptr<float>(1)[ind], rayMat.ptr<float>(2)[ind], rayMat.ptr<float>(3)[ind]};
+						cclone.end();
 						cv::Vec3f ptProj;
 
 						//int res = rayCylinder2(transformation, ray, radius, height, &ptProj);
-						int res = rayCylinder3_c(origin_trans, ray_trans.ptr<float>(), transformation_inv, C, height, &ptProj);
+
+						int res;
+						{
+							ccylinder.start();
+							//int res = rayCylinder3_c(origin_trans, /*ray_trans.ptr<float>()*/ray_trans_f, transformation_inv, C, height, &ptProj);
+
+							float retf[4];
+							bool res2 = rayCylinderClosestIntersectionPoint_c(origin_trans, ray_trans_f, C, height, retf);
+							ccylinder.end();
+
+
+							cres.start();
+							if(res2){
+								retf[3] = 1;
+								ptProj = mat_to_vec3(transformation_inv*cv::Mat(4,1,CV_32F,retf));
+								res = 1;
+							}
+							else res = 0;
+							cres.end();
+
+						}
+
 						if(res == 1){
 							fromPixels_v.push_back(ptProj);
 							//cv::Vec3s xyDepth(pt(0)-voff.x, pt(1)-voff.y, ptProj(2) * FLOAT_TO_DEPTH);
@@ -168,7 +185,6 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 				}
 				cintersect.end();
 
-				cend.start();
 				ret.create(4,fromPixels_v.size(),CV_32F);
 				for(int j=0;j<4;++j){
 					float * retptr = ret.ptr<float>(j);
@@ -180,7 +196,6 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 							*(retptr+i) = 1;
 					}
 				}
-				cend.end();
 
 				fromPixels[i] = ret;
 			}
@@ -188,7 +203,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 			limits[i] = fromPixels_2d_v.size();
 	}
-			std::cout << "  rect: " << crect.c << "\n  transform: " << ctransform.c << "\n  lerp1: " <<  clerp.c << "\n  lerp2: " << clerp2.c << "\n  intersect: " << cintersect.c << "\n  end: " << cend.c << std::endl;
+			std::cout << "  clone: " << cclone.c << "\n  cylinder: " << ccylinder.c << "\n  res: " << cres.c <<  "\n  intersect: " << cintersect.c << std::endl;
 
 }
 

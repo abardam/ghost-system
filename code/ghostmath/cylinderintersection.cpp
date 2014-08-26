@@ -183,6 +183,8 @@ bool rayCylinderClosestIntersectionPoint_c(float * origin, float * ray_, float c
 	float a = ray[0]*ray[0] + ray[1]*ray[1];
 	float b = 2*origin[0]*ray[0]+2*origin[1]*ray[1];
 
+	if(b*b-4*a*c < 0) return false;
+
 	float minus = (-b - sqrt(b*b-4*a*c))/(2*a);
 
 	float vminus2 = origin[2]+minus*ray[2];
@@ -333,7 +335,6 @@ int rayCylinder3(float * origin_trans, float * ray_trans, cv::Mat transformation
 
 int rayCylinder3_c(float * origin_trans, float * ray_trans, cv::Mat transformation_inv, float c, float height, cv::Vec3f * out){
 	
-	//ghlog.q.clear();
 
 	float retf[4];
 	bool res = rayCylinderClosestIntersectionPoint_c(origin_trans, ray_trans, c, height, retf);
