@@ -24,6 +24,8 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 	}
 
 	cv::Mat transformedOffsetPoints = transform * wcSkeletons[frame].offsetPoints;
+	Skeleton skele = wcSkeletons[frame];
+	skele.points = transform * skele.points;
 
 	for(int limb=0;limb<NUMLIMBS;++limb){
 
@@ -45,8 +47,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 		float radius = cylinderBody.newPartRadii_cyl[limb] * cylinderBody.radiusModifier;
 
 		CroppedCvMat source = limbrary.frames[frame][limb];
-		Skeleton skele = vidRecord[frame].kinectPoints;
-		skele.points = transform * skele.points;
+		//Skeleton skele = vidRecord[frame].kinectPoints;
 			
 		facing [limb] = tempCalcFacing(limb, skele); //13 us
 		offsets[limb] = source.offset;
@@ -67,7 +68,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 				cv::Vec3f a,b;
 
-				if(a_arr[limb](2) < b_arr[limb](2)){
+				if(cv::norm(a_arr[limb]) < cv::norm(b_arr[limb])){
 					a = a_arr[limb];
 					b = b_arr[limb];
 				}else{

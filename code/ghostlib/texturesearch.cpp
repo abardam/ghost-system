@@ -12,8 +12,8 @@ cv::Mat normalizeSkeleton(cv::Mat skel){
 
 	for(int i=0; i<NUMJOINTS; ++i){
 		cv::Mat tempcol;
-		//cv::normalize(skel.col(i) - skel.col(KINECT::getCenterJoint()), tempcol);
-		tempcol = skel.col(i) - skel.col(KINECT::getCenterJoint());
+		cv::normalize(skel.col(i) - skel.col(KINECT::getCenterJoint()), tempcol);
+		//tempcol = skel.col(i) - skel.col(KINECT::getCenterJoint());
 		float * colptr = tempcol.ptr<float>();
 		for(int j=0;j<3;++j){
 			//retval.at<float>(j, i) = tempcol.at<float>(j);
@@ -22,27 +22,27 @@ cv::Mat normalizeSkeleton(cv::Mat skel){
 		}
 	}
 
-	////rotate s.t. head joint is directly above neck joint
-	//
-	////first convert head joint into 2D by projecting onto viewplane
-	//cv::Vec2f hj2(retval.at<float>(0,KINECT::getHeadJoint()) / retval.at<float>(2,KINECT::getHeadJoint()),
-	//	retval.at<float>(1,KINECT::getHeadJoint()) / retval.at<float>(2,KINECT::getHeadJoint()));
-	//
-	////then get rotation to that vector...
-	//cv::Mat rot = getRotationMatrix(hj2);
-	//
-	////invert
-	//cv::Mat rot_i = rot.inv();
-	//
-	////convert to 3D transform
-	//cv::Mat rot3 = cv::Mat::eye(3,3,cv::DataType<float>::type);
-	//
-	//rot_i.copyTo(rot3.rowRange(0,2).colRange(0,2));
-	//
-	////apply
-	//for(int i=0;i<NUMJOINTS;++i){
-	//	retval.col(i) = rot3 * retval.col(i);
-	//}
+	//rotate s.t. head joint is directly above neck joint
+	
+	//first convert head joint into 2D by projecting onto viewplane
+	cv::Vec2f hj2(retval.at<float>(0,KINECT::getHeadJoint()) / retval.at<float>(2,KINECT::getHeadJoint()),
+		retval.at<float>(1,KINECT::getHeadJoint()) / retval.at<float>(2,KINECT::getHeadJoint()));
+	
+	//then get rotation to that vector...
+	cv::Mat rot = getRotationMatrix(hj2);
+	
+	//invert
+	cv::Mat rot_i = rot.inv();
+	
+	//convert to 3D transform
+	cv::Mat rot3 = cv::Mat::eye(3,3,cv::DataType<float>::type);
+	
+	rot_i.copyTo(rot3.rowRange(0,2).colRange(0,2));
+	
+	//apply
+	for(int i=0;i<NUMJOINTS;++i){
+		retval.col(i) = rot3 * retval.col(i);
+	}
 
 	return retval;
 }
