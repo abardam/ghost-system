@@ -19,7 +19,7 @@ cv::Mat cylinder_to_pts(cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff
 cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigned int width, unsigned int height);
 
 //returns a 4x4 matrix transforming from cylinder 1 to cylinder 2
-cv::Mat cylinderFacingTransform(cv::Vec3f a1, cv::Vec3f b1, float f1, cv::Vec3f a2, cv::Vec3f b2, float f2);
+cv::Mat cylinderFacingTransform(cv::Vec3f a1, cv::Vec3f b1, float f1, cv::Vec3f a2, cv::Vec3f b2, float f2, float radiusModifier = 1);
 
 //same but with cv::Mat
 cv::Mat cylinderFacingTransform(cv::Mat a1, cv::Mat b1, float f1, cv::Mat a2, cv::Mat b2, float f2);

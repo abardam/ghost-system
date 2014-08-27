@@ -17,6 +17,7 @@
 
 void CylinderBody::Reset(){
 	vidRecordBins.clear();
+	radiusModifier = 1;
 	for(int i=0;i<NUMLIMBS;++i){
 		partRadii[i] = 0;
 		leftOffset[i] = 0;
@@ -264,8 +265,6 @@ void CylinderBody::calcFacings(){
 		cv::Vec3f b = (*vidRecord)[i-1].facing;
 
 		(*vidRecord)[i].facing *= cv::norm(a - b) < cv::norm(-a - b) ? 1 : -1;
-
-
 	}
 
 }

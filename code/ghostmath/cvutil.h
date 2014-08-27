@@ -68,7 +68,7 @@ cv::Mat segmentZeroTransformation(cv::Vec3f a, cv::Vec3f b, cv::Mat * inverse = 
 
 //a1 -> a2, b1 -> b2
 //4x4 transformation matrix
-cv::Mat segmentTransformation(cv::Vec3f a1, cv::Vec3f b1, cv::Vec3f a2, cv::Vec3f b2);
+cv::Mat segmentTransformation(cv::Vec3f a1, cv::Vec3f b1, cv::Vec3f a2, cv::Vec3f b2, float radiusModifier);
 
 //new cylinder facing
 //to get the actual 3d point, add it to point a

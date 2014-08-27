@@ -341,7 +341,7 @@ cv::Mat segmentZeroTransformation(cv::Vec3f cyl_a, cv::Vec3f cyl_b, cv::Mat* inv
 
 
 //stretches along axis, doesnt scale uniformly
-cv::Mat segmentTransformation(cv::Vec3f a1, cv::Vec3f b1, cv::Vec3f a2, cv::Vec3f b2){
+cv::Mat segmentTransformation(cv::Vec3f a1, cv::Vec3f b1, cv::Vec3f a2, cv::Vec3f b2, float r){
 	//transform the space:
 	cv::Vec3f axis_1 = b1 - a1;
 	cv::Vec3f axis_2 = b2 - a2;
@@ -356,7 +356,7 @@ cv::Mat segmentTransformation(cv::Vec3f a1, cv::Vec3f b1, cv::Vec3f a2, cv::Vec3
 	cv::Vec3f axis_z2 = zero.cross(axis_2);
 	float angle_z2 = acos(zero.dot(axis_2)/(cv::norm(axis_2)));
 
-	cv::Mat transformation = getTranslationMatrix(a2) * ( getRotationMatrix4(axis_z2, angle_z2) ) * getScaleMatrix(1,1,scaleRatio) * (getRotationMatrix4(axis_1z,angle_1z)) * getTranslationMatrix(-a1);
+	cv::Mat transformation = getTranslationMatrix(a2) * ( getRotationMatrix4(axis_z2, angle_z2) ) * getScaleMatrix(r,r,scaleRatio) * (getRotationMatrix4(axis_1z,angle_1z)) * getTranslationMatrix(-a1);
 
 	return transformation;
 }

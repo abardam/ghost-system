@@ -276,3 +276,71 @@ void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, std::string path){
 }
 
 
+void LoadWorldCoordinateSkeletons(std::vector<Skeleton>& wcSkeletons, std::string path){
+	TiXmlDocument xmlDoc;
+
+	if(!xmlDoc.LoadFile(path)){
+		std::cerr << "Failed to load " << path << " game file. Aborting.\n";
+		return;
+	}
+
+	TiXmlHandle doc(&xmlDoc);
+	TiXmlElement * elem;
+	TiXmlHandle root(0);
+
+	elem = doc.FirstChildElement().Element();
+	if(!elem){
+		std::cerr << "No root handle in XML file " << path << "\n";
+		return;
+	}
+
+	double fileVersion = 0.0;
+	elem->QueryDoubleAttribute("version", &fileVersion);
+
+	root = TiXmlHandle(elem);
+	
+	TiXmlHandle vidNode = root.FirstChild("Video");
+
+	if(fileVersion < 1.4)
+	{
+
+		int animNo=0, an2=-1;
+
+		char buff[10];
+		
+	
+		TiXmlHandle animationNode = root.FirstChild("Animation");
+
+		int size;
+		animationNode.ToElement()->QueryIntAttribute("size", &size);
+
+		for(TiXmlElement * elem = animationNode.FirstChild().Element(); elem != NULL;
+			elem = elem->NextSiblingElement()){
+				Skeleton skel;
+
+				++an2;
+
+				int jtNo=0;
+				for(TiXmlElement * elem2 = elem->FirstChildElement(); elem2 != NULL;
+					elem2 = elem2->NextSiblingElement()){
+
+					
+						for(int k=0;k<4;++k){
+							elem2->QueryFloatAttribute((std::string("point")+std::string(itoa(k, buff, 10))).c_str(), & skel.points.at<float>(k,jtNo));
+						}
+
+						float temp;
+						elem2->QueryFloatAttribute("state", &temp);
+
+						skel.states[jtNo] = (temp);
+
+						++jtNo;
+				}
+				wcSkeletons[animNo] = skel;
+				++animNo;
+
+		}
+	}else{
+		std::cerr << "in LoadWorldCoordinateSkeletons: fileVersion greater than 1.4; use calculateWorldCoordinateSkeletons instead!\n";
+	}
+}

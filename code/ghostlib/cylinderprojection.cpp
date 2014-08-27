@@ -648,8 +648,9 @@ PixelMap cylinderMapPixels(cv::Vec3f from_a, cv::Vec3f from_b, cv::Vec3f to_a, c
 	return PixelMap(fromPixels_2d_v, toPixels_2d_v);
 }
 
-cv::Mat cylinderFacingTransform(cv::Vec3f a1, cv::Vec3f b1, float f1, cv::Vec3f a2, cv::Vec3f b2, float f2){
+cv::Mat cylinderFacingTransform(cv::Vec3f a1, cv::Vec3f b1, float f1, cv::Vec3f a2, cv::Vec3f b2, float f2, float r){
 	
+	cv::Mat segTrans_r = segmentTransformation(a1,b1,a2,b2,r);
 	cv::Mat segTrans = segmentTransformation(a1,b1,a2,b2);
 
 	cv::Vec3f facing = cylinderFacingVector(a1,b1,f1);
@@ -663,7 +664,7 @@ cv::Mat cylinderFacingTransform(cv::Vec3f a1, cv::Vec3f b1, float f1, cv::Vec3f 
 
 	cv::Mat rtrans = getTranslationMatrix(a2) * (getRotationMatrix4(calc_axis, angle)) * getTranslationMatrix(-a2);
 
-	return rtrans * segTrans;
+	return rtrans * segTrans_r;
 }
 
 

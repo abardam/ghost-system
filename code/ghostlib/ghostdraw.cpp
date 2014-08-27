@@ -25,7 +25,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 	cv::Mat transformedOffsetPoints = transform * wcSkeletons[frame].offsetPoints;
 
-	for(int i=0;i<NUMLIMBS;++i){
+	for(int limb=0;limb<NUMLIMBS;++limb){
 
 		//int f = getLimbmap()[i].first;
 		//int s = getLimbmap()[i].second;
@@ -39,23 +39,23 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 		//a[i] = mat_to_vec3(transform * __a);
 		//b[i] = mat_to_vec3(transform * __b);
 
-		a_arr[i] = mat_to_vec3(transformedOffsetPoints.col(i*2+0));
-		b_arr[i] = mat_to_vec3(transformedOffsetPoints.col(i*2+1));
+		a_arr[limb] = mat_to_vec3(transformedOffsetPoints.col(limb*2+0));
+		b_arr[limb] = mat_to_vec3(transformedOffsetPoints.col(limb*2+1));
 
-		float radius = cylinderBody.newPartRadii_cyl[i];
+		float radius = cylinderBody.newPartRadii_cyl[limb] * cylinderBody.radiusModifier;
 
-		CroppedCvMat source = limbrary.frames[frame][i];
+		CroppedCvMat source = limbrary.frames[frame][limb];
 		Skeleton skele = vidRecord[frame].kinectPoints;
 		skele.points = transform * skele.points;
 			
-		facing[i] = tempCalcFacing(i, skele); //13 us
-		offsets[i] = source.offset;
+		facing [limb] = tempCalcFacing(limb, skele); //13 us
+		offsets[limb] = source.offset;
 
 			//fromPixels_v.clear(); //not using it
 			//std::vector<cv::Vec3f> fromPixels_v;
 			//fromPixels_v.reserve(2048);
 
-			scoreList[i] = sortFrames(skele, vidRecord, limbrary, i, texSearchDepth, true, wtType); //105.311 us
+			scoreList[limb] = sortFrames(skele, vidRecord, limbrary, limb, texSearchDepth, true, wtType); 
 
 			//fromPixels[i] = cylinder_to_pts(a[i],b[i],radius,source.offset,&fromPixels_v,&(fromPixels_2d_v)); //6000 us
 			cv::Rect p;
@@ -67,12 +67,12 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 				cv::Vec3f a,b;
 
-				if(a_arr[i](2) < b_arr[i](2)){
-					a = a_arr[i];
-					b = b_arr[i];
+				if(a_arr[limb](2) < b_arr[limb](2)){
+					a = a_arr[limb];
+					b = b_arr[limb];
 				}else{
-					a = b_arr[i];
-					b = a_arr[i];
+					a = b_arr[limb];
+					b = a_arr[limb];
 				}
 
 				//std::vector<cv::Vec3f> pts = cylinder_to_vertices(a, b, radius,8);
@@ -83,7 +83,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 				std::vector<Segment3f> pts = cylinder_to_segments(a, b, radius,8);
 				std::vector<Segment2f> pts2 = segment3f_to_2f(pts, cv::Vec2f(source.offset.x, source.offset.y));
 				if(pts2.empty()){
-					fromPixels[i] = cv::Mat(4, 0, CV_32F, cv::Scalar(1));;
+					fromPixels[limb] = cv::Mat(4, 0, CV_32F, cv::Scalar(1));;
 					break;
 				}
 				cv::Rect r = cv::boundingRect(segments_to_points(pts2));
@@ -202,7 +202,8 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 				//cv::divide(ret.row(3), ret.row(3), ret.row(3));
 
 				for(int j=0;j<ret.cols;++j){
-					fromPixels_2d_v[j+limits[i-1]](2) = ret.ptr<float>(2)[j] * FLOAT_TO_DEPTH;
+					int ind = j+(limb>0?limits[limb-1]:0);
+					fromPixels_2d_v[ind](2) = ret.ptr<float>(2)[j] * FLOAT_TO_DEPTH;
 				}
 				
 				//ret.create(4,fromPixels_v.size(),CV_32F);
@@ -217,11 +218,11 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 				//	}
 				//}
 
-				fromPixels[i] = ret;
+				fromPixels[limb] = ret;
 			}
 
 
-			limits[i] = fromPixels_2d_v.size();
+			limits[limb] = fromPixels_2d_v.size();
 	}
 
 }
@@ -307,7 +308,7 @@ void ghostdraw_parallel(int frame, cv::Mat transform, std::vector<SkeleVideoFram
 			cv::Vec3f a = mat_to_vec3(transformedOffsetPoints.col(i*2+0));
 			cv::Vec3f b = mat_to_vec3(transformedOffsetPoints.col(i*2+1));
 
-			float radius = cylinderBody.newPartRadii_cyl[i];
+			float radius = cylinderBody.newPartRadii_cyl[i] * cylinderBody.radiusModifier;
 
 			std::vector<Segment3f> segments = cylinder_to_segments(a, b, radius, 16);
 

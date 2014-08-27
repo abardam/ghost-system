@@ -403,6 +403,8 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 	std::vector<cv::Mat> transformedPixels[NUMLIMBS];
 	//std::vector<std::vector<cv::Mat>> candidateTextureTransformMatrices(NUMLIMBS);
 
+	float cylRatio = 1.f/cylinderBody->radiusModifier;
+
 	for(int i=0;i<NUMLIMBS;++i){
 		transformedPixels[i].reserve(scoreList[i].size());
 		for(auto it=scoreList[i].begin(); it!=scoreList[i].end(); ++it){
@@ -425,7 +427,7 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 			cv::Vec3f to_b = mat_to_vec3((*vidRecord)[*it].kinectPoints.offsetPoints.col(i*2+1));
 
 			//candidateTextureTransformMatrices[i].push_back(getCameraMatrix() * cylinderFacingTransform(from_a[i], from_b[i], tempCalcFacing(i, (*vidRecord)[it->first].kinectPoints), to_a, to_b, facing[i]));
-			cv::Mat transformedPixelsMat = getCameraMatrix() * cylinderFacingTransform(from_a[i], from_b[i], tempCalcFacing(i, (*vidRecord)[*it].kinectPoints), to_a, to_b, facing[i]) * fromPixels[i];
+			cv::Mat transformedPixelsMat = getCameraMatrix() * cylinderFacingTransform(from_a[i], from_b[i], tempCalcFacing(i, (*vidRecord)[*it].kinectPoints), to_a, to_b, facing[i], cylRatio) * fromPixels[i];
 
 			//predivide
 			cv::divide(transformedPixelsMat.row(0), transformedPixelsMat.row(2), transformedPixelsMat.row(0));

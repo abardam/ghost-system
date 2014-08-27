@@ -130,3 +130,4 @@ void zeroWorldCoordinateSkeletons(cv::Mat K2P, std::vector<SkeleVideoFrame> * vi
 		(*outputSkeletons)[i].points = K2P * (*outputSkeletons)[i].points;
 	}
 }
+

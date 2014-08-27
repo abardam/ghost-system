@@ -50,6 +50,10 @@ public:
 	//debug
 	cv::Mat blobs;
 
+	//modify radius based on Kinect-to-PTAMM ratio
+	float radiusModifier;
+
+	CylinderBody():radiusModifier(1){}
 
 	void calcFacings();
 	int getBestFrame(cv::Vec3f facing, int frameno, bool writeim = false);

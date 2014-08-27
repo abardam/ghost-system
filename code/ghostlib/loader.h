@@ -18,3 +18,4 @@ void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, std::string path = "vid
 
 //IMGPIXEL getColorAtPartAndPixel(int frame, int part, cv::Vec4f pixel, cv::Vec2f * pixelLoc = 0);
 
+void LoadWorldCoordinateSkeletons(std::vector<Skeleton>& wcSkeletons, std::string path);
