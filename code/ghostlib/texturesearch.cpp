@@ -25,8 +25,10 @@ cv::Mat normalizeSkeleton(cv::Mat skel){
 	//rotate s.t. head joint is directly above neck joint
 	
 	//first convert head joint into 2D by projecting onto viewplane
-	cv::Vec2f hj2(retval.at<float>(0,KINECT::getHeadJoint()) / retval.at<float>(2,KINECT::getHeadJoint()),
-		retval.at<float>(1,KINECT::getHeadJoint()) / retval.at<float>(2,KINECT::getHeadJoint()));
+	//cv::Vec2f hj2(retval.at<float>(0,KINECT::getHeadJoint()) / retval.at<float>(2,KINECT::getHeadJoint()),
+	//	retval.at<float>(1,KINECT::getHeadJoint()) / retval.at<float>(2,KINECT::getHeadJoint()));
+	cv::Vec2f hj2(retval.ptr<float>(0)[KINECT::getHeadJoint()],
+		retval.ptr<float>(1)[KINECT::getHeadJoint()]);
 	
 	//then get rotation to that vector...
 	cv::Mat rot = getRotationMatrix(hj2);
