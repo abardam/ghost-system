@@ -606,8 +606,10 @@ void drawSkeletonCylinder(cv::Mat rotmat, int frame, std::vector<SkeleVideoFrame
 			CreateDirectoryA("shit2", NULL);
 
 			//drawSkeletonOn(currentSVF.kinectPoints, toColorPic, toColorOffset);
-			char buff[10];
-			cv::imwrite("shit2/" + std::string(_itoa(bestFrame, buff, 10)) + ".png", toColorPic);
+			std::stringstream ss;
+			ss << "shit2/" << bestFrame << ".png";
+
+			cv::imwrite(ss.str(), toColorPic);
 			*gvDrawOnPic = false;
 		}
 
@@ -646,13 +648,16 @@ void drawSkeletonCylinder(cv::Mat rotmat, int frame, std::vector<SkeleVideoFrame
 
 		free(cp);
 
-		char buf[10];
-		std::string innum = std::string(_itoa(vidID,buf,10));
+		std::stringstream ss;
+		ss << "out/vid" << vidID << ".png";
 
-		cv::imwrite("out/vid"+innum+".png", glTex);
+		cv::imwrite(ss.str(), glTex);
 
-		if(*gvDrawCylinders)
-			cv::imwrite("out/best"+innum+".png", (*vidRecord)[*chosenBest].videoFrame.mat);
+		if (*gvDrawCylinders){
+			ss.clear();
+			ss << "out/best" << vidID << ".png";
+			cv::imwrite(ss.str(), (*vidRecord)[*chosenBest].videoFrame.mat);
+		}
 
 		//cv::imwrite("out/cyl"+innum+".png", cylImg);
 

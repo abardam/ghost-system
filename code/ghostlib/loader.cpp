@@ -224,8 +224,8 @@ void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, std::string path){
 
 		if(!(*vidRecord)[i].videoFrame.mat.empty())
 		{
-			sprintf(buffer, "%sframe%d.png", path.c_str(), i);
-			sprintf(buffer2, "frame%d.png", i);
+			sprintf_s(buffer, "%sframe%d.png", path.c_str(), i);
+			sprintf_s(buffer2, "frame%d.png", i);
 			cvSaveImage(buffer, &(IplImage((*vidRecord)[i].videoFrame.mat)));
 			svfNode->SetAttribute("frame", std::string(buffer2));
 			svfNode->SetAttribute("offsetX", (*vidRecord)[i].videoFrame.offset.x);
@@ -234,8 +234,8 @@ void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, std::string path){
 
 		if(!(*vidRecord)[i].depthFrame.empty())
 		{
-			sprintf(buffer, "%sframe%d_depth.yml", path.c_str(), i);
-			sprintf(buffer2, "frame%d_depth.yml", i);
+			sprintf_s(buffer, "%sframe%d_depth.yml", path.c_str(), i);
+			sprintf_s(buffer2, "frame%d_depth.yml", i);
 			cv::FileStorage fs(buffer, cv::FileStorage::WRITE);
 			fs << "depth" << (*vidRecord)[i].depthFrame;
 			fs.release();
@@ -259,8 +259,8 @@ void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, std::string path){
 
 		if(!(*vidRecord)[i].cam2World.empty())
 		{
-			sprintf(buffer, "%sframe%d_cam2world.yml", path.c_str(), i);
-			sprintf(buffer2, "frame%d_cam2world.yml", i);
+			sprintf_s(buffer, "%sframe%d_cam2world.yml", path.c_str(), i);
+			sprintf_s(buffer2, "frame%d_cam2world.yml", i);
 			cv::FileStorage fs(buffer, cv::FileStorage::WRITE);
 			fs << "cam2world" << (*vidRecord)[i].cam2World;
 			fs.release();
@@ -306,9 +306,6 @@ void LoadWorldCoordinateSkeletons(std::vector<Skeleton>& wcSkeletons, std::strin
 
 		int animNo=0, an2=-1;
 
-		char buff[10];
-		
-	
 		TiXmlHandle animationNode = root.FirstChild("Animation");
 
 		int size;
@@ -323,18 +320,20 @@ void LoadWorldCoordinateSkeletons(std::vector<Skeleton>& wcSkeletons, std::strin
 				int jtNo=0;
 				for(TiXmlElement * elem2 = elem->FirstChildElement(); elem2 != NULL;
 					elem2 = elem2->NextSiblingElement()){
+						
 
-					
-						for(int k=0;k<4;++k){
-							elem2->QueryFloatAttribute((std::string("point")+std::string(itoa(k, buff, 10))).c_str(), & skel.points.at<float>(k,jtNo));
-						}
+					for(int k=0;k<4;++k){
+						std::stringstream ss;
+						ss << "point" << k;
+						elem2->QueryFloatAttribute(ss.str().c_str(), & skel.points.at<float>(k,jtNo));
+					}
 
-						float temp;
-						elem2->QueryFloatAttribute("state", &temp);
+					float temp;
+					elem2->QueryFloatAttribute("state", &temp);
 
-						skel.states[jtNo] = (temp);
+					skel.states[jtNo] = (temp);
 
-						++jtNo;
+					++jtNo;
 				}
 				wcSkeletons[animNo] = skel;
 				++animNo;

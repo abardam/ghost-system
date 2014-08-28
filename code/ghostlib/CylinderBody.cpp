@@ -652,15 +652,18 @@ void CylinderBody::calcVidRecordBins(){
 	std::string dir = "bin";
 
 	for(int i=0;i<NUMBINS;++i){
-		char a[4];
-		std::string dir2 = dir + std::string(_itoa(i, a, 10));
+		std::stringstream ss;
+		ss << dir << i;
+		std::string dir2 = ss.str();
 
 		CreateDirectoryA(dir2.c_str(), NULL);
 
 		std::string fname = "im";
 		
 		for(int j=0;j<vidRecordBins[i].size();++j){
-			std::string fname2 = fname + std::string(_itoa(j,a,10)) + ".png";
+			ss.clear();
+			ss << fname << j << ".png";
+			std::string fname2 = ss.str();
 
 			cv::imwrite(dir2 + "/" + fname2, vidRecordBins[i][j]->videoFrame.mat);
 		}
