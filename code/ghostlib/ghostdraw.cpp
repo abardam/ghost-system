@@ -29,14 +29,14 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 	
 	//debug; delete later
-	cv::Mat b = normalizeSkeleton(skele.points);
-	cv::Mat searchShow(480, 640, CV_8UC3, cv::Scalar(255,255,255));
-	for(int joint=0;joint<NUMJOINTS;++joint){
-		b.ptr<float>(2)[joint] += 4;
-		cv::Scalar color = joint==0?cv::Scalar(0,244,0):cv::Scalar(255,0,0);
-		cv::line(searchShow, cv::Point(toScreen(b.col(joint))), cv::Point(toScreen(cv::Vec3f(0,0,4))), color);
-	}
-	cv::imshow("search show", searchShow);
+	//cv::Mat b = normalizeSkeleton(skele.points);
+	//cv::Mat searchShow(480, 640, CV_8UC3, cv::Scalar(255,255,255));
+	//for(int joint=0;joint<NUMJOINTS;++joint){
+	//	b.ptr<float>(2)[joint] += 4;
+	//	cv::Scalar color = joint==0?cv::Scalar(0,244,0):cv::Scalar(255,0,0);
+	//	cv::line(searchShow, cv::Point(toScreen(b.col(joint))), cv::Point(toScreen(cv::Vec3f(0,0,4))), color);
+	//}
+	//cv::imshow("search show", searchShow);
 
 	for(int limb=0;limb<NUMLIMBS;++limb){
 
