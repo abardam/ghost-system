@@ -198,19 +198,35 @@ bool rayCylinderClosestIntersectionPoint_c(float * origin, float * ray_, float c
 		return true;
 	}
 
-	float plus = (-b + sqrt(b*b-4*a*c))/(2*a);
-	float vplus2 =  origin[2]+plus*ray[2];
+	//put a sphere at the end:
+	float a_s = a + ray[2]*ray[2];
+	float b_s = b + 2*origin[2]*ray[2];
+	float c_s = c + origin[2]*origin[2];
 
-	if( (vplus2 <= 0 && vminus2 > 0) || (vminus2 <= 0 && vplus2 > 0)){
-		float extra = -origin[2]/ray[2];
+	if(b_s*b_s-4*a_s*c_s >= 0){
+		float sphere = (-b_s - sqrt(b_s*b_s-4*a_s*c_s))/(2*a_s);
+
+		out[0] = origin[0]+sphere*ray[0];
+		out[1] = origin[1]+sphere*ray[1];
+		out[2] = origin[2]+sphere*ray[2];
 		
-		out[0] = origin[0]+extra*ray[0];
-		out[1] = origin[1]+extra*ray[1];
-		out[2] = origin[2]+extra*ray[2];
-
 		return true;
 	}
+	
 
+
+	//float plus = (-b + sqrt(b*b-4*a*c))/(2*a);
+	//float vplus2 =  origin[2]+plus*ray[2];
+	//
+	//if( (vplus2 <= 0 && vminus2 > 0) || (vminus2 <= 0 && vplus2 > 0)){
+	//	float extra = -origin[2]/ray[2];
+	//	
+	//	out[0] = origin[0]+extra*ray[0];
+	//	out[1] = origin[1]+extra*ray[1];
+	//	out[2] = origin[2]+extra*ray[2];
+	//
+	//	return true;
+	//}
 
 	return false;
 }

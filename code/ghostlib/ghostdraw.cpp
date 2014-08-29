@@ -55,6 +55,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 		a_arr[limb] = mat_to_vec3(transformedOffsetPoints.col(limb*2+0));
 		b_arr[limb] = mat_to_vec3(transformedOffsetPoints.col(limb*2+1));
 
+
 		float radius = cylinderBody.newPartRadii_cyl[limb] * cylinderBody.radiusModifier;
 
 		CroppedCvMat source = limbrary.frames[frame][limb];
@@ -89,12 +90,14 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 					b = a_arr[limb];
 				}
 
+				cv::Vec3f a_b = cv::normalize(b-a);
+
 				//std::vector<cv::Vec3f> pts = cylinder_to_vertices(a, b, radius,8);
 				//std::vector<cv::Vec2f> pts2 = vec3f_to_2f(pts, cv::Vec2f(voff.x, voff.y));
 				//*p = polygon_contains_pixels(pts2);
 
 
-				std::vector<Segment3f> pts = cylinder_to_segments(a, b, radius,8);
+				std::vector<Segment3f> pts = cylinder_to_segments(a-radius*a_b, b+radius*a_b, radius,8);
 				std::vector<Segment2f> pts2 = segment3f_to_2f(pts, cv::Vec2f(source.offset.x, source.offset.y));
 				if(pts2.empty()){
 					fromPixels[limb] = cv::Mat(4, 0, CV_32F, cv::Scalar(1));;
