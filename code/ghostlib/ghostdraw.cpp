@@ -37,6 +37,11 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 	//	cv::line(searchShow, cv::Point(toScreen(b.col(joint))), cv::Point(toScreen(cv::Vec3f(0,0,4))), color);
 	//}
 	//cv::imshow("search show", searchShow);
+	//static int a = 0;
+	//std::stringstream ss;
+	//ss << "texsearch/texsearch" << a << ".png";
+	//cv::imwrite(ss.str(), searchShow);
+	//++a;
 
 	for(int limb=0;limb<NUMLIMBS;++limb){
 

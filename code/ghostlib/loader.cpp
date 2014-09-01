@@ -198,6 +198,7 @@ std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoF
 }
 
 void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, std::string path){
+	
 	CreateDirectoryA(path.c_str(), NULL);
 		
 	char buffer[100];

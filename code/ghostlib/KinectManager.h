@@ -6,8 +6,6 @@
 #include "definitions.h"
 #include "Skeleton.h"
 
-#include <TooN\se3.h>
-
 #define CAPTURE_SIZE_X	640
 #define CAPTURE_SIZE_Y	480
 #define FPS				60
@@ -29,7 +27,7 @@ namespace KINECT{
 	void initMapping(Mapping * mapping);
 
 #if INIT_KINECT
-	cv::Vec2f toScreen(cv::Vec3f);
+	//cv::Vec2f toScreen(cv::Vec3f);
 #endif
 
 	cv::Vec3f calculateFacing(Skeleton * s);

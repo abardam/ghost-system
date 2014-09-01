@@ -2,15 +2,13 @@
 #include <opencv2\opencv.hpp>
 #include "definitions.h"
 #include "ghostutil.h"
-
-#if !INIT_KINECT
 #include "ghostcam.h"
-#endif
+
+//#if !INIT_KINECT
+//#endif
 
 //#include "PTAM2Kinect.h"
 
-//get rid of this later
-#include <TooN\se3.h>
 
 
 #if 1

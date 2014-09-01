@@ -42,11 +42,11 @@ cv::Mat normalizeSkeleton(cv::Mat skel){
 	rot_i.copyTo(rot3.rowRange(0,2).colRange(0,2));
 	
 	//apply
-	for(int i=0;i<NUMJOINTS;++i){
-		retval.col(i) = rot3 * retval.col(i);
-	}
+	//for(int i=0;i<NUMJOINTS;++i){
+	//	retval.col(i) = rot3 * retval.col(i);
+	//}
 
-	return retval;
+	return rot3 * retval;
 }
 
 bool ScoreSort(const std::pair<int, float>& lhs, std::pair<int, float>& rhs) 
