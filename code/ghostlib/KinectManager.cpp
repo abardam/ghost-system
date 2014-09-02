@@ -11,7 +11,7 @@
 
 
 
-#if 1
+#if GHOST_CAPTURE == CAPTURE_OPENNI
 //openNI
 #include <OpenNI.h>
 #include "OpenNIStarter.h"
@@ -442,5 +442,35 @@ namespace KINECT{
 }
 
 
-#else
+#elif GHOST_CAPTURE == CAPTURE_KINECT2
+
+
+namespace KINECT{
+
+	bool doCalib(){}
+
+	bool init(){}
+
+	cv::Mat getColorFrame(){}
+
+	CroppedCvMat getPlayerColorFrame(){}
+
+	cv::Mat getDepthFrame(){}
+
+	Skeleton getSkeleton(){}
+
+	cv::Mat getUserColorFrame(){}
+
+	bool skeletonIsGood(){}
+
+	float getSkeletonGoodness(Skeleton * s){}
+
+	int getCenterJoint(){}
+
+	int getHeadJoint(){}
+
+	void initMapping(Mapping * mapping){}
+
+}
+
 #endif
