@@ -443,13 +443,19 @@ namespace KINECT{
 
 
 #elif GHOST_CAPTURE == CAPTURE_KINECT2
-
+#include "Kinect2Starter.h"
 
 namespace KINECT{
 
+	bool bInit = false;
+
 	bool doCalib(){}
 
-	bool init(){}
+	bool init(){
+		if(bInit) return true;
+		bInit = SUCCEEDED(InitializeDefaultSensor());
+		return bInit;
+	}
 
 	cv::Mat getColorFrame(){}
 

@@ -54,6 +54,11 @@ cv::Mat uncrop(CroppedCvMat);
 
 #define JOINT_CENTER_HIP 15
 
+#elif GHOST_CAPTURE == CAPTURE_KINECT2
+
+#define NUMLIMBS 11
+#define NUMJOINTS 25
+
 #endif
 
 
