@@ -389,44 +389,6 @@ namespace KINECT{
 
 		return ret/1000.;
 	}
-#if 0
-	void GridProjection(TooN::SE3<> mse3CfW, std::vector<TooN::Vector<4>> * gridpts, std::vector<TooN::Vector<4>> * gridpts2){
-		
-		gridpts->clear();
-		gridpts2->clear();
-
-		openni::DepthPixel _depthdata [640 * 480];
-
-		KINECT::getDepthData(_depthdata);
-
-		TooN::SE3<> cam2world = mse3CfW.inverse();
-		TooN::Matrix<4,4> K2P = KINECT::getPTAMfromKinect();
-
-		for(int x=64;x<WIDTH;x+=64){
-			for(int y=64;y<HEIGHT;y+=64){
-				if(_depthdata[x+y*WIDTH] == 0) continue;
-				TooN::Vector<4, float> skeletonPt = TooN::makeVector(1,1,1,1);
-
-				float dX = x;
-				float dY = HEIGHT - 1 - y;
-				float depth = _depthdata[(int)dX+(int)dY*WIDTH];
-
-				KINECT::mapDepthToSkeleton(&dX, &dY, &depth, &skeletonPt[0], &skeletonPt[1], &skeletonPt[2]);
-				skeletonPt[0] /= 1000.;
-				skeletonPt[1] /= 1000.;
-				skeletonPt[2] /= 1000.;
-
-
-				gridpts->push_back(cam2world * K2P * (skeletonPt));
-				//gridpts2->push_back(cam2world * (skeletonPt));
-				//std::cout << _depthdata[x+y*WIDTH] << ", (" << x << ", " << y << ") -> " << gridpts2->back() << std::endl;
-
-			}
-		}
-		std::cout << "Grid size: " << gridpts->size() << std::endl;
-		
-	}
-#endif
 
 	std::pair<int, int> facingHelper(int s){
 		if(s==1) //shoulders
@@ -449,7 +411,9 @@ namespace KINECT{
 
 	bool bInit = false;
 
-	bool doCalib(){}
+	bool doCalib(){
+		return false;
+	}
 
 	bool init(){
 		if(bInit) return true;
@@ -457,25 +421,52 @@ namespace KINECT{
 		return bInit;
 	}
 
-	cv::Mat getColorFrame(){}
+	cv::Mat getColorFrame(){
+		UpdateColor();
+		cv::Mat colorFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetColorRGBX()).clone();
+		cv::Mat colorFrame;
+		cv::resize(colorFrame_, colorFrame, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));
+		return colorFrame;
+	}
 
-	CroppedCvMat getPlayerColorFrame(){}
+	CroppedCvMat getPlayerColorFrame(){
+		return CroppedCvMat();
+	}
 
-	cv::Mat getDepthFrame(){}
+	cv::Mat getDepthFrame(){
+		UpdateDepth();
+		cv::Mat depthFrame_ = cv::Mat(getDepthHeight(), getDepthWidth(), CV_16U, GetDepth()).clone();
+		cv::Mat depthFrame;
+		cv::resize(depthFrame_, depthFrame, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));
+		return depthFrame;
+	}
 
-	Skeleton getSkeleton(){}
+	Skeleton getSkeleton(){
+		return Skeleton();
+	}
 
-	cv::Mat getUserColorFrame(){}
+	cv::Mat getUserColorFrame(){
+		return cv::Mat();
+	}
 
-	bool skeletonIsGood(){}
+	bool skeletonIsGood(){
+		return false;
+	}
 
-	float getSkeletonGoodness(Skeleton * s){}
+	float getSkeletonGoodness(Skeleton * s){
+		return 0;
+	}
 
-	int getCenterJoint(){}
+	int getCenterJoint(){
+		return 0;
+	}
 
-	int getHeadJoint(){}
+	int getHeadJoint(){
+		return 0;
+	}
 
-	void initMapping(Mapping * mapping){}
+	void initMapping(Mapping * mapping){
+	}
 
 }
 
