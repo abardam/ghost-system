@@ -27,6 +27,7 @@ namespace KINECT{
 	
 	//after calling this, get the depth frame with GetDepth or GetDepthRGBX or the color frame with GetColorRGBX
 	void UpdateMulti();
+	void UpdateMultiSeparately();
 
 	void ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight, USHORT nMinDepth, USHORT nMaxDepth);
 

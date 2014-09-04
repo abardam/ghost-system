@@ -46,8 +46,8 @@ namespace KINECT{
 
 	bool m_bCalculateDepthRGBX;
 
-	void UpdateColor(IColorFrame *);
-	void UpdateDepth(IDepthFrame *);
+	void UpdateColor(IColorFrame *&);
+	void UpdateDepth(IDepthFrame *&);
 
 	void InitKinect2Starter(){
 		
@@ -90,10 +90,10 @@ namespace KINECT{
 			hr = m_pKinectSensor->Open();
 
 			//get a multi reader
-			m_pKinectSensor->OpenMultiSourceFrameReader(FrameSourceTypes::FrameSourceTypes_Body|
-				FrameSourceTypes::FrameSourceTypes_Color|
-				FrameSourceTypes::FrameSourceTypes_Depth,
-				&m_pMultiSourceFrameReader);
+			//m_pKinectSensor->OpenMultiSourceFrameReader( //FrameSourceTypes::FrameSourceTypes_Body|
+			//	FrameSourceTypes::FrameSourceTypes_Color|
+			//	FrameSourceTypes::FrameSourceTypes_Depth,
+			//	&m_pMultiSourceFrameReader);
 
 			// Initialize the Kinect and get coordinate mapper and the body reader
 			IBodyFrameSource* pBodyFrameSource = NULL;
@@ -197,10 +197,24 @@ namespace KINECT{
 		}
 	}
 
-	//after calling this, get the depth fram with GetDepth or GetDepthRGBX
-	void UpdateDepth(IDepthFrame * pDepthFrame){
+	void UpdateMultiSeparately(){
+		IColorFrame * pColorFrame = NULL;
+		HRESULT hr = m_pColorFrameReader->AcquireLatestFrame(&pColorFrame);
+		if (SUCCEEDED(hr)){
+			UpdateColor(pColorFrame);
+		}
+		IDepthFrame * pDepthFrame = NULL;
+		hr = m_pDepthFrameReader->AcquireLatestFrame(&pDepthFrame);
+		if (SUCCEEDED(hr)){
+			UpdateDepth(pDepthFrame);
+		}
+	}
 
-		HRESULT hr = m_pDepthFrameReader->AcquireLatestFrame(&pDepthFrame);
+	//after calling this, get the depth fram with GetDepth or GetDepthRGBX
+	void UpdateDepth(IDepthFrame *& pDepthFrame){
+
+		//HRESULT hr = m_pDepthFrameReader->AcquireLatestFrame(&pDepthFrame);
+		HRESULT hr = S_OK;
 
 		if (SUCCEEDED(hr))
 		{
@@ -333,9 +347,10 @@ namespace KINECT{
 		}
 	}
 
-	void UpdateColor(IColorFrame* pColorFrame)
+	void UpdateColor(IColorFrame*& pColorFrame)
 	{
-		HRESULT hr = m_pColorFrameReader->AcquireLatestFrame(&pColorFrame);
+		//HRESULT hr = m_pColorFrameReader->AcquireLatestFrame(&pColorFrame);
+		HRESULT hr = S_OK;
 
 		if (SUCCEEDED(hr))
 		{

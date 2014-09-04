@@ -431,7 +431,7 @@ namespace KINECT{
 	}
 
 	void acquireFrames(){
-		UpdateMulti();
+		UpdateMultiSeparately();
 		bAcquired = true;
 	}
 
