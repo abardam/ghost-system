@@ -31,6 +31,7 @@ namespace KINECT{
 	IBodyFrameReader * m_pBodyFrameReader;
 	IColorFrameReader * m_pColorFrameReader;
 	IDepthFrameReader * m_pDepthFrameReader;
+	IMultiSourceFrameReader * m_pMultiSourceFrameReader;
 
 	INT64 m_nStartTime;
 
@@ -44,6 +45,9 @@ namespace KINECT{
 	unsigned int m_nColorHeight;
 
 	bool m_bCalculateDepthRGBX;
+
+	void UpdateColor(IColorFrame *);
+	void UpdateDepth(IDepthFrame *);
 
 	void InitKinect2Starter(){
 		
@@ -82,11 +86,17 @@ namespace KINECT{
 
 		if (m_pKinectSensor)
 		{
-			// Initialize the Kinect and get coordinate mapper and the body reader
-			IBodyFrameSource* pBodyFrameSource = NULL;
 
 			hr = m_pKinectSensor->Open();
 
+			//get a multi reader
+			m_pKinectSensor->OpenMultiSourceFrameReader(FrameSourceTypes::FrameSourceTypes_Body|
+				FrameSourceTypes::FrameSourceTypes_Color|
+				FrameSourceTypes::FrameSourceTypes_Depth,
+				&m_pMultiSourceFrameReader);
+
+			// Initialize the Kinect and get coordinate mapper and the body reader
+			IBodyFrameSource* pBodyFrameSource = NULL;
 			if (SUCCEEDED(hr))
 			{
 				hr = m_pKinectSensor->get_CoordinateMapper(&m_pCoordinateMapper);
@@ -104,7 +114,6 @@ namespace KINECT{
 
 			SafeRelease(pBodyFrameSource);
 
-			
 			// get the color reader
 			IColorFrameSource* pColorFrameSource = NULL;
 
@@ -149,15 +158,47 @@ namespace KINECT{
 		return hr;
 	}
 
-	//after calling this, get the depth fram with GetDepth or GetDepthRGBX
-	void UpdateDepth(){
-
-		if (!m_pDepthFrameReader)
-		{
+	void UpdateMulti(){
+		if(!m_pMultiSourceFrameReader){
 			return;
 		}
 
-		IDepthFrame* pDepthFrame = NULL;
+		IMultiSourceFrame * pMultiSourceFrame = NULL;
+
+		HRESULT hr = m_pMultiSourceFrameReader->AcquireLatestFrame(&pMultiSourceFrame);
+
+		if (SUCCEEDED(hr)){
+			IDepthFrameReference * pDepthFrameReference = NULL;
+			HRESULT hr = pMultiSourceFrame->get_DepthFrameReference(&pDepthFrameReference);
+
+			if(SUCCEEDED(hr)){
+
+				IDepthFrame * pDepthFrame = NULL;
+				HRESULT hr = pDepthFrameReference->AcquireFrame(&pDepthFrame);
+
+				if(SUCCEEDED(hr)){
+					UpdateDepth(pDepthFrame);
+				}
+			}
+		}
+
+		if(SUCCEEDED(hr)){
+			IColorFrameReference * pColorFrameReference = NULL;
+			HRESULT hr = pMultiSourceFrame->get_ColorFrameReference(&pColorFrameReference);
+			
+			if(SUCCEEDED(hr)){
+				IColorFrame * pColorFrame = NULL;
+				HRESULT hr = pColorFrameReference->AcquireFrame(&pColorFrame);
+
+				if(SUCCEEDED(hr)){
+					UpdateColor(pColorFrame);
+				}
+			}
+		}
+	}
+
+	//after calling this, get the depth fram with GetDepth or GetDepthRGBX
+	void UpdateDepth(IDepthFrame * pDepthFrame){
 
 		HRESULT hr = m_pDepthFrameReader->AcquireLatestFrame(&pDepthFrame);
 
@@ -292,15 +333,8 @@ namespace KINECT{
 		}
 	}
 
-	void UpdateColor()
+	void UpdateColor(IColorFrame* pColorFrame)
 	{
-		if (!m_pColorFrameReader)
-		{
-			return;
-		}
-
-		IColorFrame* pColorFrame = NULL;
-
 		HRESULT hr = m_pColorFrameReader->AcquireLatestFrame(&pColorFrame);
 
 		if (SUCCEEDED(hr))

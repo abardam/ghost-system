@@ -410,6 +410,7 @@ namespace KINECT{
 namespace KINECT{
 
 	bool bInit = false;
+	bool bAcquired = false;
 
 	bool doCalib(){
 		return false;
@@ -429,8 +430,16 @@ namespace KINECT{
 		return true;
 	}
 
+	void acquireFrames(){
+		UpdateMulti();
+		bAcquired = true;
+	}
+
 	cv::Mat getColorFrame(){
-		UpdateColor();
+		if(!bAcquired){
+			std::cerr << "acquireFrames first!\n";
+			throw;
+		}
 		if (getColorHeight() == 0 || getColorWidth() == 0) return cv::Mat();
 		cv::Mat colorFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetColorRGBX()).clone();
 		cv::Mat colorFrame;
@@ -443,7 +452,10 @@ namespace KINECT{
 	}
 
 	cv::Mat getDepthFrame(){
-		UpdateDepth();
+		if(!bAcquired){
+			std::cerr << "acquireFrames first!\n";
+			throw;
+		}
 		if (getDepthHeight() == 0 || getDepthWidth() == 0) return cv::Mat();
 		cv::Mat depthFrame_ = cv::Mat(getDepthHeight(), getDepthWidth(), CV_16U, GetDepth()).clone();
 		cv::Mat depthFrame;

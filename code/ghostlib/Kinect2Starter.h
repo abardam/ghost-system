@@ -25,14 +25,12 @@ namespace KINECT{
 
 	HRESULT InitializeDefaultSensor();
 	
-	//after calling this, get the depth fram with GetDepth or GetDepthRGBX
-	void UpdateDepth();
+	//after calling this, get the depth frame with GetDepth or GetDepthRGBX or the color frame with GetColorRGBX
+	void UpdateMulti();
 
 	void ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight, USHORT nMinDepth, USHORT nMaxDepth);
 
 	void ProcessDepthNoRGBX(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight, USHORT nMinDepth, USHORT nMaxDepth);
-
-	void UpdateColor();
 
 	void ProcessColor(INT64 nTime, RGBQUAD* pBuffer, int nWidth, int nHeight);
 	
