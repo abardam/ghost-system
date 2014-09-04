@@ -418,11 +418,20 @@ namespace KINECT{
 	bool init(){
 		if(bInit) return true;
 		bInit = SUCCEEDED(InitializeDefaultSensor());
+		if (bInit){
+			InitKinect2Starter();
+		}
 		return bInit;
+	}
+
+	bool release(){
+		DestroyKinect2Starter();
+		return true;
 	}
 
 	cv::Mat getColorFrame(){
 		UpdateColor();
+		if (getColorHeight() == 0 || getColorWidth() == 0) return cv::Mat();
 		cv::Mat colorFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetColorRGBX()).clone();
 		cv::Mat colorFrame;
 		cv::resize(colorFrame_, colorFrame, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));
@@ -435,6 +444,7 @@ namespace KINECT{
 
 	cv::Mat getDepthFrame(){
 		UpdateDepth();
+		if (getDepthHeight() == 0 || getDepthWidth() == 0) return cv::Mat();
 		cv::Mat depthFrame_ = cv::Mat(getDepthHeight(), getDepthWidth(), CV_16U, GetDepth()).clone();
 		cv::Mat depthFrame;
 		cv::resize(depthFrame_, depthFrame, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));

@@ -3,6 +3,27 @@
 #include <Kinect.h>
 #include <iostream>
 
+void DumpHR(HRESULT hr)
+{
+	//
+	//if (hr < 0)
+	//	hr += 0x100000000;
+	//if (hr & 0x80000000)
+	//	std::cout << ("Error code") << std::endl;
+	//else
+	//	std::cout << ("Success code") << std::endl;
+	//
+	//auto facility = (hr & 0x7FFF0000) >> 16;
+	//
+	//std::cout << "Facility " << facility << std::endl;
+	//
+	//auto scode = hr & 0x0000FFFF;
+	//
+	//std::cout << "SCode " << scode << std::endl;
+
+}
+
+
 namespace KINECT{
 
 	IKinectSensor * m_pKinectSensor;
@@ -17,18 +38,18 @@ namespace KINECT{
 	USHORT * m_pDepth;
     RGBQUAD * m_pColorRGBX;
 
-	UINT8 m_nDepthWidth;
-	UINT8 m_nDepthHeight;
-	UINT8 m_nColorWidth;
-	UINT8 m_nColorHeight;
+	unsigned int m_nDepthWidth;
+	unsigned int m_nDepthHeight;
+	unsigned int m_nColorWidth;
+	unsigned int m_nColorHeight;
 
 	bool m_bCalculateDepthRGBX;
 
 	void InitKinect2Starter(){
 		
-		m_pDepthRGBX = new RGBQUAD[CAPTURE_SIZE_X * CAPTURE_SIZE_Y];
-		m_pDepth = new USHORT[CAPTURE_SIZE_X * CAPTURE_SIZE_Y];
-		m_pColorRGBX = new RGBQUAD[CAPTURE_SIZE_X * CAPTURE_SIZE_Y];
+		m_pDepthRGBX = new RGBQUAD[CAPTURE_SIZE_X_DEPTH * CAPTURE_SIZE_Y_DEPTH];
+		m_pDepth = new USHORT[CAPTURE_SIZE_X_DEPTH * CAPTURE_SIZE_Y_DEPTH];
+		m_pColorRGBX = new RGBQUAD[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
 
 		m_nStartTime = 0;
 		m_bCalculateDepthRGBX = false;
@@ -165,11 +186,13 @@ namespace KINECT{
 
 			if (SUCCEEDED(hr))
 			{
+				m_nDepthWidth = nWidth;
 				hr = pFrameDescription->get_Height(&nHeight);
 			}
 
 			if (SUCCEEDED(hr))
 			{
+				m_nDepthHeight = nHeight;
 				hr = pDepthFrame->get_DepthMinReliableDistance(&nDepthMinReliableDistance);
 			}
 
@@ -192,6 +215,9 @@ namespace KINECT{
 			}
 
 			SafeRelease(pFrameDescription);
+		}
+		else{
+			DumpHR(hr);
 		}
 
 		SafeRelease(pDepthFrame);
@@ -301,11 +327,13 @@ namespace KINECT{
 
 			if (SUCCEEDED(hr))
 			{
+				m_nColorWidth = nWidth;
 				hr = pFrameDescription->get_Height(&nHeight);
 			}
 
 			if (SUCCEEDED(hr))
 			{
+				m_nColorHeight = nHeight;
 				hr = pColorFrame->get_RawColorImageFormat(&imageFormat);
 			}
 
@@ -333,6 +361,9 @@ namespace KINECT{
 			}
 
 			SafeRelease(pFrameDescription);
+		}
+		else{
+			DumpHR(hr);
 		}
 
 		SafeRelease(pColorFrame);
@@ -377,19 +408,19 @@ namespace KINECT{
 		return m_pColorRGBX;
 	}
 
-	UINT8 getDepthWidth(){
+	unsigned int getDepthWidth(){
 		return m_nDepthWidth;
 	}
 
-	UINT8 getDepthHeight(){
+	unsigned int getDepthHeight(){
 		return m_nDepthHeight;
 	}
 
-	UINT8 getColorWidth(){
+	unsigned int getColorWidth(){
 		return m_nColorWidth;
 	}
 
-	UINT8 getColorHeight(){
+	unsigned int getColorHeight(){
 		return m_nColorHeight;
 	}
 }

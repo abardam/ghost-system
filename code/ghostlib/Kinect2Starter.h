@@ -13,6 +13,11 @@ inline void SafeRelease(Interface *& pInterfaceToRelease)
 	}
 }
 
+#define CAPTURE_SIZE_X_COLOR 1920
+#define CAPTURE_SIZE_Y_COLOR 1080
+#define CAPTURE_SIZE_X_DEPTH 512
+#define CAPTURE_SIZE_Y_DEPTH 424
+
 namespace KINECT{
 	void InitKinect2Starter();
 
@@ -37,11 +42,8 @@ namespace KINECT{
 
 	RGBQUAD * GetColorRGBX();
 
-	UINT8 getDepthWidth();
-
-	UINT8 getDepthHeight();
-
-	UINT8 getColorWidth();
-
-	UINT8 getColorHeight();
+	unsigned int getDepthWidth();
+	unsigned int getDepthHeight();
+	unsigned int getColorWidth();
+	unsigned int getColorHeight();
 }

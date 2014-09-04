@@ -14,6 +14,7 @@ namespace KINECT{
 
 	bool doCalib();
 	bool init();
+	bool release();
 	cv::Mat getColorFrame();
 	CroppedCvMat getPlayerColorFrame();
 	cv::Mat getDepthFrame();
