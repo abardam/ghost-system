@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Windows.h>
+#include <Kinect.h>
 
 // Safe release for interfaces
 template<class Interface>
@@ -31,6 +32,8 @@ namespace KINECT{
 	void ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight, USHORT nMinDepth, USHORT nMaxDepth);
 
 	void ProcessDepthNoRGBX(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight, USHORT nMinDepth, USHORT nMaxDepth);
+
+	void ProcessDepthToColor(const UINT16 * pDepthBuffer, int nDepthWidth, int nDepthHeight, const ColorSpacePoint * pDepthColorMap, int nColorWidth, int nColorHeight);
 
 	void UpdateColor();
 
