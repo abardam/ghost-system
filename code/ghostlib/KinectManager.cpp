@@ -432,7 +432,7 @@ namespace KINECT{
 	cv::Mat getColorFrame(){
 		UpdateColor();
 		if (getColorHeight() == 0 || getColorWidth() == 0) return cv::Mat();
-		cv::Mat colorFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetColorRGBX()).clone();
+		cv::Mat colorFrame_ = cv::Mat(getDepthHeight(), getDepthWidth(), CV_8UC4, GetColorMappedToDepth()).clone();
 		cv::Mat colorFrame;
 		cv::resize(colorFrame_, colorFrame, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));
 		return colorFrame;
