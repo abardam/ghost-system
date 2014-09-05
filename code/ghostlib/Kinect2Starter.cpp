@@ -40,6 +40,8 @@ namespace KINECT{
 	DepthSpacePoint * m_pColorDepthMap;
 	USHORT * m_pDepthMappedToColor;
 
+	Joint * m_pJoints;
+
 	unsigned int m_nDepthWidth;
 	unsigned int m_nDepthHeight;
 	unsigned int m_nColorWidth;
@@ -47,6 +49,7 @@ namespace KINECT{
 
 	bool m_bCalculateDepthRGBX;
 	bool m_bMapDepthToColor;
+	bool m_bSkeletonIsGood;
 
 	void InitKinect2Starter(){
 		
@@ -55,10 +58,13 @@ namespace KINECT{
 		m_pColorRGBX = new RGBQUAD[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
 		m_pColorDepthMap = new DepthSpacePoint[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
 		m_pDepthMappedToColor = new USHORT[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
+		m_pJoints = new Joint[JointType_Count];
+
 
 		m_nStartTime = 0;
 		m_bCalculateDepthRGBX = false;
 		m_bMapDepthToColor = true;
+		m_bSkeletonIsGood = false;
 	}
 
 	void DestroyKinect2Starter(){
@@ -79,6 +85,9 @@ namespace KINECT{
 		}
 		if(m_pDepthMappedToColor){
 			delete[] m_pDepthMappedToColor;
+		}
+		if(m_pJoints){
+			delete [] m_pJoints;
 		}
 	}
 
@@ -437,6 +446,87 @@ namespace KINECT{
 			}
 		}
 	}
+
+	
+	void UpdateBody()
+	{
+		if (!m_pBodyFrameReader)
+		{
+			return;
+		}
+
+		IBodyFrame* pBodyFrame = NULL;
+
+		HRESULT hr = m_pBodyFrameReader->AcquireLatestFrame(&pBodyFrame);
+
+		if (SUCCEEDED(hr))
+		{
+			INT64 nTime = 0;
+
+			hr = pBodyFrame->get_RelativeTime(&nTime);
+
+			IBody* ppBodies[BODY_COUNT] = {0};
+
+			if (SUCCEEDED(hr))
+			{
+				hr = pBodyFrame->GetAndRefreshBodyData(_countof(ppBodies), ppBodies);
+			}
+
+			if (SUCCEEDED(hr))
+			{
+				ProcessBody(nTime, _countof(ppBodies), ppBodies);
+			}
+
+			for (int i = 0; i < _countof(ppBodies); ++i)
+			{
+				SafeRelease(ppBodies[i]);
+			}
+		}
+
+		SafeRelease(pBodyFrame);
+	}
+
+	void ProcessBody(unsigned int nTime, unsigned int nBodyCount, IBody * ppBodies[6]){
+		int bestBody = -1;
+		float bestScore = 0;
+		
+		float trackingStateTable[3];
+		trackingStateTable[TrackingState_Inferred] = 0.5;
+		trackingStateTable[TrackingState_NotTracked] = 0;
+		trackingStateTable[TrackingState_Tracked] = 1;
+
+		for(int i=0;i<nBodyCount;++i){
+			IBody * body = ppBodies[i];
+			
+			BOOLEAN bodyTracked;
+			HRESULT hr = body->get_IsTracked(&bodyTracked);
+
+			if(!SUCCEEDED(hr) || !bodyTracked) continue;
+
+			Joint joints[JointType_Count];
+			hr = body->GetJoints(JointType_Count, joints);
+
+			if(!SUCCEEDED(hr)) continue;
+
+			float score=0;
+			for(int j=0;j<JointType_Count;++j){
+				score += trackingStateTable[joints[j].TrackingState];
+			}
+
+			if(score > bestScore){
+				bestScore = score;
+				bestBody = i;
+			}
+		}
+
+		HRESULT hr = ppBodies[bestBody]->GetJoints(JointType_Count, m_pJoints);
+
+		if(!SUCCEEDED(hr)){
+			std::cerr << "Error saving joints\n";
+		}else{
+			m_bSkeletonIsGood = true;
+		}
+	}
 	
 
 	RGBQUAD * GetDepthRGBX(){
@@ -453,6 +543,10 @@ namespace KINECT{
 
 	USHORT * GetDepthMappedToColor(){
 		return m_pDepthMappedToColor;
+	}
+
+	Joint * GetJoints(){
+		return m_pJoints;
 	}
 
 	unsigned int getDepthWidth(){

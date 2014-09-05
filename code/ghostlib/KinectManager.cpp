@@ -410,6 +410,7 @@ namespace KINECT{
 namespace KINECT{
 
 	bool bInit = false;
+	bool bSkeletonIsGood = false;
 
 	bool doCalib(){
 		return false;
@@ -458,14 +459,10 @@ namespace KINECT{
 	Skeleton getSkeleton(){
 
 		Skeleton skeleton;
-		IBody * body;
-		//get body from kinect;
 
+		UpdateBody();
 
-		Joint joints[NUMJOINTS];
-		HRESULT hr = body->GetJoints(NUMJOINTS, joints);
-
-		if(!SUCCEEDED(hr)) return skeleton;
+		Joint * joints = GetJoints();
 
 		float trackingStateTable[3];
 		trackingStateTable[TrackingState_Inferred] = 0.5;
@@ -482,7 +479,7 @@ namespace KINECT{
 			skeleton.states[joint.JointType] = trackingStateTable[joint.TrackingState];
 		}
 
-		return Skeleton();
+		return skeleton;
 	}
 
 	cv::Mat getUserColorFrame(){
@@ -490,7 +487,7 @@ namespace KINECT{
 	}
 
 	bool skeletonIsGood(){
-		return false;
+		return getSkeletonIsGood();
 	}
 
 	float getSkeletonGoodness(Skeleton * s){

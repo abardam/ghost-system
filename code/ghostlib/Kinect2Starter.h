@@ -38,17 +38,20 @@ namespace KINECT{
 	void UpdateColor();
 
 	void ProcessColor(INT64 nTime, RGBQUAD* pBuffer, int nWidth, int nHeight);
+
+	void UpdateBody();
+
+	void ProcessBody(unsigned int nTime, unsigned int nBodyCount, IBody * ppBodies[6]);
 	
 	RGBQUAD * GetDepthRGBX();
-
 	USHORT * GetDepth();
-
 	RGBQUAD * GetColorRGBX();
-
 	USHORT * GetDepthMappedToColor();
+	Joint * GetJoints();
 
 	unsigned int getDepthWidth();
 	unsigned int getDepthHeight();
 	unsigned int getColorWidth();
 	unsigned int getColorHeight();
+	bool getSkeletonIsGood();
 }
