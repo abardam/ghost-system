@@ -37,8 +37,8 @@ namespace KINECT{
     RGBQUAD * m_pDepthRGBX;
 	USHORT * m_pDepth;
     RGBQUAD * m_pColorRGBX;
-	ColorSpacePoint * m_pDepthColorMap;
-	USHORT * m_pDepthMappedToColor;
+	DepthSpacePoint * m_pColorDepthMap;
+	RGBQUAD * m_pColorMappedToDepth;
 
 	unsigned int m_nDepthWidth;
 	unsigned int m_nDepthHeight;
@@ -53,8 +53,8 @@ namespace KINECT{
 		m_pDepthRGBX = new RGBQUAD[CAPTURE_SIZE_X_DEPTH * CAPTURE_SIZE_Y_DEPTH];
 		m_pDepth = new USHORT[CAPTURE_SIZE_X_DEPTH * CAPTURE_SIZE_Y_DEPTH];
 		m_pColorRGBX = new RGBQUAD[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
-		m_pDepthColorMap = new ColorSpacePoint[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
-		m_pDepthMappedToColor = new USHORT[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
+		m_pColorDepthMap = new DepthSpacePoint[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
+		m_pColorMappedToDepth = new RGBQUAD[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
 
 		m_nStartTime = 0;
 		m_bCalculateDepthRGBX = false;
@@ -74,11 +74,11 @@ namespace KINECT{
 			delete [] m_pColorRGBX;
 			m_pColorRGBX = NULL;
 		}
-		if(m_pDepthColorMap){
-			delete [] m_pDepthColorMap;
+		if(m_pColorDepthMap){
+			delete [] m_pColorDepthMap;
 		}
-		if(m_pDepthMappedToColor){
-			delete [] m_pDepthMappedToColor;
+		if(m_pColorMappedToDepth){
+			delete[] m_pColorMappedToDepth;
 		}
 	}
 
@@ -221,8 +221,11 @@ namespace KINECT{
 			if (SUCCEEDED(hr))
 			{
 				if(m_bMapDepthToColor && m_nColorWidth > 0 && m_nColorHeight > 0){
-					m_pCoordinateMapper->MapDepthFrameToColorSpace(m_nDepthWidth*m_nDepthHeight, pBuffer, m_nColorWidth * m_nColorHeight, m_pDepthColorMap);
-					ProcessDepthToColor(pBuffer, m_nDepthWidth, m_nDepthHeight, m_pDepthColorMap, m_nColorWidth, m_nColorHeight);
+					hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(m_nDepthWidth*m_nDepthHeight, pBuffer, m_nDepthWidth*m_nDepthHeight, m_pColorDepthMap);
+					
+					if (SUCCEEDED(hr)){
+						ProcessColorToDepth(pBuffer, m_nDepthWidth, m_nDepthHeight, m_pColorDepthMap);
+					}
 				}
 				else{
 					if(m_bCalculateDepthRGBX)
@@ -310,7 +313,7 @@ namespace KINECT{
 		}
 	}
 
-	void ProcessDepthToColor(const UINT16 * pDepthBuffer, int nDepthWidth, int nDepthHeight, const ColorSpacePoint * pDepthColorMap, int nColorWidth, int nColorHeight){
+	void ProcessColorToDepth(const UINT16 * pDepthBuffer, int nDepthWidth, int nDepthHeight, const DepthSpacePoint * pDepthColorMap){
 		int colorSize = nColorWidth * nColorHeight;
 
 		if(pDepthBuffer && pDepthColorMap){
