@@ -564,4 +564,8 @@ namespace KINECT{
 	unsigned int getColorHeight(){
 		return m_nColorHeight;
 	}
+
+	bool getSkeletonIsGood(){
+		return m_bSkeletonIsGood;
+	}
 }

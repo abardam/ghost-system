@@ -6,8 +6,13 @@
 #include "definitions.h"
 #include "Skeleton.h"
 
+#if GHOST_CAPTURE == CAPTURE_KINECT2
+#define CAPTURE_SIZE_X 640
+#define CAPTURE_SIZE_Y 360
+#else
 #define CAPTURE_SIZE_X	640
 #define CAPTURE_SIZE_Y	480
+#endif
 #define FPS				60
 
 namespace KINECT{
