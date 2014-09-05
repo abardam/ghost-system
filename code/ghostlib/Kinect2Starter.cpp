@@ -226,7 +226,7 @@ namespace KINECT{
 				else
 					ProcessDepthNoRGBX(nTime, pBuffer, nWidth, nHeight, nDepthMinReliableDistance, nDepthMaxReliableDistance);
 
-				if(m_bMapDepthToColor && m_nDepthWidth > 0 && m_nDepthHeight > 0){
+				if(m_bMapDepthToColor && m_nColorWidth > 0 && m_nColorHeight > 0){
 
 					hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(m_nDepthWidth*m_nDepthHeight, m_pDepth, m_nColorWidth*m_nColorHeight, m_pColorDepthMap);
 					

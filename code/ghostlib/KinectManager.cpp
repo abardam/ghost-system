@@ -433,9 +433,11 @@ namespace KINECT{
 		UpdateColor();
 		if (getColorHeight() == 0 || getColorWidth() == 0) return cv::Mat();
 		cv::Mat colorFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetColorRGBX()).clone();
-		cv::Mat colorFrame;
-		cv::resize(colorFrame_, colorFrame, cv::Size(getColorWidth(), getColorHeight()));
-		return colorFrame;
+		//cv::Mat colorFrame;
+		//cv::resize(colorFrame_, colorFrame, cv::Size(getColorWidth(), getColorHeight()));
+		//return colorFrame;
+
+		return colorFrame_;
 	}
 
 	CroppedCvMat getPlayerColorFrame(){
@@ -444,11 +446,13 @@ namespace KINECT{
 
 	cv::Mat getDepthFrame(){
 		UpdateDepth();
-		if (getDepthHeight() == 0 || getDepthWidth() == 0) return cv::Mat();
+		if (getDepthHeight() == 0 || getDepthWidth() == 0 || getColorHeight() == 0 || getColorWidth() == 0) return cv::Mat();
 		cv::Mat depthFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_16U, GetDepthMappedToColor()).clone();
-		cv::Mat depthFrame;
-		cv::resize(depthFrame_, depthFrame, cv::Size(getColorWidth(), getColorHeight()));
-		return depthFrame;
+		//cv::Mat depthFrame;
+		//cv::resize(depthFrame_, depthFrame, cv::Size(getColorWidth(), getColorHeight()));
+		//return depthFrame;
+
+		return depthFrame_;
 	}
 
 	Skeleton getSkeleton(){
