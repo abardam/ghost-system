@@ -10,8 +10,8 @@
 #include <GL\glew.h>
 
 
-#define WIDTH 640
-#define HEIGHT 480
+//#define WIDTH 640
+//#define HEIGHT 480
 #define ON_TABLET 0
 
 using TooN::Vector;

@@ -65,6 +65,8 @@ namespace KINECT{
 		CroppedCvMat ccm;
 		
 		ccm.offset = cv::Point2d(offsetX, offsetY);
+		ccm.origWidth = CAPTURE_SIZE_X;
+		ccm.origHeight = CAPTURE_SIZE_Y;
 		cv::Mat temp = cv::Mat(CAPTURE_SIZE_Y, CAPTURE_SIZE_X, cv::DataType<cv::Vec3b>::type, buffer).clone();
 
 		if(offsetX < maxX && offsetY < maxY)

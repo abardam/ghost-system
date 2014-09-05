@@ -11,8 +11,8 @@
 
 typedef std::pair<std::vector<cv::Vec3s>,std::vector<cv::Scalar>> PixelColorMap;
 
-PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float radius, int limbid, float facing, ScoreList scoreList, cv::Point voff, 
-									 std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cylinderBody, Limbrary * limbrary, int blendMode);
+//PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float radius, int limbid, float facing, ScoreList scoreList, cv::Point voff, 
+//									 std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cylinderBody, Limbrary * limbrary, int blendMode);
 
 void cylinderMapPixelsColor_parallel(	cv::Vec3f from_a[NUMLIMBS], 
 										cv::Vec3f from_b[NUMLIMBS], 
@@ -28,21 +28,22 @@ void cylinderMapPixelsColor_parallel(	cv::Vec3f from_a[NUMLIMBS],
 										//PixelColorMap from_color[NUMLIMBS])
 										cv::Mat draw);
 
-void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS], 
-										cv::Vec3f from_b[NUMLIMBS], 
-										float facing[NUMLIMBS], 
-										ScoreList scoreList[NUMLIMBS],
-										cv::Point voff[NUMLIMBS], 
-										std::vector<SkeleVideoFrame> * vidRecord, 
-										CylinderBody * cylinderBody, 
-										Limbrary * limbrary, 
-										int blendMode,
-										cv::Mat fromPixels[NUMLIMBS],
-										std::vector<cv::Vec3s>& fromPixels_2d_v,
-										int limits[NUMLIMBS],
-										//PixelColorMap from_color[NUMLIMBS])
-										cv::Mat& draw,
-										cv::Mat& zBuf);
+void cylinderMapPixelsColor_parallel_orig(
+	cv::Vec3f from_a[NUMLIMBS], 
+	cv::Vec3f from_b[NUMLIMBS], 
+	float facing[NUMLIMBS], 
+	ScoreList scoreList[NUMLIMBS],
+	cv::Point voff[NUMLIMBS], 
+	std::vector<SkeleVideoFrame> * vidRecord, 
+	CylinderBody * cylinderBody, 
+	Limbrary * limbrary, 
+	int blendMode,
+	cv::Mat fromPixels[NUMLIMBS],
+	std::vector<cv::Vec3s>& fromPixels_2d_v,
+	int limits[NUMLIMBS],
+	//PixelColorMap from_color[NUMLIMBS])
+	cv::Mat& draw,
+	cv::Mat& zBuf);
 
 
 #define CP_OVER 1 //pixel not inside limb image

@@ -39,7 +39,13 @@ typedef cv::Vec<unsigned char, IMAGE_CHANNELS> IMGPIXEL;
 struct CroppedCvMat{
 	cv::Mat mat;
 	cv::Point2i offset;
-	CroppedCvMat():offset(0,0){}
+	int origWidth;
+	int origHeight;
+
+	CroppedCvMat():
+		offset(0,0),
+		origWidth(0),
+		origHeight(0){}
 
 	void clear();
 };

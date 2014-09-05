@@ -168,6 +168,8 @@ std::vector<BodyPartParam> rectFitting(Skeleton skeletonPositions, CroppedCvMat 
 
 //experimental
 cv::Mat expGetCameraMatrix(){
+
+#if GHOST_CAPTURE == CAPTURE_OPENNI
 	float param[] = { 0.811468, 1.08224, 0.507597, 0.516744, -0.0212909}; //from camera.cfg
 
 	cv::Mat cameraMatrix;
@@ -182,6 +184,24 @@ cv::Mat expGetCameraMatrix(){
 	cameraMatrix.at<float>(1,2) = - (param[3] * HEIGHT - 0.5) + HEIGHT + 5;		  //the +/- 5 is hardcoded to make it closer to the actual toScreen
 	cameraMatrix.at<float>(2,2) = 1;
 	return cameraMatrix;
+#elif GHOST_CAPTURE == CAPTURE_KINECT2
+	
+	float param[] = { 0.811468, 1.08224, 0.507597, 0.516744, -0.0212909}; //from camera.cfg
+	throw; //NOTE FIX THE PARAMS
+
+	cv::Mat cameraMatrix;
+	cameraMatrix = cv::Mat(4,4,cv::DataType<float>::type,cv::Scalar(0));
+
+	const int WIDTH = 1920;
+	const int HEIGHT = 1080;
+
+	cameraMatrix.at<float>(0,0) = param[0] * WIDTH;
+	cameraMatrix.at<float>(1,1) = - param[1] * HEIGHT;
+	cameraMatrix.at<float>(0,2) = param[2] * WIDTH - 0.5 - 5; 					  //the +/- 5 is hardcoded to make it closer to the actual toScreen
+	cameraMatrix.at<float>(1,2) = - (param[3] * HEIGHT - 0.5) + HEIGHT + 5;		  //the +/- 5 is hardcoded to make it closer to the actual toScreen
+	cameraMatrix.at<float>(2,2) = 1;
+	return cameraMatrix;
+#endif
 }
 
 cv::Vec2f _toScreen(cv::Vec3f v){

@@ -12,7 +12,7 @@ cv::Scalar white(int channels){
 }
 
 cv::Mat uncrop(CroppedCvMat ccm){
-	cv::Mat u(CAPTURE_SIZE_Y, CAPTURE_SIZE_X, ccm.mat.type(), white(ccm.mat.channels()));
+	cv::Mat u(ccm.origHeight, ccm.origWidth, ccm.mat.type(), white(ccm.mat.channels()));
 	cv::Mat tmp = u(cv::Rect(ccm.offset.x, ccm.offset.y, ccm.mat.cols, ccm.mat.rows));
 	ccm.mat.copyTo(tmp);
 	return u;

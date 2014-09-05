@@ -91,6 +91,13 @@ std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoF
 
 				temp.videoFrame.offset.x = ox;
 				temp.videoFrame.offset.y = oy;
+
+				int ow=CAPTURE_SIZE_X, oh=CAPTURE_SIZE_Y;
+				if(elem->Attribute("originalWidth") != NULL)  elem->QueryIntAttribute("originalWidth", &ow);
+				if(elem->Attribute("originalHeight") != NULL) elem->QueryIntAttribute("originalHeight", &oh);
+
+				temp.videoFrame.origWidth = ow;
+				temp.videoFrame.origHeight = oh;
 			}
 
 			if(elem->Attribute("framedepth") != NULL)
@@ -231,6 +238,8 @@ void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, std::string path){
 			svfNode->SetAttribute("frame", std::string(buffer2));
 			svfNode->SetAttribute("offsetX", (*vidRecord)[i].videoFrame.offset.x);
 			svfNode->SetAttribute("offsetY", (*vidRecord)[i].videoFrame.offset.y);
+			svfNode->SetAttribute("originalWidth", (*vidRecord)[i].videoFrame.origWidth);
+			svfNode->SetAttribute("originalHeight", (*vidRecord)[i].videoFrame.origHeight);
 		}
 
 		if(!(*vidRecord)[i].depthFrame.empty())

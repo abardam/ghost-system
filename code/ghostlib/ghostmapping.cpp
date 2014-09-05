@@ -8,6 +8,8 @@
 //used for facingHelper
 #include "KinectManager.h"
 
+#if 0
+//old function
 //TODO: fix this shitty argument list
 PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float radius, int limbid, float facing, ScoreList scoreList, cv::Point voff, 
 									 std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cylinderBody, Limbrary * limbrary, int blendMode){
@@ -161,6 +163,7 @@ PixelColorMap cylinderMapPixelsColor(cv::Vec3f from_a, cv::Vec3f from_b, float r
 
 	return PixelColorMap(fromPixels_2d_v, pixelColors);
 }
+#endif
 
 #if 0
 
@@ -339,21 +342,22 @@ void cylinderMapPixelsColor_parallel(	cv::Vec3f from_a[NUMLIMBS],
 
 #else if 1
 //TODO: fix this shitty argument list
-void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS], 
-										cv::Vec3f from_b[NUMLIMBS], 
-										float facing[NUMLIMBS], 
-										ScoreList scoreListRaw[NUMLIMBS],
-										cv::Point voff[NUMLIMBS], 
-										std::vector<SkeleVideoFrame> * vidRecord, 
-										CylinderBody * cylinderBody, 
-										Limbrary * limbrary, 
-										int blendMode,
-										cv::Mat fromPixels[NUMLIMBS],
-										std::vector<cv::Vec3s>& fromPixels_2d_v,
-										int limits[NUMLIMBS],
-										//PixelColorMap from_color[NUMLIMBS])
-										cv::Mat& draw,
-										cv::Mat& zBuf)
+void cylinderMapPixelsColor_parallel_orig(
+		cv::Vec3f from_a[NUMLIMBS], 
+		cv::Vec3f from_b[NUMLIMBS], 
+		float facing[NUMLIMBS], 
+		ScoreList scoreListRaw[NUMLIMBS],
+		cv::Point voff[NUMLIMBS], 
+		std::vector<SkeleVideoFrame> * vidRecord, 
+		CylinderBody * cylinderBody, 
+		Limbrary * limbrary, 
+		int blendMode,
+		cv::Mat fromPixels[NUMLIMBS],
+		std::vector<cv::Vec3s>& fromPixels_2d_v,
+		int limits[NUMLIMBS],
+		//PixelColorMap from_color[NUMLIMBS])
+		cv::Mat& draw,
+		cv::Mat& zBuf)
 {
 	
 	//check draw format
@@ -361,6 +365,9 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 		std::cerr << "draw channels is not 4!\n";
 		throw;
 	}
+
+	unsigned int imgWidth = draw.cols;
+	unsigned int imgHeight = draw.rows;
 
 	//convert from list to vector
 	std::vector<int> scoreList[NUMLIMBS];
@@ -395,8 +402,8 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 	std::vector<bool> erasevector(fromsize, false);
 	std::vector<cv::Scalar> pixelColors(fromsize);
 
-	zBuf.create(HEIGHT, WIDTH, CV_16U);
-	for(int i=0;i<HEIGHT*WIDTH;++i){
+	zBuf.create(imgHeight, imgWidth, CV_16U);
+	for(int i=0;i<imgHeight*imgWidth;++i){
 		zBuf.ptr<unsigned short>()[i] = MAXDEPTH;
 	}
 
@@ -515,8 +522,8 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 #pragma omp barrier
 
 		int tnum = omp_get_thread_num();
-		colorMatrices[tnum] = cv::Mat(HEIGHT,WIDTH,CV_8UC4,cv::Scalar(255,255,255,0));
-		depthMatrices[tnum] = cv::Mat(HEIGHT, WIDTH, CV_16U, cv::Scalar(MAXDEPTH));
+		colorMatrices[tnum] = cv::Mat(imgHeight, imgWidth,CV_8UC4,cv::Scalar(255,255,255,0));
+		depthMatrices[tnum] = cv::Mat(imgHeight, imgWidth, CV_16U, cv::Scalar(MAXDEPTH));
 		
 		limbid = 0;
 
@@ -638,7 +645,7 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 						}
 					}
 #endif
-					if(CLAMP_SIZE(pt.x, pt.y, WIDTH, HEIGHT)){
+					if(CLAMP_SIZE(pt.x, pt.y, imgWidth, imgHeight)){
 						if(fromPixels_2d_v[i](2) < depthMatrices[tnum].ptr<unsigned short>(pt.y)[pt.x] && fromPixels_2d_v[i](2) > 0){
 						int tnum = omp_get_thread_num();
 							cv::Vec4b& ptColor = colorMatrices[tnum].ptr<cv::Vec4b>(pt.y)[pt.x];
@@ -662,7 +669,7 @@ void cylinderMapPixelsColor_parallel_orig(	cv::Vec3f from_a[NUMLIMBS],
 
 #pragma omp barrier
 #pragma omp for
-	for(int i=0;i<WIDTH*HEIGHT;++i){
+	for(int i=0;i<imgWidth*imgHeight;++i){
 		for(int j=0;j<nThreads;++j){
 			unsigned short& zvalue = zBuf.ptr<unsigned short>()[i];
 			if(zvalue > depthMatrices[j].ptr<unsigned short>()[i]){

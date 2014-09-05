@@ -6,6 +6,9 @@
 #define MIN_DELTA 10
 #define FL_GOOD_RATIO 0.65
 
+#define DEFAULT_WIDTH 640
+#define DEFAULT_HEIGHT 480
+
 typedef std::vector<CroppedCvMat> FrameLimbs;
 
 class Limbrary{

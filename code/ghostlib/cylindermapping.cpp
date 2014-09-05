@@ -305,7 +305,7 @@ void drawSkeletonCylinder(cv::Mat rotmat, int frame, std::vector<SkeleVideoFrame
 	cv::Mat origTexture_ = cv::Mat(window_height, window_width, cv::DataType<IMGPIXEL>::type, cp).clone();
 	cv::Mat origTexture;
 
-	cv::resize(origTexture_, origTexture, cv::Size(WIDTH, HEIGHT));
+	cv::resize(origTexture_, origTexture, cv::Size(640, 480)); //idk. probably should fix this
 
 	free(cp);
 

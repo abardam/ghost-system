@@ -10,7 +10,7 @@
 #define GD_NOBLEND 0x08
 #define GD_NOWEIGHT 0x10
 
-void ghostdraw(int frame, cv::Mat transform, std::vector<SkeleVideoFrame>& vidRecord, std::vector<Skeleton>& wcSkeletons, CylinderBody& cylinderBody, Limbrary& limbrary, cv::Mat draw, unsigned char options = GD_DRAW);
+//void ghostdraw(int frame, cv::Mat transform, std::vector<SkeleVideoFrame>& vidRecord, std::vector<Skeleton>& wcSkeletons, CylinderBody& cylinderBody, Limbrary& limbrary, cv::Mat draw, unsigned char options = GD_DRAW);
 void ghostdraw_parallel
 	(int frame, cv::Mat transform, std::vector<SkeleVideoFrame>& vidRecord, std::vector<Skeleton>& wcSkeletons, CylinderBody& cylinderBody, Limbrary& limbrary, cv::Mat& draw, cv::Mat& zBuf, unsigned char options = GD_DRAW, ScoreList * scoreListOut = 0);
 

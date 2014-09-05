@@ -53,7 +53,7 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 			std::vector<cv::Vec3f> fp;
 			std::vector<cv::Vec3s> fpv;
 			PixelPolygon p;
-			cv::Mat cylPts = cylinder_to_pts(a, b, cylinderBody->newPartRadii_cyl[i], voff, &p, &fp, &fpv);
+			cv::Mat cylPts = cylinder_to_pts(it->videoFrame.origWidth, it->videoFrame.origHeight, a, b, cylinderBody->newPartRadii_cyl[i], voff, &p, &fp, &fpv);
 			int limbpicWidth = p.hi.size();
 
 
@@ -334,6 +334,9 @@ void Limbrary::Save(std::string path){
 			limb->SetAttribute("limbid", j);
 			limb->SetAttribute("offsetX", frames[i][j].offset.x);
 			limb->SetAttribute("offsetY", frames[i][j].offset.y);
+			
+			limb->SetAttribute("originalWidth", frames[i][j].origWidth);
+			limb->SetAttribute("originalHeight", frames[i][j].origHeight);
 
 			std::stringstream filenameSS;
 			filenameSS << impath 
@@ -432,6 +435,13 @@ void Limbrary::Load(std::string path){
 					limb->QueryIntAttribute("offsetY", &(offset.y));
 
 					frames[frameid][limbid].offset = offset;
+
+					int ow=DEFAULT_WIDTH, oh=DEFAULT_HEIGHT;
+					if(limb->Attribute("originalWidth") != NULL)  limb->QueryIntAttribute("originalWidth", &ow);
+					if(limb->Attribute("originalHeight") != NULL) limb->QueryIntAttribute("originalHeight", &oh);
+
+					frames[frameid][limbid].origWidth = ow;
+					frames[frameid][limbid].origHeight = oh;
 
 					std::string impath = limb->Attribute("filename");
 					frames[frameid][limbid].mat = cv::imread(path+impath);

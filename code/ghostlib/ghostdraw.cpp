@@ -132,7 +132,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 	
 				//std::cout << p->x_offset << " " << limbpicWidth << " " << p->lo_y << " " << limbpicHeight << std::endl;
 
-				cv::Rect boundingBox(0,0,WIDTH,HEIGHT);
+				cv::Rect boundingBox(0,0,limbpicWidth, limbpicHeight);
 				LerpCorners lc = generateLerpCorners(boundingBox);
 	
 				cv::Mat rayMat(4, limbpicHeight*limbpicWidth, CV_32F);
@@ -348,7 +348,7 @@ void ghostdraw_parallel(int frame, cv::Mat transform, std::vector<SkeleVideoFram
 	}
 }
 
-
+#if 0
 void ghostdraw(int frame, cv::Mat transform, std::vector<SkeleVideoFrame>& vidRecord, std::vector<Skeleton>& wcSkeletons, CylinderBody& cylinderBody, Limbrary& limbrary, cv::Mat draw, unsigned char options){
 	
 	int wtType = GH_WT_JOINT;
@@ -495,3 +495,5 @@ void ghostdraw(int frame, cv::Mat transform, std::vector<SkeleVideoFrame>& vidRe
 		}
 	}
 }
+
+#endif
