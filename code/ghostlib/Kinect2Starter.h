@@ -45,6 +45,8 @@ namespace KINECT{
 
 	RGBQUAD * GetColorRGBX();
 
+	RGBQUAD * GetColorMappedToDepth();
+
 	unsigned int getDepthWidth();
 	unsigned int getDepthHeight();
 	unsigned int getColorWidth();

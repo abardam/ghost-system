@@ -389,13 +389,14 @@ namespace KINECT{
 			if (SUCCEEDED(hr))
 			{
 				if(m_bMapColorToDepth && m_nDepthWidth > 0 && m_nDepthHeight > 0){
+
 					hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(m_nDepthWidth*m_nDepthHeight, m_pDepth, m_nDepthWidth*m_nDepthHeight, m_pColorDepthMap);
 					
 					if (SUCCEEDED(hr)){
 						ProcessColorToDepth(m_pColorRGBX, m_nColorWidth, m_nColorHeight, m_pColorDepthMap, m_nDepthWidth, m_nDepthHeight);
 					}
 				}
-				else{
+				{
 					ProcessColor(nTime, pBuffer, nWidth, nHeight);
 				}
 			}
@@ -446,6 +447,10 @@ namespace KINECT{
 
 	RGBQUAD * GetColorRGBX(){
 		return m_pColorRGBX;
+	}
+
+	RGBQUAD * GetColorMappedToDepth(){
+		return m_pColorMappedToDepth;
 	}
 
 	unsigned int getDepthWidth(){
