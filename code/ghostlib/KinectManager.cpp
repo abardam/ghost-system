@@ -456,6 +456,32 @@ namespace KINECT{
 	}
 
 	Skeleton getSkeleton(){
+
+		Skeleton skeleton;
+		IBody * body;
+		//get body from kinect;
+
+
+		Joint joints[NUMJOINTS];
+		HRESULT hr = body->GetJoints(NUMJOINTS, joints);
+
+		if(!SUCCEEDED(hr)) return skeleton;
+
+		float trackingStateTable[3];
+		trackingStateTable[TrackingState_Inferred] = 0.5;
+		trackingStateTable[TrackingState_NotTracked] = 0;
+		trackingStateTable[TrackingState_Tracked] = 1;
+
+		for(int j=0;j<NUMJOINTS;++j){
+			Joint joint = joints[j];
+			skeleton.points.ptr<float>(0)[joint.JointType] = joint.Position.X;
+			skeleton.points.ptr<float>(1)[joint.JointType] = joint.Position.Y;
+			skeleton.points.ptr<float>(2)[joint.JointType] = joint.Position.Z;
+			skeleton.points.ptr<float>(3)[joint.JointType] = 1;
+
+			skeleton.states[joint.JointType] = trackingStateTable[joint.TrackingState];
+		}
+
 		return Skeleton();
 	}
 
@@ -472,14 +498,77 @@ namespace KINECT{
 	}
 
 	int getCenterJoint(){
-		return 0;
+		return JointType_SpineMid;
 	}
 
 	int getHeadJoint(){
-		return 0;
+		return JointType_Head;
 	}
 
 	void initMapping(Mapping * mapping){
+		mapping->limbmap[HEAD]				= lmap(JointType_Head,				JointType_Neck)			;
+		mapping->limbmap[UPPERARM_LEFT]		= lmap(JointType_ShoulderLeft,		JointType_ElbowLeft)		;
+		mapping->limbmap[UPPERARM_RIGHT]	= lmap(JointType_ShoulderRight,		JointType_ElbowRight)	;
+		mapping->limbmap[LOWERARM_LEFT]		= lmap(JointType_ElbowLeft,			JointType_WristLeft)		;
+		mapping->limbmap[LOWERARM_RIGHT]	= lmap(JointType_ElbowRight,			JointType_WristRight)		;
+		mapping->limbmap[CHEST]				= lmap(JointType_SpineShoulder,				JointType_SpineMid)			;
+		mapping->limbmap[ABS]				= lmap(JointType_SpineBase,				JointType_SpineMid)			;
+		mapping->limbmap[UPPERLEG_LEFT]		= lmap(JointType_HipLeft,			JointType_KneeLeft)		;
+		mapping->limbmap[UPPERLEG_RIGHT]	= lmap(JointType_HipRight,			JointType_KneeRight)		;
+		mapping->limbmap[LOWERLEG_LEFT]		= lmap(JointType_KneeLeft,			JointType_AnkleLeft)		;
+		mapping->limbmap[LOWERLEG_RIGHT]	= lmap(JointType_KneeRight,			JointType_AnkleRight)		;
+
+		mapping->jointmap[JointType_Head].push_back(HEAD);
+		mapping->jointmap[JointType_Neck].push_back(HEAD);
+		mapping->jointmap[JointType_SpineShoulder].push_back(CHEST);
+		mapping->jointmap[JointType_ShoulderLeft].push_back(UPPERARM_LEFT);
+		mapping->jointmap[JointType_ShoulderRight].push_back(UPPERARM_RIGHT);
+		mapping->jointmap[JointType_ElbowLeft].push_back(LOWERARM_LEFT);
+		mapping->jointmap[JointType_ElbowLeft].push_back(UPPERARM_LEFT);
+		mapping->jointmap[JointType_ElbowRight].push_back(LOWERARM_RIGHT);
+		mapping->jointmap[JointType_ElbowRight].push_back(UPPERARM_RIGHT);
+		mapping->jointmap[JointType_WristLeft].push_back(LOWERARM_LEFT);
+		mapping->jointmap[JointType_WristRight].push_back(LOWERARM_RIGHT);
+		mapping->jointmap[JointType_SpineMid].push_back(CHEST);
+		mapping->jointmap[JointType_SpineMid].push_back(ABS);
+		mapping->jointmap[JointType_SpineBase].push_back(ABS);
+		mapping->jointmap[JointType_HipLeft].push_back(UPPERLEG_LEFT);
+		mapping->jointmap[JointType_HipRight].push_back(UPPERLEG_RIGHT);
+		mapping->jointmap[JointType_KneeLeft].push_back(LOWERLEG_LEFT);
+		mapping->jointmap[JointType_KneeLeft].push_back(UPPERLEG_LEFT);
+		mapping->jointmap[JointType_KneeRight].push_back(LOWERLEG_RIGHT);
+		mapping->jointmap[JointType_KneeRight].push_back(UPPERLEG_RIGHT);
+		mapping->jointmap[JointType_AnkleLeft].push_back(LOWERLEG_LEFT);
+		mapping->jointmap[JointType_AnkleRight].push_back(LOWERLEG_RIGHT);
+
+		
+		for(int i=0; i<NUMLIMBS; ++i){
+			mapping->partWeights[i][getLimbmap()[i].first] = 1;
+			mapping->partWeights[i][getLimbmap()[i].second] = 1;
+		}
+
+		mapping->partWeights[HEAD][JointType_ShoulderLeft] = 1;
+		mapping->partWeights[HEAD][JointType_ShoulderRight] = 1;
+
+		mapping->partWeights[UPPERARM_LEFT]	[JointType_WristLeft] = 1;
+		mapping->partWeights[UPPERARM_RIGHT][JointType_WristRight] = 1;
+		mapping->partWeights[LOWERARM_LEFT]	[JointType_ShoulderLeft] = 1;
+		mapping->partWeights[LOWERARM_RIGHT][JointType_ShoulderRight] = 1;
+		
+
+		mapping->partWeights[CHEST][JointType_ShoulderLeft] = 1;
+		mapping->partWeights[CHEST][JointType_ShoulderRight] = 1;
+		mapping->partWeights[CHEST][JointType_HipLeft] = 1;
+		mapping->partWeights[CHEST][JointType_SpineBase] = 1;
+		mapping->partWeights[CHEST][JointType_HipRight] = 1;
+
+		mapping->partWeights[ABS][JointType_ShoulderLeft] = 1;
+		mapping->partWeights[ABS][JointType_Neck] = 1;
+		mapping->partWeights[ABS][JointType_ShoulderRight] = 1;
+		mapping->partWeights[ABS][JointType_HipLeft] = 1;
+		mapping->partWeights[ABS][JointType_HipRight] = 1;
+		mapping->partWeights[ABS][JointType_SpineShoulder] = 1;
+
 	}
 
 }
