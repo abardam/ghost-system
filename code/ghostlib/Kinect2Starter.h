@@ -33,7 +33,7 @@ namespace KINECT{
 
 	void ProcessDepthNoRGBX(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight, USHORT nMinDepth, USHORT nMaxDepth);
 
-	void ProcessColorToDepth(const RGBQUAD * pColorBuffer, int nColorWidth, int nColorHeight, const DepthSpacePoint * pColorDepthMap, int nDepthWidth, int nDepthHeight);
+	void ProcessDepthToColor(const USHORT * pDepthBuffer, int nDepthWidth, int nDepthHeight, const DepthSpacePoint * pColorDepthMap, int nColorWidth, int nColorHeight);
 
 	void UpdateColor();
 
@@ -45,7 +45,7 @@ namespace KINECT{
 
 	RGBQUAD * GetColorRGBX();
 
-	RGBQUAD * GetColorMappedToDepth();
+	USHORT * GetDepthMappedToColor();
 
 	unsigned int getDepthWidth();
 	unsigned int getDepthHeight();

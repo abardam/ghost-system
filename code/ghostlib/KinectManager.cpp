@@ -432,9 +432,9 @@ namespace KINECT{
 	cv::Mat getColorFrame(){
 		UpdateColor();
 		if (getColorHeight() == 0 || getColorWidth() == 0) return cv::Mat();
-		cv::Mat colorFrame_ = cv::Mat(getDepthHeight(), getDepthWidth(), CV_8UC4, GetColorMappedToDepth()).clone();
+		cv::Mat colorFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetColorRGBX()).clone();
 		cv::Mat colorFrame;
-		cv::resize(colorFrame_, colorFrame, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));
+		cv::resize(colorFrame_, colorFrame, cv::Size(getColorWidth(), getColorHeight()));
 		return colorFrame;
 	}
 
@@ -445,9 +445,9 @@ namespace KINECT{
 	cv::Mat getDepthFrame(){
 		UpdateDepth();
 		if (getDepthHeight() == 0 || getDepthWidth() == 0) return cv::Mat();
-		cv::Mat depthFrame_ = cv::Mat(getDepthHeight(), getDepthWidth(), CV_16U, GetDepth()).clone();
+		cv::Mat depthFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_16U, GetDepthMappedToColor()).clone();
 		cv::Mat depthFrame;
-		cv::resize(depthFrame_, depthFrame, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));
+		cv::resize(depthFrame_, depthFrame, cv::Size(getColorWidth(), getColorHeight()));
 		return depthFrame;
 	}
 

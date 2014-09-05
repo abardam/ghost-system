@@ -38,7 +38,7 @@ namespace KINECT{
 	USHORT * m_pDepth;
     RGBQUAD * m_pColorRGBX;
 	DepthSpacePoint * m_pColorDepthMap;
-	RGBQUAD * m_pColorMappedToDepth;
+	USHORT * m_pDepthMappedToColor;
 
 	unsigned int m_nDepthWidth;
 	unsigned int m_nDepthHeight;
@@ -46,7 +46,7 @@ namespace KINECT{
 	unsigned int m_nColorHeight;
 
 	bool m_bCalculateDepthRGBX;
-	bool m_bMapColorToDepth;
+	bool m_bMapDepthToColor;
 
 	void InitKinect2Starter(){
 		
@@ -54,11 +54,11 @@ namespace KINECT{
 		m_pDepth = new USHORT[CAPTURE_SIZE_X_DEPTH * CAPTURE_SIZE_Y_DEPTH];
 		m_pColorRGBX = new RGBQUAD[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
 		m_pColorDepthMap = new DepthSpacePoint[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
-		m_pColorMappedToDepth = new RGBQUAD[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
+		m_pDepthMappedToColor = new USHORT[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
 
 		m_nStartTime = 0;
 		m_bCalculateDepthRGBX = false;
-		m_bMapColorToDepth = true;
+		m_bMapDepthToColor = true;
 	}
 
 	void DestroyKinect2Starter(){
@@ -77,8 +77,8 @@ namespace KINECT{
 		if(m_pColorDepthMap){
 			delete [] m_pColorDepthMap;
 		}
-		if(m_pColorMappedToDepth){
-			delete[] m_pColorMappedToDepth;
+		if(m_pDepthMappedToColor){
+			delete[] m_pDepthMappedToColor;
 		}
 	}
 
@@ -220,10 +220,20 @@ namespace KINECT{
 
 			if (SUCCEEDED(hr))
 			{
+
 				if(m_bCalculateDepthRGBX)
 					ProcessDepth(nTime, pBuffer, nWidth, nHeight, nDepthMinReliableDistance, nDepthMaxReliableDistance);
 				else
 					ProcessDepthNoRGBX(nTime, pBuffer, nWidth, nHeight, nDepthMinReliableDistance, nDepthMaxReliableDistance);
+
+				if(m_bMapDepthToColor && m_nDepthWidth > 0 && m_nDepthHeight > 0){
+
+					hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(m_nDepthWidth*m_nDepthHeight, m_pDepth, m_nColorWidth*m_nColorHeight, m_pColorDepthMap);
+					
+					if (SUCCEEDED(hr)){
+						ProcessDepthToColor(m_pDepth, m_nDepthWidth, m_nDepthHeight, m_pColorDepthMap, m_nColorWidth, m_nColorHeight);
+					}
+				}
 			}
 
 			SafeRelease(pFrameDescription);
@@ -304,18 +314,18 @@ namespace KINECT{
 		}
 	}
 
-	void ProcessColorToDepth(const RGBQUAD * pColorBuffer, int nColorWidth, int nColorHeight, const DepthSpacePoint * pColorDepthMap, int nDepthWidth, int nDepthHeight){
-		int depthSize = nDepthWidth * nDepthHeight;
+	void ProcessDepthToColor(const USHORT * pDepthBuffer, int nDepthWidth, int nDepthHeight, const DepthSpacePoint * pColorDepthMap, int nColorWidth, int nColorHeight){
+		int colorSize = nColorWidth * nColorHeight;
 
-		if(pColorBuffer && pColorDepthMap){
-			RGBQUAD * pDepthMappedToColor = m_pColorMappedToDepth;
+		if(pDepthBuffer && pColorDepthMap){
+			USHORT * pDepthMappedToColor = m_pDepthMappedToColor;
 
-			const DepthSpacePoint * pBufferEnd = pColorDepthMap + depthSize;
+			const DepthSpacePoint * pBufferEnd = pColorDepthMap + colorSize;
 
 			while(pColorDepthMap < pBufferEnd){
 				DepthSpacePoint depthSpacePoint = *pColorDepthMap;
-				int pointerValue = depthSpacePoint.X + depthSpacePoint.Y * nColorWidth;
-				*pDepthMappedToColor = pColorBuffer[pointerValue];
+				int pointerValue = depthSpacePoint.X + depthSpacePoint.Y * nDepthWidth;
+				*pDepthMappedToColor = pDepthBuffer[pointerValue];
 
 				++pColorDepthMap;
 				++pDepthMappedToColor;
@@ -388,14 +398,6 @@ namespace KINECT{
 
 			if (SUCCEEDED(hr))
 			{
-				if(m_bMapColorToDepth && m_nDepthWidth > 0 && m_nDepthHeight > 0){
-
-					hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(m_nDepthWidth*m_nDepthHeight, m_pDepth, m_nColorWidth*m_nColorHeight, m_pColorDepthMap);
-					
-					if (SUCCEEDED(hr)){
-						ProcessColorToDepth(m_pColorRGBX, m_nColorWidth, m_nColorHeight, m_pColorDepthMap, m_nDepthWidth, m_nDepthHeight);
-					}
-				}
 				{
 					ProcessColor(nTime, pBuffer, nWidth, nHeight);
 				}
@@ -449,8 +451,8 @@ namespace KINECT{
 		return m_pColorRGBX;
 	}
 
-	RGBQUAD * GetColorMappedToDepth(){
-		return m_pColorMappedToDepth;
+	USHORT * GetDepthMappedToColor(){
+		return m_pDepthMappedToColor;
 	}
 
 	unsigned int getDepthWidth(){
