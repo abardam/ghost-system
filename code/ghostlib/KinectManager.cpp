@@ -445,11 +445,9 @@ namespace KINECT{
 
 		if (getColorHeight() == 0 || getColorWidth() == 0) return cv::Mat();
 		cv::Mat colorFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetColorRGBX()).clone();
-		//cv::Mat colorFrame;
-		//cv::resize(colorFrame_, colorFrame, cv::Size(getColorWidth(), getColorHeight()));
-		//return colorFrame;
-
-		return colorFrame_;
+		cv::Mat colorFrame;
+		cv::resize(colorFrame_, colorFrame, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));
+		return colorFrame;
 	}
 
 	CroppedCvMat getPlayerColorFrame(){
@@ -462,7 +460,10 @@ namespace KINECT{
 
 		if (getDepthHeight() == 0 || getDepthWidth() == 0 || getColorHeight() == 0 || getColorWidth() == 0) return CroppedCvMat();
 
-		cv::Mat bodyFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetBodyColorRGBX()).clone();
+		cv::Mat bodyFrame__ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetBodyColorRGBX()).clone();
+		cv::Mat bodyFrame_;
+
+		cv::resize(bodyFrame__, bodyFrame_, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));
 
 		int minY = getColorHeight(), minX = getColorWidth(), maxY = 0, maxX = 0;
 
@@ -494,11 +495,9 @@ namespace KINECT{
 
 		if (getDepthHeight() == 0 || getDepthWidth() == 0 || getColorHeight() == 0 || getColorWidth() == 0) return cv::Mat();
 		cv::Mat depthFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_16U, GetDepthMappedToColor()).clone();
-		//cv::Mat depthFrame;
-		//cv::resize(depthFrame_, depthFrame, cv::Size(getColorWidth(), getColorHeight()));
-		//return depthFrame;
-
-		return depthFrame_;
+		cv::Mat depthFrame;
+		cv::resize(depthFrame_, depthFrame, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));
+		return depthFrame;
 	}
 
 	Skeleton getSkeleton(){
