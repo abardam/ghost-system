@@ -874,9 +874,9 @@ bool buildDepth(Skeleton skeletonPositions, cv::Mat depthIm, CroppedCvMat colorI
 	if(!in) return false;
 	*/
 	lt = 0;
-	rt = CAPTURE_SIZE_X;
+	rt = colorIm.mat.cols;
 	up = 0;
-	dn = CAPTURE_SIZE_Y;
+	dn = colorIm.mat.rows;
 
 	cv::Vec2f offset(lt, up);
 

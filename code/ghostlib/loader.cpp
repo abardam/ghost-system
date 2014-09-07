@@ -13,6 +13,7 @@
 #include "cvutil.h"
 #include "ghostutil.h"
 #include "KinectManager.h"
+#include "ghostcam.h"
 
 #include "opencv2\opencv.hpp"
 #include <TooN\TooN.h>
@@ -30,6 +31,8 @@ void initLoader(){
 
 std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoFrame> * vidRecord, std::vector<Skeleton> * wcSkeletons, std::string path, bool loadRGB){
 	cv::Mat cam2World = matCfW.inv();
+
+	path += "/";
 		
 	char buffer[100];
 
@@ -55,6 +58,16 @@ std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoF
 	elem->QueryDoubleAttribute("version", &fileVersion);
 
 	root = TiXmlHandle(elem);
+
+	TiXmlElement * cameraMatrixElement = root.FirstChild("CameraMatrix").ToElement();
+
+	if (cameraMatrixElement != NULL){
+		std::string cameraMatrixFileName = cameraMatrixElement->Attribute("filename");
+		cv::FileStorage camfs(path + cameraMatrixFileName, cv::FileStorage::READ);
+		cv::Mat cameraMatrix;
+		camfs["CameraMatrix"] >> cameraMatrix;
+		setCameraMatrix(cameraMatrix);
+	}
 
 	TiXmlHandle framesNode = root.FirstChild("frames");
 	
@@ -204,7 +217,7 @@ std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoF
 	return ret;
 }
 
-void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, std::string path){
+void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, cv::Mat cameraMatrix, std::string path){
 	
 	CreateDirectoryA(path.c_str(), NULL);
 		
@@ -220,6 +233,14 @@ void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, std::string path){
 	xmlDoc.LinkEndChild(rootNode);
 	rootNode->SetDoubleAttribute("version", 1.3);
 
+	TiXmlElement * cameraMatrixNode = new TiXmlElement("CameraMatrix");
+	rootNode->LinkEndChild(cameraMatrixNode);
+
+	std::string cameraMatrixFileName = "CameraMatrix.yml";
+	cv::FileStorage camfs(path + cameraMatrixFileName, cv::FileStorage::WRITE);
+	camfs << "CameraMatrix" << cameraMatrix;
+	camfs.release();
+	cameraMatrixNode->SetAttribute("filename", cameraMatrixFileName);
 
 	TiXmlElement * framesNode = new TiXmlElement("frames");
 	rootNode->LinkEndChild(framesNode);

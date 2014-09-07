@@ -14,7 +14,7 @@
 
 void initLoader();
 std::vector<bool> LoadVideo(cv::Mat cam2World, cv::Mat K2P, std::vector<SkeleVideoFrame> * vidRecord, std::vector<Skeleton> * wcSkeletons, std::string path = "video/", bool loadRGB = true);
-void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, std::string path = "video/");
+void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, cv::Mat cameraMatrix, std::string path = "video/");
 
 //IMGPIXEL getColorAtPartAndPixel(int frame, int part, cv::Vec4f pixel, cv::Vec2f * pixelLoc = 0);
 

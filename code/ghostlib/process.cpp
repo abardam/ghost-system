@@ -17,10 +17,6 @@ void initAndLoad(cv::Mat mse3CfW, cv::Mat K2P, std::vector<SkeleVideoFrame> * vi
 	/*for(auto it = vidRecord.begin(); it+offset != vidRecord.end(); ++ it){
 		buildDepth((it)->kinectPoints, (it)->skeleton.states, (it+offset)->depthFrame, (it+offset)->videoFrame);
 	}*/
-	
-	//TODO: store camera matrix in the SVF.xml
-	//for now use the hardcoded camera matrix
-	setCameraMatrix(expGetCameraMatrix());
 }
 
 void calculateSkeletonOffsetPoints(std::vector<SkeleVideoFrame>& vidRecord, std::vector<Skeleton>& wcSkeletons, const CylinderBody& cylinderBody){

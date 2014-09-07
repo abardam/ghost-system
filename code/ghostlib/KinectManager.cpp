@@ -464,8 +464,27 @@ namespace KINECT{
 
 		cv::Mat bodyFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetBodyColorRGBX()).clone();
 
+		int minY = getColorHeight(), minX = getColorWidth(), maxY = 0, maxX = 0;
+
+		for (int y = 0; y < getColorHeight(); ++y){
+			for (int x = 0; x < getColorWidth(); ++x){
+				if (bodyFrame_.ptr<cv::Vec4b>(y)[x](3) != 0){
+					if (minY>y)minY = y;
+					if (minX>x)minX = x;
+					if (maxY < y)maxY = y;
+					if (maxX < x)maxX = x;
+				}
+			}
+		}
+
+		cv::Mat bodyFrame = bodyFrame_(cv::Rect(minX, minY, maxX - minX, maxY - minY));
+
 		CroppedCvMat croppedCvMat;
-		croppedCvMat.mat = bodyFrame_;
+		croppedCvMat.mat = bodyFrame.clone();
+		croppedCvMat.offset.x = minX;
+		croppedCvMat.offset.y = minY;
+		croppedCvMat.origWidth = getColorWidth();
+		croppedCvMat.origHeight = getColorHeight();
 
 		return croppedCvMat;
 	}
