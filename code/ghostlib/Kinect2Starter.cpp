@@ -31,6 +31,7 @@ namespace KINECT{
 	IBodyFrameReader * m_pBodyFrameReader;
 	IColorFrameReader * m_pColorFrameReader;
 	IDepthFrameReader * m_pDepthFrameReader;
+	IBodyIndexFrameReader * m_pBodyIndexFrameReader;
 
 	INT64 m_nStartTime;
 
@@ -39,8 +40,11 @@ namespace KINECT{
     RGBQUAD * m_pColorRGBX;
 	DepthSpacePoint * m_pColorDepthMap;
 	USHORT * m_pDepthMappedToColor;
+	RGBQUAD * m_pBodyColorRGBX;
 
 	Joint * m_pJoints;
+
+	UCHAR m_nBodyIndex;
 
 	unsigned int m_nDepthWidth;
 	unsigned int m_nDepthHeight;
@@ -58,6 +62,8 @@ namespace KINECT{
 		m_pColorRGBX = new RGBQUAD[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
 		m_pColorDepthMap = new DepthSpacePoint[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
 		m_pDepthMappedToColor = new USHORT[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
+		m_pBodyColorRGBX = new RGBQUAD[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
+
 		m_pJoints = new Joint[JointType_Count];
 
 
@@ -65,6 +71,7 @@ namespace KINECT{
 		m_bCalculateDepthRGBX = false;
 		m_bMapDepthToColor = true;
 		m_bSkeletonIsGood = false;
+		m_nBodyIndex = 0xff;
 	}
 
 	void DestroyKinect2Starter(){
@@ -85,6 +92,9 @@ namespace KINECT{
 		}
 		if(m_pDepthMappedToColor){
 			delete[] m_pDepthMappedToColor;
+		}
+		if(m_pBodyColorRGBX){
+			delete [] m_pBodyColorRGBX;
 		}
 		if(m_pJoints){
 			delete [] m_pJoints;
@@ -158,6 +168,20 @@ namespace KINECT{
 			}
 
 			SafeRelease(pDepthFrameSource);
+
+			//get the body frame index reader
+
+			IBodyIndexFrameSource * pBodyIndexFrameSource = NULL;
+
+			if(SUCCEEDED(hr)){
+				hr = m_pKinectSensor->get_BodyIndexFrameSource(&pBodyIndexFrameSource);
+			}
+
+			if(SUCCEEDED(hr)){
+				hr = pBodyIndexFrameSource->OpenReader(&m_pBodyIndexFrameReader);
+			}
+
+			SafeRelease(pBodyIndexFrameSource);
 
 		}
 
@@ -487,7 +511,7 @@ namespace KINECT{
 	}
 
 	void ProcessBody(unsigned int nTime, unsigned int nBodyCount, IBody * ppBodies[6]){
-		int bestBody = -1;
+		UCHAR bestBody = 0xff;
 		float bestScore = 0;
 		
 		float trackingStateTable[3];
@@ -523,8 +547,74 @@ namespace KINECT{
 
 		if(!SUCCEEDED(hr)){
 			std::cerr << "Error saving joints\n";
+			m_bSkeletonIsGood = false;
+			m_nBodyIndex = 0xff;
 		}else{
 			m_bSkeletonIsGood = true;
+			m_nBodyIndex = bestBody;
+		}
+	}
+
+	void UpdateBodyFrameIndex(){
+		if(!m_pBodyIndexFrameReader){
+			return;
+		}
+
+		if(m_nDepthWidth == 0 || m_nDepthHeight == 0 || m_nColorWidth == 0 || m_nColorHeight == 0){
+			std::cerr << "UpdateColor and UpdateDepth first!\n";
+			return;
+		}
+
+		IBodyIndexFrame *  pBodyIndexFrame = NULL;
+
+		HRESULT hr = m_pBodyIndexFrameReader->AcquireLatestFrame(&pBodyIndexFrame);
+
+		if(SUCCEEDED(hr)){
+			unsigned int nBufferSize = 0;
+			unsigned char * pBuffer = NULL;
+
+			if(SUCCEEDED(hr)){
+				hr = pBodyIndexFrame->AccessUnderlyingBuffer(&nBufferSize, &pBuffer);
+			}
+			
+			if(SUCCEEDED(hr)){
+				hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(m_nDepthWidth*m_nDepthHeight, m_pDepth, m_nColorWidth*m_nColorHeight, m_pColorDepthMap);
+			}
+
+			if(SUCCEEDED(hr)){
+				ProcessBodyFrameIndexColor(pBuffer, m_nDepthWidth, m_nDepthHeight, m_pColorDepthMap, m_nColorWidth, m_nColorHeight);
+			}
+		}
+	}
+
+	void ProcessBodyFrameIndexColor(unsigned char * pBodyIndexBuffer, unsigned int nDepthWidth, unsigned int nDepthHeight, const DepthSpacePoint * pColorDepthMap, int nColorWidth, int nColorHeight){
+		
+		int colorSize = nColorWidth * nColorHeight;
+
+		if(pBodyIndexBuffer && pColorDepthMap){
+			RGBQUAD * pBodyColorRGBX = m_pBodyColorRGBX;
+			RGBQUAD * pColorRGBX = m_pColorRGBX;
+
+			const DepthSpacePoint * pBufferEnd = pColorDepthMap + colorSize;
+
+			while(pColorDepthMap < pBufferEnd){
+				DepthSpacePoint depthSpacePoint = *pColorDepthMap;
+				int pointerValue = depthSpacePoint.X + depthSpacePoint.Y * nDepthWidth;
+				unsigned char bodyIndex = pBodyIndexBuffer[pointerValue];
+
+				if(bodyIndex == m_nBodyIndex)
+					*pBodyColorRGBX = *pColorRGBX;
+				else{
+					pBodyColorRGBX->rgbBlue = 0;
+					pBodyColorRGBX->rgbGreen = 0;
+					pBodyColorRGBX->rgbRed = 0;
+					pBodyColorRGBX->rgbReserved = 0;
+				}
+
+				++pColorDepthMap;
+				++pBodyColorRGBX;
+				++pColorRGBX;
+			}
 		}
 	}
 	
@@ -543,6 +633,10 @@ namespace KINECT{
 
 	USHORT * GetDepthMappedToColor(){
 		return m_pDepthMappedToColor;
+	}
+
+	RGBQUAD * GetBodyColorRGBX(){
+		return m_pBodyColorRGBX;
 	}
 
 	Joint * GetJoints(){
