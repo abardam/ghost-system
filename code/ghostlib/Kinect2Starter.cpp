@@ -565,6 +565,10 @@ namespace KINECT{
 			return;
 		}
 
+		if(m_nBodyIndex == 0xff){
+			return;
+		}
+
 		IBodyIndexFrame *  pBodyIndexFrame = NULL;
 
 		HRESULT hr = m_pBodyIndexFrameReader->AcquireLatestFrame(&pBodyIndexFrame);
