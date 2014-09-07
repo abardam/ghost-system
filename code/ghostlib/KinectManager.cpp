@@ -444,7 +444,19 @@ namespace KINECT{
 	}
 
 	CroppedCvMat getPlayerColorFrame(){
-		return CroppedCvMat();
+		UpdateColor();
+		UpdateDepth();
+		UpdateBody();
+		UpdateBodyFrameIndex();
+
+		if (getDepthHeight() == 0 || getDepthWidth() == 0 || getColorHeight() == 0 || getColorWidth() == 0) return CroppedCvMat();
+
+		cv::Mat bodyFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetBodyColorRGBX()).clone();
+
+		CroppedCvMat croppedCvMat;
+		croppedCvMat.mat = bodyFrame_;
+
+		return croppedCvMat;
 	}
 
 	cv::Mat getDepthFrame(){
