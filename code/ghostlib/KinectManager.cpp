@@ -699,6 +699,29 @@ namespace KINECT{
 		//nothing to do here
 	}
 
+	//delete later
+
+	void getKinectData_depth_raw(DepthXY * depthPoints){
+		if(!init()) { 
+			std::cerr << "Error! not initialized!\n";  
+			return;
+		}
+		
+		if(getDepthHeight() == 0 || getDepthWidth() == 0) return;
+
+		cv::Mat depthFrame_ = cv::Mat(getDepthHeight(), getDepthWidth(), CV_16U, GetDepth());
+		cv::Mat depthFrame;
+		cv::resize(depthFrame_, depthFrame, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));
+
+		for(int y=0;y<CAPTURE_SIZE_Y;++y){
+			for(int x=0;x<CAPTURE_SIZE_X;++x){
+				depthPoints[x + CAPTURE_SIZE_X*y].depth = depthFrame.ptr<unsigned short>()[x + CAPTURE_SIZE_X*y];
+				depthPoints[x + CAPTURE_SIZE_X*y].x = x;
+				depthPoints[x + CAPTURE_SIZE_X*y].y = y;
+			}
+		}
+	}
+
 	cv::Vec3f mapDepthToSkeletonPoint(DepthXY d){
 		cv::Vec3f ret;
 
