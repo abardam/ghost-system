@@ -413,6 +413,7 @@ namespace KINECT{
 
 	bool bInit = false;
 	bool bSkeletonIsGood = false;
+	bool bAutoUpdate = false;
 
 	bool doCalib(){
 		return false;
@@ -432,8 +433,16 @@ namespace KINECT{
 		return true;
 	}
 
-	cv::Mat getColorFrame(){
+	void updateFrames(){
 		UpdateColor();
+		UpdateDepth();
+		UpdateBody();
+		UpdateBodyFrameIndex();
+	}
+
+	cv::Mat getColorFrame(){
+		if(bAutoUpdate) UpdateColor();
+
 		if (getColorHeight() == 0 || getColorWidth() == 0) return cv::Mat();
 		cv::Mat colorFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetColorRGBX()).clone();
 		//cv::Mat colorFrame;
@@ -444,10 +453,12 @@ namespace KINECT{
 	}
 
 	CroppedCvMat getPlayerColorFrame(){
-		UpdateColor();
-		UpdateDepth();
-		UpdateBody();
-		UpdateBodyFrameIndex();
+		if(bAutoUpdate){
+			UpdateColor();
+			UpdateDepth();
+			UpdateBody();
+			UpdateBodyFrameIndex();
+		}
 
 		if (getDepthHeight() == 0 || getDepthWidth() == 0 || getColorHeight() == 0 || getColorWidth() == 0) return CroppedCvMat();
 
@@ -460,7 +471,8 @@ namespace KINECT{
 	}
 
 	cv::Mat getDepthFrame(){
-		UpdateDepth();
+		if(bAutoUpdate) UpdateDepth();
+
 		if (getDepthHeight() == 0 || getDepthWidth() == 0 || getColorHeight() == 0 || getColorWidth() == 0) return cv::Mat();
 		cv::Mat depthFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_16U, GetDepthMappedToColor()).clone();
 		//cv::Mat depthFrame;

@@ -47,6 +47,8 @@ namespace KINECT{
 
 	void ProcessBodyFrameIndexColor(unsigned char * pBodyIndexBuffer, unsigned int nDepthWidth, unsigned int nDepthHeight, const DepthSpacePoint * pColorDepthMap, int nColorWidth, int nColorHeight);
 	
+	void CalculateColorDepthMap();
+
 	RGBQUAD * GetDepthRGBX();
 	USHORT * GetDepth();
 	RGBQUAD * GetColorRGBX();

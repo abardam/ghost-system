@@ -54,6 +54,7 @@ namespace KINECT{
 	bool m_bCalculateDepthRGBX;
 	bool m_bMapDepthToColor;
 	bool m_bSkeletonIsGood;
+	bool m_bColorDepthMapCalculated;
 
 	void InitKinect2Starter(){
 		
@@ -72,6 +73,7 @@ namespace KINECT{
 		m_bMapDepthToColor = true;
 		m_bSkeletonIsGood = false;
 		m_nBodyIndex = 0xff;
+		m_bColorDepthMapCalculated = false;
 	}
 
 	void DestroyKinect2Starter(){
@@ -194,6 +196,13 @@ namespace KINECT{
 		return hr;
 	}
 
+	void CalculateColorDepthMap(){
+		HRESULT hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(m_nDepthWidth*m_nDepthHeight, m_pDepth, m_nColorWidth*m_nColorHeight, m_pColorDepthMap);
+		if(SUCCEEDED(hr)){
+			m_bColorDepthMapCalculated = true;
+		}
+	}
+
 	//after calling this, get the depth fram with GetDepth or GetDepthRGBX
 	void UpdateDepth(){
 
@@ -259,13 +268,12 @@ namespace KINECT{
 				else
 					ProcessDepthNoRGBX(nTime, pBuffer, nWidth, nHeight, nDepthMinReliableDistance, nDepthMaxReliableDistance);
 
-				if(m_bMapDepthToColor && m_nColorWidth > 0 && m_nColorHeight > 0){
+				if(!m_bColorDepthMapCalculated){
+					CalculateColorDepthMap();
+				}
 
-					hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(m_nDepthWidth*m_nDepthHeight, m_pDepth, m_nColorWidth*m_nColorHeight, m_pColorDepthMap);
-					
-					if (SUCCEEDED(hr)){
-						ProcessDepthToColor(m_pDepth, m_nDepthWidth, m_nDepthHeight, m_pColorDepthMap, m_nColorWidth, m_nColorHeight);
-					}
+				if(m_bMapDepthToColor && m_nColorWidth > 0 && m_nColorHeight > 0 && SUCCEEDED(hr) && m_bColorDepthMapCalculated){
+					ProcessDepthToColor(m_pDepth, m_nDepthWidth, m_nDepthHeight, m_pColorDepthMap, m_nColorWidth, m_nColorHeight);
 				}
 			}
 
