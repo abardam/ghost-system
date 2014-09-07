@@ -543,6 +543,11 @@ namespace KINECT{
 			}
 		}
 
+		if (bestBody == 0xff){
+			m_bSkeletonIsGood = false;
+			m_nBodyIndex = 0xff;
+			return;
+		}
 		HRESULT hr = ppBodies[bestBody]->GetJoints(JointType_Count, m_pJoints);
 
 		if(!SUCCEEDED(hr)){
@@ -589,6 +594,8 @@ namespace KINECT{
 				ProcessBodyFrameIndexColor(pBuffer, m_nDepthWidth, m_nDepthHeight, m_pColorDepthMap, m_nColorWidth, m_nColorHeight);
 			}
 		}
+
+		SafeRelease(pBodyIndexFrame);
 	}
 
 	void ProcessBodyFrameIndexColor(unsigned char * pBodyIndexBuffer, unsigned int nDepthWidth, unsigned int nDepthHeight, const DepthSpacePoint * pColorDepthMap, int nColorWidth, int nColorHeight){
@@ -604,15 +611,24 @@ namespace KINECT{
 			while(pColorDepthMap < pBufferEnd){
 				DepthSpacePoint depthSpacePoint = *pColorDepthMap;
 				int pointerValue = depthSpacePoint.X + depthSpacePoint.Y * nDepthWidth;
-				unsigned char bodyIndex = pBodyIndexBuffer[pointerValue];
+				if (pointerValue > 0){
+					unsigned char bodyIndex = pBodyIndexBuffer[pointerValue];
 
-				if(bodyIndex == m_nBodyIndex)
-					*pBodyColorRGBX = *pColorRGBX;
+					if (bodyIndex == m_nBodyIndex)
+						*pBodyColorRGBX = *pColorRGBX;
+					else{
+						pBodyColorRGBX->rgbBlue = 0;
+						pBodyColorRGBX->rgbGreen = 0;
+						pBodyColorRGBX->rgbRed = 0;
+						pBodyColorRGBX->rgbReserved = 0;
+					}
+				}
 				else{
 					pBodyColorRGBX->rgbBlue = 0;
 					pBodyColorRGBX->rgbGreen = 0;
 					pBodyColorRGBX->rgbRed = 0;
 					pBodyColorRGBX->rgbReserved = 0;
+
 				}
 
 				++pColorDepthMap;
