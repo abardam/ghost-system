@@ -89,11 +89,25 @@ std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoF
 					ffilename = elem->Attribute("frame");
 				}
 
+				cv::Mat bodyFrame = cv::imread(ffilename, CV_LOAD_IMAGE_UNCHANGED);
+
 #if IMAGE_CHANNELS == 3
-				temp.videoFrame.mat = cv::imread(ffilename, CV_LOAD_IMAGE_COLOR);
+				if (bodyFrame.channels() == 4){
+					for (int i = 0; i < bodyFrame.rows*bodyFrame.cols; ++i){
+						if (bodyFrame.ptr<cv::Vec4b>()[i](3) == 0){
+							bodyFrame.ptr<cv::Vec4b>()[i](0) = 0xff;
+							bodyFrame.ptr<cv::Vec4b>()[i](1) = 0xff;
+							bodyFrame.ptr<cv::Vec4b>()[i](2) = 0xff;
+						}
+					}
+					cv::cvtColor(bodyFrame, temp.videoFrame.mat, CV_BGRA2BGR);
+				}
+				else{
+					temp.videoFrame.mat = bodyFrame;
+				}
 #endif
 #if IMAGE_CHANNELS == 4
-				temp.videoFrame.mat = cv::imread(ffilename, CV_LOAD_IMAGE_UNCHANGED);
+				temp.videoFrame.mat = bodyFrame;
 #endif
 				if(temp.videoFrame.mat.empty()) {
 					std::cout << "unable to read " << ffilename << "; skipping\n";

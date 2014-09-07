@@ -574,7 +574,7 @@ namespace KINECT{
 		}
 
 		if(m_nDepthWidth == 0 || m_nDepthHeight == 0 || m_nColorWidth == 0 || m_nColorHeight == 0){
-			std::cerr << "UpdateColor and UpdateDepth first!\n";
+			
 			return;
 		}
 
@@ -625,9 +625,9 @@ namespace KINECT{
 					if (bodyIndex == m_nBodyIndex)
 						*pBodyColorRGBX = *pColorRGBX;
 					else{
-						pBodyColorRGBX->rgbBlue = 0;
-						pBodyColorRGBX->rgbGreen = 0;
-						pBodyColorRGBX->rgbRed = 0;
+						pBodyColorRGBX->rgbBlue = 0xff;
+						pBodyColorRGBX->rgbGreen = 0xff;
+						pBodyColorRGBX->rgbRed = 0xff;
 						pBodyColorRGBX->rgbReserved = 0;
 					}
 				}

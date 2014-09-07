@@ -458,17 +458,17 @@ namespace KINECT{
 			UpdateBodyFrameIndex();
 		}
 
-		if (getDepthHeight() == 0 || getDepthWidth() == 0 || getColorHeight() == 0 || getColorWidth() == 0) return CroppedCvMat();
+		if (getDepthHeight() == 0 || getDepthWidth() == 0 || getColorHeight() == 0 || getColorWidth() == 0 || !skeletonIsGood()) return CroppedCvMat();
 
 		cv::Mat bodyFrame__ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetBodyColorRGBX()).clone();
 		cv::Mat bodyFrame_;
 
 		cv::resize(bodyFrame__, bodyFrame_, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));
 
-		int minY = getColorHeight(), minX = getColorWidth(), maxY = 0, maxX = 0;
+		int minY = bodyFrame_.rows, minX = bodyFrame_.cols, maxY = 0, maxX = 0;
 
-		for (int y = 0; y < getColorHeight(); ++y){
-			for (int x = 0; x < getColorWidth(); ++x){
+		for (int y = 0; y < bodyFrame_.rows; ++y){
+			for (int x = 0; x < bodyFrame_.cols; ++x){
 				if (bodyFrame_.ptr<cv::Vec4b>(y)[x](3) != 0){
 					if (minY>y)minY = y;
 					if (minX>x)minX = x;
@@ -484,8 +484,8 @@ namespace KINECT{
 		croppedCvMat.mat = bodyFrame.clone();
 		croppedCvMat.offset.x = minX;
 		croppedCvMat.offset.y = minY;
-		croppedCvMat.origWidth = getColorWidth();
-		croppedCvMat.origHeight = getColorHeight();
+		croppedCvMat.origWidth = bodyFrame_.cols;
+		croppedCvMat.origHeight = bodyFrame_.rows;
 
 		return croppedCvMat;
 	}
