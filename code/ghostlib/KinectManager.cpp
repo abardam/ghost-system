@@ -3,12 +3,15 @@
 #include "definitions.h"
 #include "ghostutil.h"
 #include "ghostcam.h"
+#include "cvutil.h"
 
 //#if !INIT_KINECT
 //#endif
 
 //#include "PTAM2Kinect.h"
 
+#define JFS(s, j) mat_to_vec3(s.points.col(j))
+#define JFM(m, j) mat_to_vec3(m.col(j))
 
 
 #if GHOST_CAPTURE == CAPTURE_OPENNI
@@ -16,10 +19,7 @@
 #include <OpenNI.h>
 #include "OpenNIStarter.h"
 #include <NiTE.h>
-#include "cvutil.h"
 
-#define JFS(s, j) mat_to_vec3(s.points.col(j))
-#define JFM(m, j) mat_to_vec3(m.col(j))
 
 
 namespace KINECT{
@@ -594,6 +594,134 @@ namespace KINECT{
 
 	}
 
+
+	
+	cv::Vec3f calculateFacing(Skeleton * _s){
+		
+		Skeleton s = *_s;
+
+		//calculate torso normalized vector
+		cv::Vec3f tnorm = cv::normalize(JFS(s,JointType_SpineShoulder) - JFS(s,JointType_SpineMid));
+
+		//vector from center shoulder to right shoulder
+		cv::Vec3f v = JFS(s,JointType_ShoulderRight) - JFS(s,JointType_SpineShoulder);
+
+		//dot product with torso norm vector
+		cv::Vec3f dotp = tnorm * (v.dot(tnorm));
+
+		//subtract from right shoulder
+		cv::Vec3f projplane = JFS(s,JointType_ShoulderRight) - dotp;
+		
+
+		//repeat for left
+		cv::Vec3f vl = JFS(s,JointType_ShoulderLeft) - JFS(s,JointType_SpineShoulder);
+		cv::Vec3f dotpl = tnorm * (vl.dot(tnorm));
+		cv::Vec3f projplanel = JFS(s,JointType_ShoulderLeft) - dotpl;
+		
+
+		//find angle bisectors
+		cv::Vec3f angr = cv::normalize(projplane - JFS(s,JointType_SpineShoulder));
+		cv::Vec3f angl = cv::normalize(projplanel - JFS(s,JointType_SpineShoulder));
+		   
+		cv::Vec3f bis = cv::normalize(angr + angl);
+
+		return bis;
+	}
+
+	bool checkTracked(int state){
+		//TODO
+		return true;
+	}
+
+	int initSkeletonScore(Skeleton kinectPoints){
+		//return a score of how good this skeleton is for building from
+
+		cv::Vec3f torsoV = mat_to_vec3(kinectPoints.points.col(JointType_SpineBase) - kinectPoints.points.col(JointType_SpineShoulder) );
+		cv::Vec3f larmV = mat_to_vec3(kinectPoints.points.col(JointType_WristLeft) - kinectPoints.points.col(JointType_ShoulderLeft));
+		cv::Vec3f rarmV = mat_to_vec3(kinectPoints.points.col(JointType_WristRight) - kinectPoints.points.col(JointType_ShoulderRight));
+
+		double torsoVA = atan2(torsoV[1], torsoV[0]);
+		double larmVA = atan2(larmV[1], larmV[0]);
+		double rarmVA = atan2(rarmV[1], rarmV[0]);
+
+		//arms must be away from the body: the further the better
+	
+		//cv::Vec3f llegV = kinectPoints[nite::JOINT_LEFT_FOOT] - kinectPoints[nite::JOINT_LEFT_HIP];
+		//cv::Vec3f rlegV = kinectPoints[nite::JOINT_RIGHT_FOOT] - kinectPoints[nite::JOINT_RIGHT_HIP];
+
+		//double llegVA = atan2(llegV[1], llegV[0]);
+		//double rlegVA = atan2(rlegV[1], rlegV[0]);
+		
+		//double cleg = ((llegVA > rlegVA)?-1000:1000);
+
+		//convert to 2D
+		cv::Vec2f a1 = toScreen(mat_to_vec3(kinectPoints.points.col(JointType_AnkleLeft)));
+		cv::Vec2f b1 = toScreen(mat_to_vec3(kinectPoints.points.col(JointType_HipLeft)));
+		cv::Vec2f a2 = toScreen(mat_to_vec3(kinectPoints.points.col(JointType_AnkleRight)));
+		cv::Vec2f b2 = toScreen(mat_to_vec3(kinectPoints.points.col(JointType_HipRight)));
+
+		float lambda1, lambda2;
+
+		//find intersection
+		bool int_exist = calculateIntersection(a1, b1, a2, b2, &lambda1, &lambda2);
+
+		double cleg = int_exist?((lambda1>0&&lambda1<1&&lambda2>0&&lambda2<1)?-1000:1000):1000;
+
+		//legs should not be crossed
+
+		//better if facing screen
+		//i.e. arms parallel to screen
+
+		cv::Vec3f z_in(1,0,0);
+
+		double multL = abs( ((cv::normalize(larmV)).dot( z_in)) );
+		double multR = abs( ((cv::normalize(rarmV)).dot( z_in)));
+
+		std::cout << "torso: " << torsoVA << " larm: " << larmVA << " rarm: " << rarmVA << " cleg: " << cleg << " multL: " << multL << " multR: " << multR << std::endl;
+
+		//int score = multL * 1000 * (torsoVA - larmVA) + multR * 1000 * (rarmVA - torsoVA) + cleg;
+		int score = multL * 1000 + multR * 1000 + cleg;
+
+		int s2 = score > 200000? 200000: score;
+
+		return getSkeletonGoodness(&kinectPoints) * s2;
+	}
+
+	void augmentSkeleton(Skeleton * s){
+		//nothing to do here
+	}
+
+	void saveParams(std::string filename){
+		//nothing to do here
+	}
+
+	void loadParams(std::string filename){
+		//nothing to do here
+	}
+
+	cv::Vec3f mapDepthToSkeletonPoint(DepthXY d){
+		cv::Vec3f ret;
+
+		float dx = d.x;
+		float dy = d.y;
+		long dz = d.depth;
+
+		mapDepthToSkeleton(&dx, &dy, &dz, &ret(0), &ret(1), &ret(2));
+
+		return ret/1000.;
+	}
+
+	std::pair<int, int> facingHelper(int s){
+		if(s==1) //shoulders
+		{
+			return std::pair<int,int>(JointType_ShoulderLeft, JointType_ShoulderRight);
+		}else if(s==2){
+			return std::pair<int,int>(JointType_HipLeft, JointType_HipRight);
+		}else{
+			std::cerr << "wrong value passed into facingHelper\n";
+			throw std::exception();
+		}
+	}
 }
 
 #endif

@@ -55,7 +55,7 @@ namespace KINECT{
 		long y;
 	};
 
-	void getKinectData_depth_raw(DepthXY * depthPoints);
+	//void getKinectData_depth_raw(DepthXY * depthPoints);
 
 	cv::Vec3f mapDepthToSkeletonPoint(DepthXY d);
 

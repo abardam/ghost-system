@@ -49,6 +49,8 @@ namespace KINECT{
 	
 	void CalculateColorDepthMap();
 
+	void mapDepthToSkeleton(float * nDepthX, float * nDepthY, long * nDepth, float * nCameraX, float * nCameraY, float * nCameraZ);
+
 	RGBQUAD * GetDepthRGBX();
 	USHORT * GetDepth();
 	RGBQUAD * GetColorRGBX();

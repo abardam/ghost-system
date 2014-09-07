@@ -646,6 +646,24 @@ namespace KINECT{
 		}
 	}
 	
+	//legacy
+	void mapDepthToSkeleton(float * nDepthX, float * nDepthY, long * nDepth, float * nCameraX, float * nCameraY, float * nCameraZ){
+		if(!m_pCoordinateMapper){
+			return;
+		}
+
+		DepthSpacePoint depthSpacePoint;
+		depthSpacePoint.X = *nDepthX;
+		depthSpacePoint.Y = *nDepthY;
+
+		CameraSpacePoint cameraSpacePoint;
+		m_pCoordinateMapper->MapDepthPointToCameraSpace(depthSpacePoint, *nDepth, &cameraSpacePoint);
+
+		*nCameraX = cameraSpacePoint.X;
+		*nCameraY = cameraSpacePoint.Y;
+		*nCameraZ = cameraSpacePoint.Z;
+
+	}
 
 	RGBQUAD * GetDepthRGBX(){
 		return m_pDepthRGBX;
