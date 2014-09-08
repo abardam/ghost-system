@@ -752,6 +752,31 @@ namespace KINECT{
 		return ret/1000.;
 	}
 
+	
+	//takes 4xN Mat of camera points and uses Kinect function to map it to 2xN Mat of color space points
+	cv::Mat mapCameraPointsToColorPoints(cv::Mat cameraPoints){
+		ICoordinateMapper * coordinateMapper = getCoordinateMapper();
+		int nCameraPoints = cameraPoints.cols;
+		std::vector<CameraSpacePoints> vCameraPoints(nCameraPoints);
+		std::vector<ColorSpacePoints> vColorPoints(nCameraPoints);
+
+		for(int i=0;i<nCameraPoints;++i){
+			vCameraPoints[i].X = cameraPoints.ptr<float>(0)[i];
+			vCameraPoints[i].Y = cameraPoints.ptr<float>(1)[i];
+			vCameraPoints[i].Z = cameraPoints.ptr<float>(2)[i];
+		}
+
+		HRESULT hr = coordinateMapper->MapCameraPointsToColorSpace(nCameraPoints, vCameraPoints.data(), nCameraPoints, vColorPoints.data());
+
+		cv::Mat mColorPoints(2, nCameraPoints, CV_32F);
+		for(int i=0;i<nCameraPoints;++i){
+			mColorPoints.ptr<float>(0)[i] = vColorPoints[i].X;
+			mColorPoints.ptr<float>(1)[i] = vColorPoints[i].Y;
+		}
+
+		return mColorPoints;
+	}
+
 	std::pair<int, int> facingHelper(int s){
 		if(s==1) //shoulders
 		{

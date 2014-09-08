@@ -708,4 +708,8 @@ namespace KINECT{
 	bool getSkeletonIsGood(){
 		return m_bSkeletonIsGood;
 	}
+
+	ICoordinateMapper * getCoordinateMapper(){
+		return m_pCoordinateMapper;
+	}
 }

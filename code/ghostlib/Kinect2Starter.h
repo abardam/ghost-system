@@ -63,4 +63,5 @@ namespace KINECT{
 	unsigned int getColorWidth();
 	unsigned int getColorHeight();
 	bool getSkeletonIsGood();
+	ICoordinateMapper * getCoordinateMapper();
 }
