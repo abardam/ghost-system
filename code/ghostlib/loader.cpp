@@ -76,6 +76,8 @@ std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoF
 	for(TiXmlElement * elem = framesNode.FirstChild().Element(); 
 		elem != NULL; elem = elem->NextSiblingElement()){
 			
+		if (elem->Attribute("frame") == NULL) continue;
+
 			ret.push_back(false);
 
 			SkeleVideoFrame temp;
@@ -109,23 +111,28 @@ std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoF
 #if IMAGE_CHANNELS == 4
 				temp.videoFrame.mat = bodyFrame;
 #endif
-				if(temp.videoFrame.mat.empty()) {
+
+				if (temp.videoFrame.mat.empty()) {
 					std::cout << "unable to read " << ffilename << "; skipping\n";
 				}
-				double ox=0, oy=0;
-				if(elem->Attribute("offsetX") != NULL) elem->QueryDoubleAttribute("offsetX", &ox);
-				if(elem->Attribute("offsetY") != NULL) elem->QueryDoubleAttribute("offsetY", &oy);
-
-				temp.videoFrame.offset.x = ox;
-				temp.videoFrame.offset.y = oy;
-
-				int ow=CAPTURE_SIZE_X, oh=CAPTURE_SIZE_Y;
-				if(elem->Attribute("originalWidth") != NULL)  elem->QueryIntAttribute("originalWidth", &ow);
-				if(elem->Attribute("originalHeight") != NULL) elem->QueryIntAttribute("originalHeight", &oh);
-
-				temp.videoFrame.origWidth = ow;
-				temp.videoFrame.origHeight = oh;
 			}
+			if(loadRGB && temp.videoFrame.mat.empty()) {
+				continue;
+			}
+
+			double ox=0, oy=0;
+			if(elem->Attribute("offsetX") != NULL) elem->QueryDoubleAttribute("offsetX", &ox);
+			if(elem->Attribute("offsetY") != NULL) elem->QueryDoubleAttribute("offsetY", &oy);
+
+			temp.videoFrame.offset.x = ox;
+			temp.videoFrame.offset.y = oy;
+
+			int ow=CAPTURE_SIZE_X, oh=CAPTURE_SIZE_Y;
+			if(elem->Attribute("originalWidth") != NULL)  elem->QueryIntAttribute("originalWidth", &ow);
+			if(elem->Attribute("originalHeight") != NULL) elem->QueryIntAttribute("originalHeight", &oh);
+
+			temp.videoFrame.origWidth = ow;
+			temp.videoFrame.origHeight = oh;
 
 			if(elem->Attribute("framedepth") != NULL)
 			{

@@ -19,7 +19,7 @@ cv::Mat cylinder_to_pts(unsigned int imgWidth, unsigned int imgHeight, cv::Vec3f
 
 	cv::Vec3f a,b;
 
-	if(a_(2) < b_(2)){
+	if(cv::norm(a_) < cv::norm(b_)){
 		a = a_;
 		b = b_;
 	}else{
