@@ -62,8 +62,6 @@ namespace KINECT{
 	//takes 4xN Mat of camera points and uses Kinect function to map it to 2xN Mat of color space points
 	cv::Mat mapCameraPointsToColorPoints(cv::Mat cameraPoints);
 	
-	//takes 4xN Mat of camera points and uses Kinect function to map it to 3xN Mat of depth points
-	cv::Mat mapCameraPointsToDepthPoints(cv::Mat cameraPoints);
 
 	//void GridProjection(TooN::SE3<> mse3CfW, std::vector<TooN::Vector<4>> * gp1, std::vector<TooN::Vector<4>> * gp2); //moved to PTAM2Kinect
 

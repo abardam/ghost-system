@@ -570,7 +570,7 @@ cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigne
 #if GHOST_CAPTURE == CAPTURE_OPENNI
 	cv::Mat cameraMatrix = getCameraMatrix();
 #elif GHOST_CAPTURE == CAPTURE_KINECT2
-	cv::Mat convertedDepthPoints = KINECT::mapCameraPointsToDepthPoints(cylPts);
+	cv::Mat convertedDepthPoints = KINECT::mapCameraPointsToColorPoints(cylPts);
 #endif
 
 	for(int i=0;i<cylPts.cols;++i){
@@ -581,7 +581,7 @@ cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigne
 #elif GHOST_CAPTURE == CAPTURE_KINECT2
 		cv::Vec2f ptProj2d(convertedDepthPoints.ptr<float>(0)[i],
 			convertedDepthPoints.ptr<float>(1)[i]);
-		unsigned short new_depth = convertedDepthPoints.ptr<float>(2)[i] * FLOAT_TO_DEPTH;
+		unsigned short new_depth = cylPts.ptr<float>(2)[i] * FLOAT_TO_DEPTH;
 #endif
 		cv::Point2i pixLoc = cv::Point2i(ptProj2d) - voff;
 		cv::Point2i pixLoc_off = pixLoc - offset + voff;
