@@ -3,6 +3,7 @@
 #include "cvutil.h"
 #include "bodybuild.h"
 #include "ghostcam.h"
+#include "KinectManager.h"
 
 #include "camlerp.h"
 
@@ -564,17 +565,24 @@ cv::Mat cylinder_to_pts(cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff
 #endif
 
 cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigned int width, unsigned int height){
-	cv::Mat cameraMatrix = getCameraMatrix();
 
 	cv::Mat zBufferLocal(height, width, CV_16U, cv::Scalar(MAXDEPTH));
+#if GHOST_CAPTURE == CAPTURE_OPENNI
+	cv::Mat cameraMatrix = getCameraMatrix();
+#elif GHOST_CAPTURE == CAPTURE_KINECT2
+	cv::Mat convertedDepthPoints = KINECT::mapCameraPointsToDepthPoints(cylPts);
+#endif
 
 	for(int i=0;i<cylPts.cols;++i){
+#if GHOST_CAPTURE == CAPTURE_OPENNI
 		cv::Vec3f ptProj = mat_to_vec3(cylPts.col(i));
-
 		cv::Vec2f ptProj2d = mat4_to_vec2(cameraMatrix * vec3_to_mat4(ptProj));
-						
 		unsigned short new_depth = ptProj(2) * FLOAT_TO_DEPTH;
-
+#elif GHOST_CAPTURE == CAPTURE_KINECT2
+		cv::Vec2f ptProj2d(convertedDepthPoints.ptr<float>(0)[i],
+			convertedDepthPoints.ptr<float>(1)[i]);
+		unsigned short new_depth = convertedDepthPoints.ptr<float>(2)[i] * FLOAT_TO_DEPTH;
+#endif
 		cv::Point2i pixLoc = cv::Point2i(ptProj2d) - voff;
 		cv::Point2i pixLoc_off = pixLoc - offset + voff;
 

@@ -21,12 +21,6 @@ Limbrary::Limbrary():framesForLimb(NUMLIMBS){
 void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cylinderBody, bool verbose){
 
 	if(verbose) std::cout << "Building limbrary...\n";
-
-
-	cv::Mat cameraMatrix = getCameraMatrix(); //for 3D pt -> 2D pt
-	cv::Mat invCameraMatrix = invertCameraMatrix(cameraMatrix); //for 2D pt -> 3D ray
-
-	
 	
 	for(auto it=vidRecord->begin(); it!=vidRecord->end(); ++it){
 		cv::Mat draw = it->videoFrame.mat.clone();

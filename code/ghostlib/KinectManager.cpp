@@ -779,6 +779,36 @@ namespace KINECT{
 
 		return mColorPoints;
 	}
+	
+	//takes 4xN Mat of camera points and uses Kinect function to map it to 3xN Mat of depth points
+	cv::Mat mapCameraPointsToDepthPoints(cv::Mat cameraPoints){
+		ICoordinateMapper * coordinateMapper = getCoordinateMapper();
+		int nCameraPoints = cameraPoints.cols;
+		std::vector<CameraSpacePoint> vCameraPoints(nCameraPoints);
+		std::vector<DepthSpacePoint> vDepthPoints(nCameraPoints);
+
+		for(int i=0;i<nCameraPoints;++i){
+			vCameraPoints[i].X = cameraPoints.ptr<float>(0)[i];
+			vCameraPoints[i].Y = cameraPoints.ptr<float>(1)[i];
+			vCameraPoints[i].Z = cameraPoints.ptr<float>(2)[i];
+		}
+
+		HRESULT hr = coordinateMapper->MapCameraPointsToDepthSpace(nCameraPoints, vCameraPoints.data(), nCameraPoints, vDepthPoints.data());
+
+		float ratioX = (CAPTURE_SIZE_X + 0.0) / CAPTURE_SIZE_X_DEPTH;
+		float ratioY = (CAPTURE_SIZE_Y + 0.0) / CAPTURE_SIZE_Y_DEPTH;
+
+		cv::Mat mDepthPoints(3, nCameraPoints, CV_32F);
+		for(int i=0;i<nCameraPoints;++i){
+			mDepthPoints.ptr<float>(0)[i] = ratioX * vDepthPoints[i].X;
+			mDepthPoints.ptr<float>(1)[i] = ratioY * vDepthPoints[i].Y;
+			mDepthPoints.ptr<float>(2)[i] = vCameraPoints[i].Z;
+		}
+
+		return mDepthPoints;
+	}
+
+
 
 	std::pair<int, int> facingHelper(int s){
 		if(s==1) //shoulders
