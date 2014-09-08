@@ -4,6 +4,7 @@
 #include "loader.h"
 #include "cvutil.h"
 #include "ghostcam.h"
+#include "KinectManager.h"
 
 //from KinectManager.h
 #define CAPTURE_SIZE_X	640
@@ -214,12 +215,34 @@ cv::Vec2f _toScreen(cv::Vec3f v){
 #define NEAR 0.1
 
 std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f offset){
+#if GHOST_CAPTURE == CAPTURE_KINECT2
+	cv::Mat mPts(3, pts.size()*2, CV_32F);
+	for(int i=0;i<pts.size();++i){
+		mPts.ptr<float>(0)[i*2] = pts[i].first(0);
+		mPts.ptr<float>(1)[i*2] = pts[i].first(1);
+		mPts.ptr<float>(2)[i*2] = pts[i].first(2);
+		mPts.ptr<float>(0)[i*2+1] = pts[i].second(0);
+		mPts.ptr<float>(1)[i*2+1] = pts[i].second(1);
+		mPts.ptr<float>(2)[i*2+1] = pts[i].second(2);
+	}
+
+	cv::Mat mTransformedPts = KINECT::mapCameraPointsToColorPoints(mPts);
+#endif
+
 	std::vector<Segment2f> pts2(pts.size());
 	for(int i=0;i<pts.size();++i){
 		if(pts[i].first(2) < NEAR || pts[i].second(2) < NEAR) return std::vector<Segment2f>(); //opencv bugs out when things are clip thru
 
+#if GHOST_CAPTURE == CAPTURE_OPENNI
 		pts2[i].first = toScreen(pts[i].first) - offset;
 		pts2[i].second = toScreen(pts[i].second) - offset;
+#elif GHOST_CAPTURE == CAPTURE_KINECT2
+		pts2[i].first = cv::Vec2f(mTransformedPts.ptr<float>(0)[i*2],
+			mTransformedPts.ptr<float>(1)[i*2]) - offset;
+		pts2[i].first = cv::Vec2f(mTransformedPts.ptr<float>(0)[i*2+1],
+			mTransformedPts.ptr<float>(1)[i*2+1]) - offset;
+
+#endif
 	}
 	return pts2;
 }
