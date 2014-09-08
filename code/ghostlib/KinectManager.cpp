@@ -547,7 +547,7 @@ namespace KINECT{
 	}
 
 	void initMapping(Mapping * mapping){
-		mapping->limbmap[HEAD]				= lmap(JointType_Head,				JointType_Neck)			;
+		mapping->limbmap[HEAD]				= lmap(JointType_Head,				JointType_SpineShoulder)			;
 		mapping->limbmap[UPPERARM_LEFT]		= lmap(JointType_ShoulderLeft,		JointType_ElbowLeft)		;
 		mapping->limbmap[UPPERARM_RIGHT]	= lmap(JointType_ShoulderRight,		JointType_ElbowRight)	;
 		mapping->limbmap[LOWERARM_LEFT]		= lmap(JointType_ElbowLeft,			JointType_WristLeft)		;
@@ -560,7 +560,7 @@ namespace KINECT{
 		mapping->limbmap[LOWERLEG_RIGHT]	= lmap(JointType_KneeRight,			JointType_AnkleRight)		;
 
 		mapping->jointmap[JointType_Head].push_back(HEAD);
-		mapping->jointmap[JointType_Neck].push_back(HEAD);
+		mapping->jointmap[JointType_SpineShoulder].push_back(HEAD);
 		mapping->jointmap[JointType_SpineShoulder].push_back(CHEST);
 		mapping->jointmap[JointType_ShoulderLeft].push_back(UPPERARM_LEFT);
 		mapping->jointmap[JointType_ShoulderRight].push_back(UPPERARM_RIGHT);
@@ -604,7 +604,7 @@ namespace KINECT{
 		mapping->partWeights[CHEST][JointType_HipRight] = 1;
 
 		mapping->partWeights[ABS][JointType_ShoulderLeft] = 1;
-		mapping->partWeights[ABS][JointType_Neck] = 1;
+		mapping->partWeights[ABS][JointType_SpineShoulder] = 1;
 		mapping->partWeights[ABS][JointType_ShoulderRight] = 1;
 		mapping->partWeights[ABS][JointType_HipLeft] = 1;
 		mapping->partWeights[ABS][JointType_HipRight] = 1;

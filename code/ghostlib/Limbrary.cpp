@@ -37,6 +37,8 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 		CroppedCvMat occlBuffer[NUMLIMBS]; 
 		FrameLimbs individualLimbMat(NUMLIMBS);
 
+		if (it->videoFrame.origWidth == 0 || it->videoFrame.origHeight == 0) continue;
+
 
 		for(int i=0;i<NUMLIMBS;++i){
 
