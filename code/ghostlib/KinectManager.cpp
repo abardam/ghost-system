@@ -416,7 +416,7 @@ namespace KINECT{
 	bool bAutoUpdate = false;
 
 	bool doCalib(){
-		return false;
+		return true;
 	}
 
 	bool init(){
@@ -749,7 +749,7 @@ namespace KINECT{
 
 		mapDepthToSkeleton(&dx, &dy, &dz, &ret(0), &ret(1), &ret(2));
 
-		return ret/1000.;
+		return ret;
 	}
 
 	

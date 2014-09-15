@@ -106,7 +106,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 				std::vector<Segment2f> pts2 = segment3f_to_2f(pts, cv::Vec2f(source.offset.x, source.offset.y));
 				if(pts2.empty()){
 					fromPixels[limb] = cv::Mat(4, 0, CV_32F, cv::Scalar(1));;
-					break;
+					continue;
 				}
 				cv::Rect r = cv::boundingRect(segments_to_points(pts2));
 
@@ -132,10 +132,17 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 	
 				//std::cout << p->x_offset << " " << limbpicWidth << " " << p->lo_y << " " << limbpicHeight << std::endl;
 
+				if (limbpicWidth <= 0 || limbpicHeight <= 0 || limbpicWidth * limbpicHeight * 4 <= 0 ) continue;
+
 				cv::Rect boundingBox(0,0,limbpicWidth, limbpicHeight);
 				LerpCorners lc = generateLerpCorners(boundingBox);
-	
-				cv::Mat rayMat(4, limbpicHeight*limbpicWidth, CV_32F);
+				cv::Mat rayMat;
+				try{
+					rayMat = cv::Mat (4, limbpicHeight*limbpicWidth, CV_32F);
+				}
+				catch (std::exception){
+					continue;
+				}
 
 				for(int _x = 0; _x < limbpicWidth; ++_x){
 					for(int _y = 0; _y < limbpicHeight; ++_y){
@@ -208,7 +215,15 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 					}
 				}
 
-				cv::Mat ret(valid_count, 4, CV_32F, fromPixels_f.data());
+				if (valid_count * 4 <= 0) continue;
+				cv::Mat ret;
+
+				try{
+					ret = cv::Mat(valid_count, 4, CV_32F, fromPixels_f.data());
+				}
+				catch (std::exception){
+					continue;
+				}
 				//for(int j=0;j<4;++j){
 				//	float * retptr = ret.ptr<float>(j);
 				//	for(int i=0;i<fromPixels_f.size();++i){

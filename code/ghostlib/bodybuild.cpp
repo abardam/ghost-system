@@ -212,7 +212,7 @@ cv::Vec2f _toScreen(cv::Vec3f v){
 }
 
 //todo: make more official
-#define NEAR 0.1
+#define NEAR 1.5
 
 std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f offset){
 #if GHOST_CAPTURE == CAPTURE_KINECT2
@@ -541,6 +541,7 @@ PixelPolygon polygon_contains_pixels(std::vector<Segment2f> polygon){
 	if(polygon.empty()) return p;
 
 	cv::Rect bb = cv::boundingRect(segments_to_points(polygon));
+	if (bb.width < 0 || bb.height < 0) return p;
 	p.hi.resize(bb.width);
 	p.lo.resize(bb.width);
 	p.hi_y=-1;

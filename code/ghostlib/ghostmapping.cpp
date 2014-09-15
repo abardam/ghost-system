@@ -413,6 +413,8 @@ void cylinderMapPixelsColor_parallel_orig(
 	float cylRatio = 1.f/cylinderBody->radiusModifier;
 
 	for(int i=0;i<NUMLIMBS;++i){
+		if (fromPixels[i].empty()) continue;
+
 		transformedPixels[i].reserve(scoreList[i].size());
 		for(auto it=scoreList[i].begin(); it!=scoreList[i].end(); ++it){
 			
@@ -557,6 +559,8 @@ void cylinderMapPixelsColor_parallel_orig(
 			lastlimit = limits[limbid-1];
 			//lastlimit2 = transformedPixelsLimits[limbid-1];
 		}
+
+		if (fromPixels[limbid].cols == 0) continue;
 		
 		cv::Vec3b blendPixel(0,0,0);
 		cv::Vec3b lastBlend(0,0,0);
