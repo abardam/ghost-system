@@ -45,6 +45,9 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 	for(int limb=0;limb<NUMLIMBS;++limb){
 
+		int lastLimbLimit = (limb>0?limits[limb-1]:0);
+		limits[limb] = lastLimbLimit;
+
 		//int f = getLimbmap()[i].first;
 		//int s = getLimbmap()[i].second;
 		//
@@ -215,7 +218,9 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 					}
 				}
 
-				if (valid_count * 4 <= 0) continue;
+				if (valid_count * 4 <= 0){
+					continue;
+				}
 				cv::Mat ret;
 
 				try{
@@ -239,7 +244,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 				//cv::divide(ret.row(3), ret.row(3), ret.row(3));
 
 				for(int j=0;j<ret.cols;++j){
-					int ind = j+(limb>0?limits[limb-1]:0);
+					int ind = j+lastLimbLimit;
 					fromPixels_2d_v[ind](2) = ret.ptr<float>(2)[j] * FLOAT_TO_DEPTH;
 				}
 				

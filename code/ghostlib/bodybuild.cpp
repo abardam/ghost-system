@@ -212,7 +212,7 @@ cv::Vec2f _toScreen(cv::Vec3f v){
 }
 
 //todo: make more official
-#define NEAR 1.5
+#define NEAR 0.1
 
 std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f offset){
 #if GHOST_CAPTURE == CAPTURE_KINECT2
@@ -243,6 +243,11 @@ std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f off
 			mTransformedPts.ptr<float>(1)[i*2+1]) - offset;
 
 #endif
+
+		if(!_finite(pts2[i].first(0)) || 
+			!_finite(pts2[i].first(1)) || 
+			!_finite(pts2[i].second(0)) || 
+			!_finite(pts2[i].second(1))) return std::vector<Segment2f>(); //trying to solve kinect pts at infinity problem
 	}
 	return pts2;
 }
