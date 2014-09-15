@@ -17,6 +17,8 @@
 
 namespace KINECT{
 
+	bool setKinectManager(int captureType);
+
 	bool doCalib();
 	bool init();
 	bool release();
@@ -25,7 +27,6 @@ namespace KINECT{
 	CroppedCvMat getPlayerColorFrame();
 	cv::Mat getDepthFrame();
 	Skeleton getSkeleton();
-	cv::Mat getUserColorFrame();
 	bool skeletonIsGood();
 	float getSkeletonGoodness(Skeleton * s);
 
@@ -69,29 +70,29 @@ namespace KINECT{
 	std::pair<int, int> facingHelper(int s);
 
 	class IKinectManager{
-		bool doCalib();
-		bool init();
-		bool release();
-		void updateFrames();
-		cv::Mat getColorFrame();
-		CroppedCvMat getPlayerColorFrame();
-		cv::Mat getDepthFrame();
-		Skeleton getSkeleton();
-		cv::Mat getUserColorFrame();
-		bool skeletonIsGood();
-		float getSkeletonGoodness(Skeleton * s);
-		int getCenterJoint();
-		int getHeadJoint();
-		void initMapping(Mapping * mapping);
-		cv::Vec3f calculateFacing(Skeleton * s);
-		bool checkTracked(int state);
-		int initSkeletonScore(Skeleton kinectPoints);
-		void saveParams(std::string);
-		void loadParams(std::string);
-		void augmentSkeleton(Skeleton * s);
-		void getKinectData_depth_raw(DepthXY * depthPoints);
-		cv::Vec3f mapDepthToSkeletonPoint(DepthXY d);
-		cv::Mat mapCameraPointsToColorPoints(cv::Mat cameraPoints);
-		std::pair<int, int> facingHelper(int s);
+	public:
+		virtual bool doCalib() = 0;
+		virtual bool init() = 0;
+		virtual bool release() = 0;
+		virtual void updateFrames() = 0;
+		virtual cv::Mat getColorFrame() = 0;
+		virtual CroppedCvMat getPlayerColorFrame() = 0;
+		virtual cv::Mat getDepthFrame() = 0;
+		virtual Skeleton getSkeleton() = 0;
+		virtual bool skeletonIsGood() = 0;
+		virtual float getSkeletonGoodness(Skeleton * s) = 0;
+		virtual int getCenterJoint() = 0;
+		virtual int getHeadJoint() = 0;
+		virtual void initMapping(Mapping * mapping) = 0;
+		virtual cv::Vec3f calculateFacing(Skeleton * s) = 0;
+		virtual bool checkTracked(int state) = 0;
+		virtual int initSkeletonScore(Skeleton kinectPoints) = 0;
+		virtual void saveParams(std::string) = 0;
+		virtual void loadParams(std::string) = 0;
+		virtual void augmentSkeleton(Skeleton * s) = 0;
+		virtual void getKinectData_depth_raw(DepthXY * depthPoints) = 0;
+		virtual cv::Vec3f mapDepthToSkeletonPoint(DepthXY d) = 0;
+		virtual cv::Mat mapCameraPointsToColorPoints(cv::Mat cameraPoints) = 0;
+		virtual std::pair<int, int> facingHelper(int s) = 0;
 	};
 };
