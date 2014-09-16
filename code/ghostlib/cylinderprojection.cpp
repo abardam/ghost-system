@@ -56,12 +56,13 @@ cv::Mat cylinder_to_pts(unsigned int imgWidth, unsigned int imgHeight, cv::Vec3f
 	int limbpicHeight = p->hi_y-p->lo_y;
 	
 	//std::cout << p->x_offset << " " << limbpicWidth << " " << p->lo_y << " " << limbpicHeight << std::endl;
+	cv::Mat rayMat(4, limbpicHeight*limbpicWidth, CV_32F);
+
+#if GHOST_CAPTURE != CAPTURE_KINECT2
 
 	cv::Rect boundingBox(0,0,imgWidth,imgHeight);
 	LerpCorners lc = generateLerpCorners(boundingBox);
 	
-	cv::Mat rayMat(4, limbpicHeight*limbpicWidth, CV_32F);
-
 	for(int _x = 0; _x < limbpicWidth; ++_x){
 		for(int _y = 0; _y < limbpicHeight; ++_y){
 			int y = _y + p->lo_y;
@@ -75,6 +76,22 @@ cv::Mat cylinder_to_pts(unsigned int imgWidth, unsigned int imgHeight, cv::Vec3f
 
 		}
 	}
+
+#else
+
+	cv::Mat pts2D(2, limbpicWidth * limbpicHeight, CV_32F);
+	for(int i=0;i<limbpicWidth * limbpicHeight;++i){
+		int _x = i%limbpicWidth;
+		int _y = i/limbpicWidth;
+		int x = _x + p->x_offset+voff.x;
+		int y = _y + p->lo_y+voff.y;
+		pts2D.ptr<float>(0)[i] = x;
+		pts2D.ptr<float>(1)[i] = y;
+	}
+
+	rayMat = KINECT::makeRays(pts2D);
+
+#endif
 
 	rayMat = transformation * rayMat;
 

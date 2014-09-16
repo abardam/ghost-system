@@ -801,10 +801,12 @@ namespace KINECT{
 
 		HRESULT hr = coordinateMapper->MapDepthPointsToCameraSpace(n2DPoints, vDepthPoints.data(), n2DPoints, vDepthValues.data(), n2DPoints, vCameraPoints.data());
 
-		cv::Mat mCameraPoints(2, n2DPoints, CV_32F);
+		cv::Mat mCameraPoints(4, n2DPoints, CV_32F);
 		for(int i=0;i<n2DPoints;++i){
 			mCameraPoints.ptr<float>(0)[i] = vCameraPoints[i].X;
 			mCameraPoints.ptr<float>(1)[i] = vCameraPoints[i].Y;
+			mCameraPoints.ptr<float>(2)[i] = 1;
+			mCameraPoints.ptr<float>(3)[i] = 1;
 		}
 
 		return mCameraPoints;
