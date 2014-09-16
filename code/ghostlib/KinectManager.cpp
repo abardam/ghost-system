@@ -445,8 +445,16 @@ namespace KINECT{
 
 		if (getColorHeight() == 0 || getColorWidth() == 0) return cv::Mat();
 		cv::Mat colorFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetColorRGBX()).clone();
-		cv::Mat colorFrame;
-		cv::resize(colorFrame_, colorFrame, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));
+
+		cv::Mat colorFrameResized;
+
+		float ratioX = (CAPTURE_SIZE_Y+0.0) * getColorWidth() / getColorHeight();
+		cv::resize(colorFrame_, colorFrameResized, cv::Size(ratioX, CAPTURE_SIZE_Y));
+
+		int xDifference = ratioX - CAPTURE_SIZE_X;
+		int xLeft = xDifference / 2;
+
+		cv::Mat colorFrame = colorFrameResized(cv::Rect(xLeft, 0, CAPTURE_SIZE_X, CAPTURE_SIZE_Y)).clone();
 		return colorFrame;
 	}
 
