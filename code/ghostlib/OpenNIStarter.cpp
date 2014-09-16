@@ -514,6 +514,9 @@ namespace KINECT
 
 	void mapDepthToSkeleton(float *dX, float *dY, float *dZ, float *sX, float *sY, float *sZ){
 		openni::CoordinateConverter::convertDepthToWorld(depth, *dX, *dY, *dZ, sX, sY, sZ);
+		*sX /= 1000.;
+		*sY /= 1000.;
+		*sZ /= 1000.;
 	}
 
 	void mapSkeletonToDepth(float *sX, float *sY, float *sZ, float *dX, float *dY, float *dZ){

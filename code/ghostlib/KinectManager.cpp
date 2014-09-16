@@ -389,7 +389,7 @@ namespace KINECT{
 
 		mapDepthToSkeleton(&dx, &dy, &dz, &ret(0), &ret(1), &ret(2));
 
-		return ret/1000.;
+		return ret;
 	}
 
 	std::pair<int, int> facingHelper(int s){
