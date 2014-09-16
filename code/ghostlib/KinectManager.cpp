@@ -13,7 +13,6 @@
 #define JFS(s, j) mat_to_vec3(s.points.col(j))
 #define JFM(m, j) mat_to_vec3(m.col(j))
 
-
 #if GHOST_CAPTURE == CAPTURE_OPENNI
 //openNI
 #include <OpenNI.h>
@@ -409,11 +408,16 @@ namespace KINECT{
 #elif GHOST_CAPTURE == CAPTURE_KINECT2
 #include "Kinect2Starter.h"
 
+
+
 namespace KINECT{
 
 	bool bInit = false;
 	bool bSkeletonIsGood = false;
 	bool bAutoUpdate = false;
+
+	const float nRatio = (CAPTURE_SIZE_Y+0.0) / CAPTURE_SIZE_Y_COLOR;
+	const float nOffsetX = ((nRatio * CAPTURE_SIZE_X_COLOR) - CAPTURE_SIZE_X)/2;
 
 	bool doCalib(){
 		return true;
@@ -425,6 +429,7 @@ namespace KINECT{
 		if (bInit){
 			InitKinect2Starter();
 		}
+
 		return bInit;
 	}
 
@@ -440,21 +445,21 @@ namespace KINECT{
 		UpdateBodyFrameIndex();
 	}
 
+	cv::Mat scaleAndCrop(cv::Mat& m){
+		
+		float tempWidth = nRatio * getColorWidth();
+		cv::Mat m_resized;
+		cv::resize(m, m_resized, cv::Size(tempWidth, CAPTURE_SIZE_Y));
+		return m_resized(cv::Rect(nOffsetX, 0, CAPTURE_SIZE_X, CAPTURE_SIZE_Y)).clone();
+	}
+
 	cv::Mat getColorFrame(){
 		if(bAutoUpdate) UpdateColor();
 
 		if (getColorHeight() == 0 || getColorWidth() == 0) return cv::Mat();
 		cv::Mat colorFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetColorRGBX()).clone();
+		cv::Mat colorFrame = scaleAndCrop(colorFrame_);
 
-		cv::Mat colorFrameResized;
-
-		float ratioX = (CAPTURE_SIZE_Y+0.0) * getColorWidth() / getColorHeight();
-		cv::resize(colorFrame_, colorFrameResized, cv::Size(ratioX, CAPTURE_SIZE_Y));
-
-		int xDifference = ratioX - CAPTURE_SIZE_X;
-		int xLeft = xDifference / 2;
-
-		cv::Mat colorFrame = colorFrameResized(cv::Rect(xLeft, 0, CAPTURE_SIZE_X, CAPTURE_SIZE_Y)).clone();
 		return colorFrame;
 	}
 
@@ -469,9 +474,7 @@ namespace KINECT{
 		if (getDepthHeight() == 0 || getDepthWidth() == 0 || getColorHeight() == 0 || getColorWidth() == 0 || !skeletonIsGood()) return CroppedCvMat();
 
 		cv::Mat bodyFrame__ = cv::Mat(getColorHeight(), getColorWidth(), CV_8UC4, GetBodyColorRGBX()).clone();
-		cv::Mat bodyFrame_;
-
-		cv::resize(bodyFrame__, bodyFrame_, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));
+		cv::Mat bodyFrame_ = scaleAndCrop(bodyFrame__);
 
 		int minY = bodyFrame_.rows, minX = bodyFrame_.cols, maxY = 0, maxX = 0;
 
@@ -503,8 +506,7 @@ namespace KINECT{
 
 		if (getDepthHeight() == 0 || getDepthWidth() == 0 || getColorHeight() == 0 || getColorWidth() == 0) return cv::Mat();
 		cv::Mat depthFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_16U, GetDepthMappedToColor()).clone();
-		cv::Mat depthFrame;
-		cv::resize(depthFrame_, depthFrame, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));
+		cv::Mat depthFrame = scaleAndCrop(depthFrame_);
 		return depthFrame;
 	}
 
@@ -733,11 +735,10 @@ namespace KINECT{
 			return;
 		}
 		
-		if(getDepthHeight() == 0 || getDepthWidth() == 0) return;
+		if(getDepthHeight() == 0 || getDepthWidth() == 0 || getColorHeight() == 0 || getColorWidth() == 0) return;
 
-		cv::Mat depthFrame_ = cv::Mat(getDepthHeight(), getDepthWidth(), CV_16U, GetDepth());
-		cv::Mat depthFrame;
-		cv::resize(depthFrame_, depthFrame, cv::Size(CAPTURE_SIZE_X, CAPTURE_SIZE_Y));
+		cv::Mat depthFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_16U, GetDepthMappedToColor());
+		cv::Mat depthFrame = scaleAndCrop(depthFrame);
 
 		for(int y=0;y<CAPTURE_SIZE_Y;++y){
 			for(int x=0;x<CAPTURE_SIZE_X;++x){
@@ -776,20 +777,15 @@ namespace KINECT{
 
 		HRESULT hr = coordinateMapper->MapCameraPointsToColorSpace(nCameraPoints, vCameraPoints.data(), nCameraPoints, vColorPoints.data());
 
-		float ratioX = (CAPTURE_SIZE_X + 0.0) / CAPTURE_SIZE_X_COLOR;
-		float ratioY = (CAPTURE_SIZE_Y + 0.0) / CAPTURE_SIZE_Y_COLOR;
-
 		cv::Mat mColorPoints(2, nCameraPoints, CV_32F);
 		for(int i=0;i<nCameraPoints;++i){
-			mColorPoints.ptr<float>(0)[i] = ratioX * vColorPoints[i].X;
-			mColorPoints.ptr<float>(1)[i] = ratioY * vColorPoints[i].Y;
+			mColorPoints.ptr<float>(0)[i] = nRatio * vColorPoints[i].X - nOffsetX;
+			mColorPoints.ptr<float>(1)[i] = nRatio * vColorPoints[i].Y;
 		}
 
 		return mColorPoints;
 	}
 	
-
-
 
 	std::pair<int, int> facingHelper(int s){
 		if(s==1) //shoulders
