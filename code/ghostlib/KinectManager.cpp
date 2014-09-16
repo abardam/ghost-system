@@ -777,14 +777,10 @@ namespace KINECT{
 
 		HRESULT hr = coordinateMapper->MapCameraPointsToColorSpace(nCameraPoints, vCameraPoints.data(), nCameraPoints, vColorPoints.data());
 
-		float ratioX = (CAPTURE_SIZE_X + 0.0) / CAPTURE_SIZE_X_COLOR;
-		float ratioY = (CAPTURE_SIZE_Y + 0.0) / CAPTURE_SIZE_Y_COLOR;
-
-
 		cv::Mat mColorPoints(2, nCameraPoints, CV_32F);
 		for(int i=0;i<nCameraPoints;++i){
-			mColorPoints.ptr<float>(0)[i] = ratioX * vColorPoints[i].X;
-			mColorPoints.ptr<float>(1)[i] = ratioY * vColorPoints[i].Y;
+			mColorPoints.ptr<float>(0)[i] = nRatio * vColorPoints[i].X - nOffsetX;
+			mColorPoints.ptr<float>(1)[i] = nRatio * vColorPoints[i].Y;
 		}
 
 		return mColorPoints;
