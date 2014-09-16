@@ -785,6 +785,30 @@ namespace KINECT{
 
 		return mColorPoints;
 	}
+
+	cv::Mat makeRays(cv::Mat pts2d){
+		ICoordinateMapper * coordinateMapper = getCoordinateMapper();
+		int n2DPoints = pts2d.cols;
+
+		std::vector<DepthSpacePoint> vDepthPoints(n2DPoints);
+		for(int i=0;i<n2DPoints;++i){
+			vDepthPoints[i].X = pts2d.ptr<float>(0)[i];
+			vDepthPoints[i].Y = pts2d.ptr<float>(1)[i];
+		}
+
+		std::vector<UINT16> vDepthValues(n2DPoints, 1000);
+		std::vector<CameraSpacePoint> vCameraPoints(n2DPoints);
+
+		HRESULT hr = coordinateMapper->MapDepthPointsToCameraSpace(n2DPoints, vDepthPoints.data(), n2DPoints, vDepthValues.data(), n2DPoints, vCameraPoints.data());
+
+		cv::Mat mCameraPoints(2, n2DPoints, CV_32F);
+		for(int i=0;i<n2DPoints;++i){
+			mCameraPoints.ptr<float>(0)[i] = vCameraPoints[i].X;
+			mCameraPoints.ptr<float>(1)[i] = vCameraPoints[i].Y;
+		}
+
+		return mCameraPoints;
+	}
 	
 
 	std::pair<int, int> facingHelper(int s){
