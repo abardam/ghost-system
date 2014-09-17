@@ -4,6 +4,7 @@
 #include "Limbrary.h"
 #include "texturesearch.h"
 
+
 #define GD_DRAW 0x01
 #define GD_CYL 0x02
 #define GD_NOLIMBRARY 0x04
