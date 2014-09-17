@@ -812,6 +812,71 @@ namespace KINECT{
 		return mCameraPoints;
 	}
 	
+	cv::Mat calculateCameraMatrix(){
+		ICoordinateMapper* coordinateMapper = getCoordinateMapper();
+
+		//try to calculate the intrinsic camera parameters
+		//we make a cube of camera space points:
+		int cubeSide = 2;
+		float spacing = 0.1;
+		int stride = cubeSide / spacing;
+
+		std::vector<CameraSpacePoint> cameraPoints;
+		for (int w = -stride; w < stride; ++w){
+			for (int h = -stride; h < stride; ++h){
+				for (int d = stride; d < stride*2; ++d){
+					CameraSpacePoint csp;
+					csp.X = w*spacing;
+					csp.Y = h*spacing;
+					csp.Z = d*spacing;
+					cameraPoints.push_back(csp);
+				}
+			}
+		}
+		int count = cameraPoints.size();
+		std::vector<ColorSpacePoint> colorPoints(count);
+
+		coordinateMapper->MapCameraPointsToColorSpace(count, cameraPoints.data(),
+			count, colorPoints.data());
+
+		for (int i = 0; i < count; ++i){
+			colorPoints[i].X = nRatio*colorPoints[i].X - nOffsetX;
+			colorPoints[i].Y = nRatio*colorPoints[i].Y;
+		}
+
+		cv::Mat mCameraPoints(4, count, CV_32F);
+		cv::Mat mColorPoints(4, count, CV_32F);
+
+		for (int i = 0; i < count; ++i){
+			if (!isinf(colorPoints[i].X) && !isinf(colorPoints[i].Y)){
+				mCameraPoints.ptr<float>(0)[i] = cameraPoints[i].X;
+				mCameraPoints.ptr<float>(1)[i] = cameraPoints[i].Y;
+				mCameraPoints.ptr<float>(2)[i] = cameraPoints[i].Z;
+				mCameraPoints.ptr<float>(3)[i] = 1;
+
+				float W = cameraPoints[i].Z;
+
+				mColorPoints.ptr<float>(0)[i] = colorPoints[i].X*W;
+				mColorPoints.ptr<float>(1)[i] = colorPoints[i].Y*W;
+				mColorPoints.ptr<float>(2)[i] = W;
+				mColorPoints.ptr<float>(3)[i] = 1;
+			}
+			else{
+
+				mCameraPoints.ptr<float>(0)[i] = 0;
+				mCameraPoints.ptr<float>(1)[i] = 0;
+				mCameraPoints.ptr<float>(2)[i] = 0;
+				mCameraPoints.ptr<float>(3)[i] = 0;
+
+				mColorPoints.ptr<float>(0)[i] = 0;
+				mColorPoints.ptr<float>(1)[i] = 0;
+				mColorPoints.ptr<float>(2)[i] = 0;
+				mColorPoints.ptr<float>(3)[i] = 0;
+			}
+		}
+
+		return mColorPoints*mCameraPoints.t()*((mCameraPoints*mCameraPoints.t()).inv());
+	}
 
 	std::pair<int, int> facingHelper(int s){
 		if(s==1) //shoulders

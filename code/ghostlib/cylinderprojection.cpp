@@ -581,6 +581,24 @@ cv::Mat cylinder_to_pts(cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff
 }
 #endif
 
+//2nd version
+cv::Mat pts_to_zBuffer(std::vector<cv::Vec3s>& cylPts, cv::Point offset, unsigned int width, unsigned int height){
+
+	cv::Mat zBufferLocal(height, width, CV_16U, cv::Scalar(MAXDEPTH));
+	
+	for (int i = 0; i<cylPts.size(); ++i){
+		cv::Point2i pixLoc(cylPts[i](0), cylPts[i](1));
+		cv::Point2i pixLoc_off = pixLoc - offset;
+
+		if (CLAMP_SIZE(pixLoc_off.x, pixLoc_off.y, zBufferLocal.cols, zBufferLocal.rows)){
+			zBufferLocal.at<unsigned short>(pixLoc_off) = cylPts[i](2);
+		}
+	}
+
+	return zBufferLocal;
+}
+
+//first version
 cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigned int width, unsigned int height){
 
 	cv::Mat zBufferLocal(height, width, CV_16U, cv::Scalar(MAXDEPTH));
@@ -596,7 +614,8 @@ cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigne
 		cv::Vec2f ptProj2d = mat4_to_vec2(cameraMatrix * vec3_to_mat4(ptProj));
 		unsigned short new_depth = ptProj(2) * FLOAT_TO_DEPTH;
 #elif GHOST_CAPTURE == CAPTURE_KINECT2
-		cv::Vec2f ptProj2d(convertedDepthPoints.ptr<float>(0)[i],
+		cv::Vec2f ptProj2d(
+			convertedDepthPoints.ptr<float>(0)[i],
 			convertedDepthPoints.ptr<float>(1)[i]);
 		unsigned short new_depth = cylPts.ptr<float>(2)[i] * FLOAT_TO_DEPTH;
 #endif

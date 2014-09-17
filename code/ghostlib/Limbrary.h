@@ -35,6 +35,7 @@ public:
 	//removes bad images (ex: mostly occluded pixels)
 	void removeBadFrames();
 
+
 private:
 
 	//index = limb id. contains list of all valid frames. if empty, assume all vidRecord frames are valid

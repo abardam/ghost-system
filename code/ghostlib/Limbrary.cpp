@@ -54,6 +54,7 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 
 
 			cv::Point2i offset = voff + cv::Point(p.x_offset, p.lo_y);
+			//cv::Mat zBufferLocal = pts_to_zBuffer(fpv, offset - voff, limbpicWidth + 1, p.hi_y - p.lo_y + 1);
 			cv::Mat zBufferLocal = pts_to_zBuffer(cylPts, voff, offset, limbpicWidth + 1, p.hi_y - p.lo_y + 1);
 
 
