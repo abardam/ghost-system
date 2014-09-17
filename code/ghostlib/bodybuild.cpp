@@ -216,17 +216,21 @@ cv::Vec2f _toScreen(cv::Vec3f v){
 
 std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f offset){
 #if GHOST_CAPTURE == CAPTURE_KINECT2
-	cv::Mat mPts(3, pts.size()*2, CV_32F);
+	cv::Mat mPts(4, pts.size()*2, CV_32F);
 	for(int i=0;i<pts.size();++i){
 		mPts.ptr<float>(0)[i*2] = pts[i].first(0);
 		mPts.ptr<float>(1)[i*2] = pts[i].first(1);
-		mPts.ptr<float>(2)[i*2] = pts[i].first(2);
+		mPts.ptr<float>(2)[i * 2] = pts[i].first(2);
+		mPts.ptr<float>(3)[i * 2] = 1;
+
 		mPts.ptr<float>(0)[i*2+1] = pts[i].second(0);
 		mPts.ptr<float>(1)[i*2+1] = pts[i].second(1);
-		mPts.ptr<float>(2)[i*2+1] = pts[i].second(2);
+		mPts.ptr<float>(2)[i * 2 + 1] = pts[i].second(2);
+		mPts.ptr<float>(3)[i * 2+1] = 1;
 	}
 
-	cv::Mat mTransformedPts = KINECT::mapCameraPointsToColorPoints(mPts);
+	//cv::Mat mTransformedPts = KINECT::mapCameraPointsToColorPoints(mPts);
+	cv::Mat mTransformedPts = getCameraMatrix() * mPts;
 #endif
 
 	std::vector<Segment2f> pts2(pts.size());
@@ -237,10 +241,14 @@ std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f off
 		pts2[i].first = toScreen(pts[i].first) - offset;
 		pts2[i].second = toScreen(pts[i].second) - offset;
 #elif GHOST_CAPTURE == CAPTURE_KINECT2
-		pts2[i].first = cv::Vec2f(mTransformedPts.ptr<float>(0)[i*2],
-			mTransformedPts.ptr<float>(1)[i*2]) - offset;
-		pts2[i].first = cv::Vec2f(mTransformedPts.ptr<float>(0)[i*2+1],
-			mTransformedPts.ptr<float>(1)[i*2+1]) - offset;
+		pts2[i].first = cv::Vec2f(mTransformedPts.ptr<float>(0)[i*2]/
+			mTransformedPts.ptr<float>(2)[i * 2],
+			mTransformedPts.ptr<float>(1)[i * 2] /
+			mTransformedPts.ptr<float>(2)[i * 2]) - offset;
+		pts2[i].first = cv::Vec2f(mTransformedPts.ptr<float>(0)[i * 2 + 1] /
+			mTransformedPts.ptr<float>(2)[i * 2+1],
+			mTransformedPts.ptr<float>(1)[i * 2 + 1] /
+			mTransformedPts.ptr<float>(2)[i * 2+1]) - offset;
 
 #endif
 

@@ -58,7 +58,7 @@ cv::Mat cylinder_to_pts(unsigned int imgWidth, unsigned int imgHeight, cv::Vec3f
 	//std::cout << p->x_offset << " " << limbpicWidth << " " << p->lo_y << " " << limbpicHeight << std::endl;
 	cv::Mat rayMat(4, limbpicHeight*limbpicWidth, CV_32F);
 
-#if GHOST_CAPTURE != CAPTURE_KINECT2
+#if 1
 
 	cv::Rect boundingBox(0,0,imgWidth,imgHeight);
 	LerpCorners lc = generateLerpCorners(boundingBox);
@@ -605,7 +605,8 @@ cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigne
 #if GHOST_CAPTURE == CAPTURE_OPENNI
 	cv::Mat cameraMatrix = getCameraMatrix();
 #elif GHOST_CAPTURE == CAPTURE_KINECT2
-	cv::Mat convertedDepthPoints = KINECT::mapCameraPointsToColorPoints(cylPts);
+	//cv::Mat convertedDepthPoints = KINECT::mapCameraPointsToColorPoints(cylPts);
+	cv::Mat convertedDepthPoints = getCameraMatrix()*cylPts;
 #endif
 
 	for(int i=0;i<cylPts.cols;++i){
@@ -615,8 +616,10 @@ cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigne
 		unsigned short new_depth = ptProj(2) * FLOAT_TO_DEPTH;
 #elif GHOST_CAPTURE == CAPTURE_KINECT2
 		cv::Vec2f ptProj2d(
-			convertedDepthPoints.ptr<float>(0)[i],
-			convertedDepthPoints.ptr<float>(1)[i]);
+			convertedDepthPoints.ptr<float>(0)[i]/
+			convertedDepthPoints.ptr<float>(2)[i],
+			convertedDepthPoints.ptr<float>(1)[i] /
+			convertedDepthPoints.ptr<float>(2)[i]);
 		unsigned short new_depth = cylPts.ptr<float>(2)[i] * FLOAT_TO_DEPTH;
 #endif
 		cv::Point2i pixLoc = cv::Point2i(ptProj2d) - voff;

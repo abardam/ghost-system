@@ -59,11 +59,11 @@ namespace KINECT{
 
 	cv::Vec3f mapDepthToSkeletonPoint(DepthXY d);
 
-	//takes 4xN Mat of camera points and uses Kinect function to map it to 2xN Mat of color space points
-	cv::Mat mapCameraPointsToColorPoints(cv::Mat cameraPoints);
-	
-	//use for inverse mapping
-	cv::Mat makeRays(cv::Mat pts2d);
+	////takes 4xN Mat of camera points and uses Kinect function to map it to 2xN Mat of color space points
+	//cv::Mat mapCameraPointsToColorPoints(cv::Mat cameraPoints);
+	//
+	////use for inverse mapping
+	//cv::Mat makeRays(cv::Mat pts2d);
 
 	cv::Mat calculateCameraMatrix();
 

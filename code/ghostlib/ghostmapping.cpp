@@ -446,7 +446,11 @@ void cylinderMapPixelsColor_parallel_orig(
 			cv::divide(transformedPixelsMat.row(1), transformedPixelsMat.row(2), transformedPixelsMat.row(1));
 #elif GHOST_CAPTURE == CAPTURE_KINECT2
 
-			transformedPixelsMat = KINECT::mapCameraPointsToColorPoints(transformedPixelsMat);
+			//transformedPixelsMat = KINECT::mapCameraPointsToColorPoints(transformedPixelsMat);
+			transformedPixelsMat = getCameraMatrix() * transformedPixelsMat;
+			//predivide
+			cv::divide(transformedPixelsMat.row(0), transformedPixelsMat.row(2), transformedPixelsMat.row(0));
+			cv::divide(transformedPixelsMat.row(1), transformedPixelsMat.row(2), transformedPixelsMat.row(1));
 #endif
 
 			transformedPixels[i].push_back(transformedPixelsMat);
