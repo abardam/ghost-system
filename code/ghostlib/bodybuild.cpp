@@ -245,7 +245,7 @@ std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f off
 			mTransformedPts.ptr<float>(2)[i * 2],
 			mTransformedPts.ptr<float>(1)[i * 2] /
 			mTransformedPts.ptr<float>(2)[i * 2]) - offset;
-		pts2[i].first = cv::Vec2f(mTransformedPts.ptr<float>(0)[i * 2 + 1] /
+		pts2[i].second = cv::Vec2f(mTransformedPts.ptr<float>(0)[i * 2 + 1] /
 			mTransformedPts.ptr<float>(2)[i * 2+1],
 			mTransformedPts.ptr<float>(1)[i * 2 + 1] /
 			mTransformedPts.ptr<float>(2)[i * 2+1]) - offset;

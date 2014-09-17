@@ -127,11 +127,44 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 			//
 			//}
 
+			//cv::Mat occlBufferColor(occlBuffer[i].mat.rows,
+			//	occlBuffer[i].mat.cols, CV_8UC3);
+			//
+			//for (int x = 0; x < occlBufferColor.rows*occlBufferColor.cols; ++x){
+			//	int status = occlBuffer[i].mat.ptr<unsigned char>()[x];
+			//	cv::Vec3b color;
+			//	switch (status){
+			//	case OCCL_NONE:
+			//		color = cv::Vec3b(50, 50, 50);
+			//		break;
+			//	case OCCL_OCCLUDED:
+			//		color = cv::Vec3b(250, 50, 50);
+			//		break;
+			//	case OCCL_UNOCCLUDED:
+			//		color = cv::Vec3b(59, 250, 50);
+			//		break;
+			//	}
+			//	occlBufferColor.ptr<cv::Vec3b>()[x] = color;
+			//}
+			//
 			//std::stringstream ss;
 			//ss << "occl" << i;
-			//cv::imshow(ss.str(), occlBuffer[i].mat);
+			//cv::imshow(ss.str(), occlBufferColor);
 		}
 
+		//cv::waitKey();
+
+		//cv::Mat partBufferColor(partBuffer.rows, partBuffer.cols, CV_8UC3);
+		//for (int x = 0; x < partBuffer.cols*partBuffer.rows; ++x){
+		//	int limb = partBuffer.ptr<unsigned char>()[x];
+		//	cv::Scalar color = getLimbColor(limb, 3);
+		//	partBufferColor.ptr<cv::Vec3b>()[x](0) = color(0);
+		//	partBufferColor.ptr<cv::Vec3b>()[x](1) = color(1);
+		//	partBufferColor.ptr<cv::Vec3b>()[x](2) = color(2);
+		//}
+		//
+		//cv::imshow("part buffer", partBufferColor);
+		//cv::imshow("color", iFullVideoFrame);
 		//cv::waitKey();
 
 		for(int x=0;x<partBuffer.cols;++x){
