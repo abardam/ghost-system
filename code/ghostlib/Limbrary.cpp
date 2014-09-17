@@ -17,6 +17,7 @@
 
 void createMask(const cv::Mat& src, cv::Mat& src_b);
 void applyMask(const cv::Mat& src, const cv::Mat& mask, cv::Mat& dst, int morph_size);
+void fillHoles(const cv::Mat& src, cv::Mat& dst, int morph_size);
 
 Limbrary::Limbrary():framesForLimb(NUMLIMBS){	
 }
@@ -28,18 +29,9 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 	for(auto it=vidRecord->begin(); it!=vidRecord->end(); ++it){
 		//const CroppedCvMat& iVideoFrame = it->videoFrame;
 
-		cv::Mat& iFullVideoFrame = uncrop(it->videoFrame);
-
-		cv::Mat mVideoFrameMask;
-		createMask(iFullVideoFrame, mVideoFrameMask);
-
-		cv::Mat mVideoFrameMaskDst;
-
-		const int morph_size = 2;
-		cv::morphologyEx(mVideoFrameMask, mVideoFrameMaskDst, CV_MOP_CLOSE, 
-			cv::getStructuringElement( CV_SHAPE_ELLIPSE, cv::Size( 2*morph_size + 1, 2*morph_size+1 ), cv::Point( morph_size, morph_size ) ));
-
-		applyMask(iFullVideoFrame, mVideoFrameMaskDst, iFullVideoFrame, morph_size);
+		cv::Mat iFullVideoFrameSrc = uncrop(it->videoFrame);
+		cv::Mat iFullVideoFrame;
+		fillHoles(iFullVideoFrameSrc, iFullVideoFrame, 4);
 
 		cv::Mat iDebugDraw = iFullVideoFrame.clone();
 
@@ -196,10 +188,12 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 				if(CLAMP_SIZE(ilmPt.x, ilmPt.y, individualLimbMat[i].mat.cols, individualLimbMat[i].mat.rows))
 					individualLimbMat[i].mat.at<cv::Vec3b>(ilmPt) = iFullVideoFrame.ptr<cv::Vec3b>(pt.y)[pt.x];
 			}
+
 		}
 
 		for(int i=0;i<NUMLIMBS;++i){
 
+			fillHoles(individualLimbMat[i].mat, individualLimbMat[i].mat, 4);
 			for(int x=0;x<occlBuffer[i].mat.cols;++x){
 				for(int y=0;y<occlBuffer[i].mat.rows;++y){
 					if(occlBuffer[i].mat.at<unsigned char>(cv::Point(x,y)) == OCCL_OCCLUDED){
@@ -210,7 +204,6 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 			}
 
 		}
-
 		frames.push_back(individualLimbMat);
 		if(verbose) std::cout << frames.size() << std::endl;
 
@@ -606,4 +599,18 @@ void applyMask(const cv::Mat& src, const cv::Mat& mask, cv::Mat& dst, int morph_
 			}
 		}
 	}
+}
+
+void fillHoles(const cv::Mat& src, cv::Mat& dst, int morph_size){
+
+	cv::Mat mask;
+	createMask(src, mask);
+
+	cv::Mat mask_dst;
+
+	cv::morphologyEx(mask, mask_dst, CV_MOP_CLOSE,
+		cv::getStructuringElement(CV_SHAPE_ELLIPSE, cv::Size(2 * morph_size + 1, 2 * morph_size + 1), cv::Point(morph_size, morph_size)));
+
+	applyMask(src, mask_dst, dst, morph_size);
+
 }
