@@ -72,11 +72,11 @@ void calculateCameraMatrix(){
 }*/
 
 
-cv::Mat getCameraMatrix(){
+cv::Mat& getCameraMatrix(){
 	return cameraMatrix;
 }
 
-cv::Mat getInvCameraMatrix(){
+cv::Mat& getInvCameraMatrix(){
 	return invCameraMatrix;
 }
 
