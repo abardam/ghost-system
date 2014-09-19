@@ -10,6 +10,7 @@
 #define GD_NOLIMBRARY 0x04
 #define GD_NOBLEND 0x08
 #define GD_NOWEIGHT 0x10
+#define GD_NOCOLOR 0x20
 
 //void ghostdraw(int frame, cv::Mat transform, std::vector<SkeleVideoFrame>& vidRecord, std::vector<Skeleton>& wcSkeletons, CylinderBody& cylinderBody, Limbrary& limbrary, cv::Mat draw, unsigned char options = GD_DRAW);
 void ghostdraw_parallel

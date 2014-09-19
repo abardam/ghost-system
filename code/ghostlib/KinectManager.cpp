@@ -812,7 +812,7 @@ namespace KINECT{
 		return mCameraPoints;
 	}
 	
-	cv::Mat calculateCameraMatrix(){
+	cv::Mat calculateCameraParameters(){
 		ICoordinateMapper* coordinateMapper = getCoordinateMapper();
 
 		//try to calculate the intrinsic camera parameters
@@ -876,6 +876,14 @@ namespace KINECT{
 		}
 
 		return mColorPoints*mCameraPoints.t()*((mCameraPoints*mCameraPoints.t()).inv());
+	}
+
+	cv::Mat loadCameraParameters(){
+		cv::FileStorage fs;
+		fs.open("kinect2camera.yml", cv::FileStorage::READ);
+		cv::Mat camparam;
+		fs["kinect2camera"] >> camparam;
+		return camparam;
 	}
 
 	std::pair<int, int> facingHelper(int s){

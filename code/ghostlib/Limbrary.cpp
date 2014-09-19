@@ -10,14 +10,12 @@
 #include "cylinderprojection.h"
 #include "tinyxml.h"
 #include "texturesearch.h"
+#include "ghostutil.h"
 
 #define OCCL_NONE 0
 #define OCCL_UNOCCLUDED 1
 #define OCCL_OCCLUDED 2
 
-void createMask(const cv::Mat& src, cv::Mat& src_b);
-void applyMask(const cv::Mat& src, const cv::Mat& mask, cv::Mat& dst, int morph_size);
-void fillHoles(const cv::Mat& src, cv::Mat& dst, int morph_size);
 
 Limbrary::Limbrary():framesForLimb(NUMLIMBS){	
 }
@@ -549,68 +547,3 @@ void Limbrary::Load(std::string path){
 	}
 }
 
-
-void createMask(const cv::Mat& src, cv::Mat& src_b){
-  src_b.create(src.size(), CV_8U);
-  for(int i=0;i<src.rows*src.cols;++i){
-	  src_b.ptr<unsigned char>()[i] = src.ptr<cv::Vec3b>()[i] == cv::Vec3b(255,255,255)?0:255;
-  }
-}
-
-
-
-void applyMask(const cv::Mat& src, const cv::Mat& mask, cv::Mat& dst, int morph_size){
-	dst.create(src.size(), src.type());
-	for(int r=0;r<src.rows;++r){
-		for(int c=0;c<src.cols;++c){
-			if(mask.ptr<unsigned char>(r)[c] == 255){
-				cv::Vec3b color = src.ptr<cv::Vec3b>(r)[c];
-				if(color == cv::Vec3b(255,255,255)){
-					int c1=0,c2=0,c3=0;
-					int count = 0;
-					//look for colors in a range around the pixel
-					for(int j=-morph_size;j<=morph_size;++j){
-						for(int k=-morph_size;k<=morph_size;++k){
-							if(r+j<0||r+j>=src.rows||c+k<0||c+k>=src.cols) continue;
-							cv::Vec3b representative_color = src.ptr<cv::Vec3b>(r+j)[c+k];
-							if(representative_color != cv::Vec3b(255,255,255)){
-								c1+=representative_color(0);
-								c2+=representative_color(1);
-								c3+=representative_color(2);
-								++count;
-							}
-						}
-					}
-
-					if(count == 0) count = 1;
-
-					cv::Vec3b new_color(c1/count,
-						c2/count,
-						c3/count);
-
-					dst.ptr<cv::Vec3b>(r)[c] = new_color;
-
-				}else{
-					dst.ptr<cv::Vec3b>(r)[c] = color;
-				}
-			}
-			else{
-				dst.ptr<cv::Vec3b>(r)[c] = cv::Vec3b(255,255,255);
-			}
-		}
-	}
-}
-
-void fillHoles(const cv::Mat& src, cv::Mat& dst, int morph_size){
-
-	cv::Mat mask;
-	createMask(src, mask);
-
-	cv::Mat mask_dst;
-
-	cv::morphologyEx(mask, mask_dst, CV_MOP_CLOSE,
-		cv::getStructuringElement(CV_SHAPE_ELLIPSE, cv::Size(2 * morph_size + 1, 2 * morph_size + 1), cv::Point(morph_size, morph_size)));
-
-	applyMask(src, mask_dst, dst, morph_size);
-
-}

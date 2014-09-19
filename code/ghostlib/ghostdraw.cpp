@@ -11,7 +11,7 @@
 #include "Limbrary.h"
 #include "CylinderBody.h"
 #include "camlerp.h"
-
+#include "ghostutil.h"
 
 //parallelization
 //#include <ppl.h>
@@ -325,12 +325,23 @@ void ghostdraw_parallel(int frame, cv::Mat transform, std::vector<SkeleVideoFram
 
 	int limits[NUMLIMBS];
 
-	if(options & GD_DRAW)
+	if (options & GD_DRAW)
 	{
 		ghostdraw_prep(frame, transform, texSearchDepth, wtType, vidRecord, wcSkeletons, cylinderBody, limbrary, a, b, facing, scoreList, offsets, fromPixels, fromPixels_2d_v, limits);
 
-		cylinderMapPixelsColor_parallel_orig(a, b, facing, scoreList, offsets, 
-			&vidRecord, &cylinderBody, &limbrary, blendType, fromPixels, fromPixels_2d_v, limits, draw, zBuf /*from_color*/);
+		if (options&GD_NOCOLOR){
+			for (auto it = fromPixels_2d_v.begin(); it != fromPixels_2d_v.end(); ++it){
+				if (CLAMP_SIZE((*it)(0), (*it)(1), draw.cols, draw.rows)){
+					float depthRatio = ((*it)(2)+0.0) / MAXDEPTH;
+					draw.ptr<cv::Vec4b>((*it)(1))[(*it)(0)] = cv::Vec4b(depthRatio * 255, 100 + depthRatio * 155, 200 + depthRatio * 55, 255);
+				}
+			}
+		}
+		else{
+
+			cylinderMapPixelsColor_parallel_orig(a, b, facing, scoreList, offsets,
+				&vidRecord, &cylinderBody, &limbrary, blendType, fromPixels, fromPixels_2d_v, limits, draw, zBuf /*from_color*/);
+		}
 	}
 
 

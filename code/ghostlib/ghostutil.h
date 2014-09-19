@@ -50,5 +50,10 @@ int calcBinFromFacing(cv::Vec3f facing);
 
 float calculateScore(cv::Mat a, cv::Mat b);
 
+
+void createMask(const cv::Mat& src, cv::Mat& src_b);
+void applyMask(const cv::Mat& src, const cv::Mat& mask, cv::Mat& dst, int morph_size);
+void fillHoles(const cv::Mat& src, cv::Mat& dst, int morph_size);
+
 #endif 
 

@@ -65,7 +65,8 @@ namespace KINECT{
 	////use for inverse mapping
 	//cv::Mat makeRays(cv::Mat pts2d);
 
-	cv::Mat calculateCameraMatrix();
+	cv::Mat calculateCameraParameters();
+	cv::Mat loadCameraParameters();
 
 	//void GridProjection(TooN::SE3<> mse3CfW, std::vector<TooN::Vector<4>> * gp1, std::vector<TooN::Vector<4>> * gp2); //moved to PTAM2Kinect
 
