@@ -113,6 +113,10 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 					continue;
 				}
 				cv::Rect r = cv::boundingRect(segments_to_points(pts2));
+				r.x -= 100;
+				r.y -= 100;
+				r.width += 200;
+				r.height += 200;
 
 				//transform the space:
 				cv::Vec3f cyl_axis = b - a;

@@ -60,6 +60,8 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 			PixelPolygon p;
 			cv::Mat cylPts = cylinder_to_pts(it->videoFrame.origWidth, it->videoFrame.origHeight, a, b, cylinderBody->newPartRadii_cyl[i], cv::Point(0,0), &p, &fp, &fpv);
 			int limbpicWidth = p.hi.size();
+			limbpicWidth += 200;
+			p.x_offset -= 100;
 
 			//***DEBUG***
 			//cv::Mat projectedCylPts = getCameraMatrix() * cylPts;
