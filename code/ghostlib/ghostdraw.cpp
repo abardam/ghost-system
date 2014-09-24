@@ -70,6 +70,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 		//Skeleton skele = vidRecord[frame].kinectPoints;
 			
 		facing [limb] = tempCalcFacing(limb, skele); //13 us
+		source.offset = cv::Point(0,0);
 		offsets[limb] = source.offset;
 
 			//fromPixels_v.clear(); //not using it
@@ -224,7 +225,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 				cv::Mat ret;
 
 				try{
-					ret = cv::Mat(valid_count, 4, CV_32F, fromPixels_f.data());
+					ret = cv::Mat(valid_count, 4, CV_32F, fromPixels_f.data()).t();
 				}
 				catch (std::exception){
 					continue;
@@ -236,16 +237,28 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 				//	}
 				//}
 
-				ret = transformation_inv * ret.t();
+				ret = transformation_inv * ret;
+				cv::Mat m2DPoints = getCameraMatrix() * ret;
 
 				//cv::divide(ret.row(0), ret.row(3), ret.row(0)); //somehow the last row is already 1
 				//cv::divide(ret.row(1), ret.row(3), ret.row(1));
 				//cv::divide(ret.row(2), ret.row(3), ret.row(2));
 				//cv::divide(ret.row(3), ret.row(3), ret.row(3));
 
+				std::vector<cv::Vec3s> fromPixels_2d_v2;
+
 				for(int j=0;j<ret.cols;++j){
 					int ind = j+lastLimbLimit;
 					fromPixels_2d_v[ind](2) = ret.ptr<float>(2)[j] * FLOAT_TO_DEPTH;
+
+					int x = m2DPoints.ptr<float>(0)[j] / m2DPoints.ptr<float>(2)[j];
+					int y = m2DPoints.ptr<float>(1)[j] / m2DPoints.ptr<float>(2)[j];
+					int depth = ret.ptr<float>(2)[j] * FLOAT_TO_DEPTH;
+
+					cv::Vec3s xyDepth(x, y, depth); 
+					fromPixels_2d_v2.push_back(xyDepth);
+
+					std::cout << fromPixels_2d_v[ind] - fromPixels_2d_v2.back() << std::endl;
 				}
 				
 				//ret.create(4,fromPixels_v.size(),CV_32F);
@@ -356,7 +369,7 @@ void ghostdraw_parallel(int frame, cv::Mat transform, std::vector<SkeleVideoFram
 
 			for(auto it=segments.begin(); it!=segments.end(); ++it){
 			
-				cv::line(draw, cv::Point(toScreen(it->first)), cv::Point(toScreen(it->second)), cv::Scalar(0,0,255));
+				cv::line(draw, cv::Point(toScreen(it->first)), cv::Point(toScreen(it->second)), cv::Scalar(0,0,255,255));
 			}
 		}
 	}
