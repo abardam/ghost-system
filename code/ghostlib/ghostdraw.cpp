@@ -157,7 +157,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 					}
 				}
 
-				rayMat = transformation * getInvCameraMatrix() * rayMat;
+				rayMat = transformation * getInvCameraMatrixScene() * rayMat;
 
 
 				std::vector<float> fromPixels_f(limbpicHeight*limbpicWidth*4);
@@ -234,7 +234,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 				//}
 
 				ret = transformation_inv * ret;
-				cv::Mat m2DPoints = getCameraMatrix() * ret;
+				cv::Mat m2DPoints = getCameraMatrixScene() * ret;
 				std::vector<cv::Vec3s> fromPixels_2d_v2;
 
 				//cv::divide(ret.row(0), ret.row(3), ret.row(0)); //somehow the last row is already 1
@@ -366,7 +366,7 @@ void ghostdraw_parallel(int frame, cv::Mat transform, std::vector<SkeleVideoFram
 
 			for(auto it=segments.begin(); it!=segments.end(); ++it){
 			
-				cv::line(draw, cv::Point(toScreen(it->first)), cv::Point(toScreen(it->second)), cv::Scalar(0,0,255,255));
+				cv::line(draw, cv::Point(mat4_to_vec2(getCameraMatrixScene()*vec3_to_mat4(it->first))), cv::Point(mat4_to_vec2(getCameraMatrixScene()*vec3_to_mat4(it->second))), cv::Scalar(0,0,255,255));
 			}
 		}
 	}

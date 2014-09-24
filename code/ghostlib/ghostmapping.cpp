@@ -440,7 +440,7 @@ void cylinderMapPixelsColor_parallel_orig(
 			cv::Mat transformedPixelsMat = cylinderFacingTransform(from_a[i], from_b[i], tempCalcFacing(i, (*vidRecord)[*it].kinectPoints), to_a, to_b, facing[i], cylRatio) * fromPixels[i];
 
 #if  GHOST_CAPTURE == CAPTURE_OPENNI
-			transformedPixelsMat = getCameraMatrix() * transformedPixelsMat;
+			transformedPixelsMat = getCameraMatrixTexture() * transformedPixelsMat;
 			//predivide
 			cv::divide(transformedPixelsMat.row(0), transformedPixelsMat.row(2), transformedPixelsMat.row(0));
 			cv::divide(transformedPixelsMat.row(1), transformedPixelsMat.row(2), transformedPixelsMat.row(1));

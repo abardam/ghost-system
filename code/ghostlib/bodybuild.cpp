@@ -123,8 +123,8 @@ std::vector<BodyPartParam> rectFitting(Skeleton skeletonPositions, CroppedCvMat 
 		cv::Vec3f lv1 = v2 + (v1 - v2)*bpLengthsLeft[i];
 		cv::Vec3f lv2 = v1 + (v2 - v1)*bpLengthsRight[i];
 
-		cv::Vec2f s1 = toScreen(lv1) - voff;
-		cv::Vec2f s2 = toScreen(lv2) - voff;
+		cv::Vec2f s1 = mat4_to_vec2(getCameraMatrixTexture()*vec3_to_mat4(lv1)) - voff;
+		cv::Vec2f s2 = mat4_to_vec2(getCameraMatrixTexture()*vec3_to_mat4(lv2)) - voff;
 
 		cv::Vec2f m = (s1+s2)/2;
 		cv::Vec2f v = s2 - s1;
@@ -238,8 +238,8 @@ std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f off
 		if(pts[i].first(2) < NEAR || pts[i].second(2) < NEAR) return std::vector<Segment2f>(); //opencv bugs out when things are clip thru
 
 #if GHOST_CAPTURE == CAPTURE_OPENNI
-		pts2[i].first = toScreen(pts[i].first) - offset;
-		pts2[i].second = toScreen(pts[i].second) - offset;
+		pts2[i].first  = mat4_to_vec2(getCameraMatrixTexture()*vec3_to_mat4(pts[i].first) ) - offset;
+		pts2[i].second = mat4_to_vec2(getCameraMatrixTexture()*vec3_to_mat4(pts[i].second)) - offset;
 #elif GHOST_CAPTURE == CAPTURE_KINECT2
 		pts2[i].first = cv::Vec2f(mTransformedPts.ptr<float>(0)[i*2]/
 			mTransformedPts.ptr<float>(2)[i * 2],
@@ -261,12 +261,12 @@ std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f off
 }
 
 
-std::vector<cv::Vec2f> vec3f_to_2f(std::vector<cv::Vec3f> pts, cv::Vec2f offset){
+std::vector<cv::Vec2f> vec3f_to_2f(std::vector<cv::Vec3f> pts, cv::Vec2f offset, cv::Mat& cameraMatrix){
 	std::vector<cv::Vec2f> pts2(pts.size());
 	for(int i=0;i<pts.size();++i){
 		if(pts[i](2) < NEAR ) return std::vector<cv::Vec2f>(); //opencv bugs out when things are clip thru
 
-		pts2[i] = toScreen(pts[i]) - offset;
+		pts2[i] = mat4_to_vec2(cameraMatrix*vec3_to_mat4(pts[i])) - offset;
 	}
 	return pts2;
 }
@@ -341,8 +341,8 @@ std::vector<Cylinder> projectedCylinderFitting(Skeleton skeletonPositions, Cropp
 		cv::Vec3f lv1 = v2 + (v1 - v2)*bpLengthsLeft[i];
 		cv::Vec3f lv2 = v1 + (v2 - v1)*bpLengthsRight[i];
 
-		cv::Vec2f s1 = toScreen(lv1) - voff;
-		cv::Vec2f s2 = toScreen(lv2) - voff;
+		cv::Vec2f s1 = mat4_to_vec2(getCameraMatrixTexture()*vec3_to_mat4(lv1)) - voff;
+		cv::Vec2f s2 = mat4_to_vec2(getCameraMatrixTexture()*vec3_to_mat4(lv2)) - voff;
 
 		cv::Vec2f m = (s1+s2)/2;
 		cv::Vec2f v = s2 - s1;

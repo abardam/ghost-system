@@ -302,7 +302,7 @@ IMGPIXEL CylinderBody::getColorAtPartAndPixel(int frame, int part, cv::Vec4f pix
 
 	SkeleVideoFrame * targetFrame = &(*vidRecord)[frame];
 	
-	cv::Vec2f pix =  toScreen( mat_to_vec3( limbTransforms[part][frame] * cv::Mat(pixel) ));
+	cv::Vec2f pix =  mat4_to_vec2( getCameraMatrixTexture() * limbTransforms[part][frame] * cv::Mat(pixel) );
 	cv::Point2d offset = targetFrame->videoFrame.offset;
 	pix[0] -= offset.x;
 	pix[1] -= offset.y;
@@ -438,7 +438,7 @@ void CylinderBody::colorsAtPixels(std::vector<cv::Vec4f> * pt3d, cv::Mat unrotma
 
 		IMGPIXEL color;
 
-		cv::Mat tempPix = getCameraMatrix() * unrotlimb * temp;
+		cv::Mat tempPix = getCameraMatrixTexture() * unrotlimb * temp;
 
 		//cv::Vec2f pix =  toScreen( mat2Vec(  unrotlimb * temp ));
 
@@ -486,7 +486,7 @@ void CylinderBody::colorsAtPixels(std::vector<VecPart> * pt3d, cv::Mat unrotmat2
 
 		IMGPIXEL color;	
 
-		cv::Mat tempPix = getCameraMatrix() * unrotlimb[realpart] * temp;
+		cv::Mat tempPix = getCameraMatrixTexture() * unrotlimb[realpart] * temp;
 		//cv::Vec2f pixo =  toScreen( mat2Vec(  unrotlimb[realpart] * temp ));
 		cv::Vec2f pix(tempPix.at<float>(0)/tempPix.at<float>(2), tempPix.at<float>(1)/tempPix.at<float>(2));
 		
@@ -536,7 +536,7 @@ void CylinderBody::colorsAtPixels(cv::Mat pt3d[NUMLIMBS], cv::Mat unrotmat2[NUML
 
 		if(pt3d[i].empty()) continue;
 
-		cv::Mat temp = getCameraMatrix() * unrotlimb[i] * pt3d[i];
+		cv::Mat temp = getCameraMatrixTexture() * unrotlimb[i] * pt3d[i];
 
 		for(int j=0;j<temp.cols;++j){
 			cv::Vec2f pix(temp.at<float>(0,j)/temp.at<float>(2,j),
@@ -582,7 +582,7 @@ void CylinderBody::colorsAtPixelsMultiFrame(cv::Mat pt3d[NUMLIMBS], cv::Mat unro
 		SkeleVideoFrame * targetFrame = &(*vidRecord)[bestFrames[i]];
 	
 		cv::Point2d offset = targetFrame->videoFrame.offset;
-		cv::Mat temp = getCameraMatrix() * unrotlimb[i] * pt3d[i];
+		cv::Mat temp = getCameraMatrixTexture() * unrotlimb[i] * pt3d[i];
 
 		for(int j=0;j<temp.cols;++j){
 			cv::Vec2f pix(temp.at<float>(0,j)/temp.at<float>(2,j),

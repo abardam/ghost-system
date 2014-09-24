@@ -23,7 +23,7 @@ LerpCorners generateLerpCorners(const cv::Rect& boundingBox){
 			int x = _x + boundingBox.x;
 
 			cv::Vec4f p2d(x,y,1,1);
-			cv::Vec3f p2d_ray = mat_to_vec3(getInvCameraMatrix() * cv::Mat(p2d));
+			cv::Vec3f p2d_ray = mat_to_vec3(getInvCameraMatrixScene() * cv::Mat(p2d));
 
 			lerpVec.push_back(p2d_ray);
 		}

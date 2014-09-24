@@ -66,7 +66,7 @@ std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoF
 		cv::FileStorage camfs(path + cameraMatrixFileName, cv::FileStorage::READ);
 		cv::Mat cameraMatrix;
 		camfs["CameraMatrix"] >> cameraMatrix;
-		setCameraMatrix(cameraMatrix);
+		setCameraMatrixTexture(cameraMatrix);
 	}
 
 	TiXmlHandle framesNode = root.FirstChild("frames");

@@ -596,7 +596,7 @@ cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigne
 
 	cv::Mat zBufferLocal(height, width, CV_16U, cv::Scalar(MAXDEPTH));
 #if GHOST_CAPTURE == CAPTURE_OPENNI
-	cv::Mat cameraMatrix = getCameraMatrix();
+	cv::Mat cameraMatrix = getCameraMatrixScene();
 #elif GHOST_CAPTURE == CAPTURE_KINECT2
 	//cv::Mat convertedDepthPoints = KINECT::mapCameraPointsToColorPoints(cylPts);
 	cv::Mat convertedDepthPoints = getCameraMatrix()*cylPts;
@@ -648,7 +648,7 @@ PixelMap cylinderMapPixels(cv::Vec3f from_a, cv::Vec3f from_b, cv::Vec3f to_a, c
 				//cv::Vec2f pt(c + fromMat->offset.x,
 				//	r + fromMat->offset.y);
 				cv::Vec2f pt(c + captureOffset.x,r + captureOffset.y);
-				cv::Vec3f r_pt3 = raycast(pt, getInvCameraMatrix());
+				cv::Vec3f r_pt3 = raycast(pt, getInvCameraMatrixScene());
 
 				cv::Vec3f pt3;
 				if(rayCylinder2(raycastTransform, r_pt3, radius, fromHeight, &pt3)){
@@ -677,7 +677,7 @@ PixelMap cylinderMapPixels(cv::Vec3f from_a, cv::Vec3f from_b, cv::Vec3f to_a, c
 	cv::Mat toPixels_mat = pre_rot_transform * segmentTransform * fromPixels_mat;
 	//toPixels_mat = fromPixels_mat;
 
-	cv::Mat toPixels_2d = getCameraMatrix() * toPixels_mat;
+	cv::Mat toPixels_2d = getCameraMatrixTexture() * toPixels_mat;
 	std::vector<cv::Point2i> toPixels_2d_v;
 	for(int i=0;i<toPixels_2d.cols;++i){
 		cv::Point2i pt(mat4_to_vec2(toPixels_2d.col(i)));
@@ -760,7 +760,7 @@ cv::Point2i mapPixel(cv::Vec3f pixLoc, cv::Point2i pixOffset, cv::Vec3f from_a, 
 
 	cv::Mat toPixels_mat = cylFacingTrans * vec3_to_mat4(pixLoc);
 
-	cv::Mat toPixels_2d = getCameraMatrix() * toPixels_mat;
+	cv::Mat toPixels_2d = getCameraMatrixTexture() * toPixels_mat;
 
 	cv::Point2i pt(mat4_to_vec2(toPixels_2d));
 
