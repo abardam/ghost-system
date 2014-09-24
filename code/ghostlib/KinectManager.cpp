@@ -836,8 +836,13 @@ namespace KINECT{
 		int count = cameraPoints.size();
 		std::vector<ColorSpacePoint> colorPoints(count);
 
-		coordinateMapper->MapCameraPointsToColorSpace(count, cameraPoints.data(),
+		HRESULT hr = coordinateMapper->MapCameraPointsToColorSpace(count, cameraPoints.data(),
 			count, colorPoints.data());
+
+		if (!SUCCEEDED(hr)){
+			std::cerr << "error with coordinate mapper...\n";
+			throw;
+		}
 
 		for (int i = 0; i < count; ++i){
 			colorPoints[i].X = nRatio*colorPoints[i].X - nOffsetX;

@@ -212,7 +212,7 @@ cv::Vec2f _toScreen(cv::Vec3f v){
 }
 
 //todo: make more official
-#define NEAR 0.1
+#define NEAR 1.5
 
 std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f offset){
 #if GHOST_CAPTURE == CAPTURE_KINECT2
@@ -860,7 +860,7 @@ bool buildDepth(Skeleton skeletonPositions, cv::Mat depthIm, CroppedCvMat colorI
 	for(int i=0;i<=NUMLIMBS;++i){
 		cv::randu(bpColors[i], cv::Scalar(0), cv::Scalar(255));
 	}*/
-
+#if 0
 	cv::Vec2f skeletonPositions2[NUMJOINTS];
 	for(int bp=0;bp<NUMJOINTS;++bp){
 		skeletonPositions2[bp] = toScreen(mat_to_vec3(skeletonPositions.points.col(bp)));
@@ -1045,7 +1045,7 @@ bool buildDepth(Skeleton skeletonPositions, cv::Mat depthIm, CroppedCvMat colorI
 		cb->varianceY[i] = vary * ratio;
 
 	}
-
+#endif
 	//newskool stuff
 
 	std::vector<BodyPartParam> bpp = rectFitting(skeletonPositions, colorIm, cb);

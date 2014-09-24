@@ -87,7 +87,6 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 			{
 				//fromPixels[i] = cylinder_to_pts(a[i],b[i],radius,source.offset,&p,&fromPixels_v,&(fromPixels_2d_v)); 
 				//cv::Mat ret(4, 0, CV_32F, cv::Scalar(1));
-				cv::Mat invCameraMatrix = (getInvCameraMatrix()); 
 
 				cv::Vec3f a,b;
 
@@ -140,6 +139,8 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 				cv::Rect boundingBox(0,0,limbpicWidth, limbpicHeight);
 				LerpCorners lc = generateLerpCorners(boundingBox);
+
+
 				cv::Mat rayMat;
 				try{
 					rayMat = cv::Mat (4, limbpicHeight*limbpicWidth, CV_32F);
@@ -159,6 +160,8 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 						rayMat.ptr<float>(2)[_y*limbpicWidth+_x] = 1;
 						rayMat.ptr<float>(3)[_y*limbpicWidth+_x] = 1;
 
+						cv::Mat temp = getCameraMatrix()*vec3_to_mat4(ray);
+						//std::cout << "x: " << temp.ptr<float>(0)[0]/temp.ptr<float>(2)[0] - x << " y: " << temp.ptr<float>(1)[0]/temp.ptr<float>(2)[0] - y << std::endl;
 					}
 				}
 
@@ -258,9 +261,9 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 					cv::Vec3s xyDepth(x, y, depth); 
 					fromPixels_2d_v2.push_back(xyDepth);
 
-					std::cout << fromPixels_2d_v[ind] - fromPixels_2d_v2.back() << std::endl;
 				}
 				
+				std::cout << fromPixels_2d_v[lastLimbLimit] - fromPixels_2d_v2[0] << std::endl;
 				//ret.create(4,fromPixels_v.size(),CV_32F);
 				//for(int j=0;j<4;++j){
 				//	float * retptr = ret.ptr<float>(j);

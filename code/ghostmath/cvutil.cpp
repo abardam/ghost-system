@@ -314,9 +314,12 @@ bool calculateIntersection(cv::Vec2f a1, cv::Vec2f b1, cv::Vec2f a2, cv::Vec2f b
 
 
 cv::Mat invertCameraMatrix(cv::Mat cameraMatrix){
-	cv::Mat cam33 = cameraMatrix.colRange(0,3).rowRange(0,3);
-	cv::Mat invcam33 = cam33.inv();
-	return (invcam33);
+	//cv::Mat cam33 = cameraMatrix.colRange(0,3).rowRange(0,3);
+	//cv::Mat invcam33 = cam33.inv();
+	//return (invcam33);
+	cv::Mat cam44 = mat3_to_mat4(cameraMatrix);
+	cv::Mat invcam44 = cam44.inv();
+	return invcam44;
 }
 
 cv::Mat segmentZeroTransformation(cv::Vec3f cyl_a, cv::Vec3f cyl_b, cv::Mat* inverse){

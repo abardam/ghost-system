@@ -20,6 +20,8 @@ void setCameraMatrix(float param0, float param1, float param2, float param3, flo
 
 	//std::cout << "cam matrix: \n" << cameraMatrix << std::endl;
 
+	invCameraMatrix = invertCameraMatrix(cameraMatrix);
+	initLerp(CAPTURE_SIZE_X, CAPTURE_SIZE_Y);
 }
 
 void setCameraMatrix(cv::Mat mat){
