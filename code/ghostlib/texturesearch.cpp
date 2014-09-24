@@ -54,7 +54,7 @@ bool ScoreSort(const std::pair<int, float>& lhs, std::pair<int, float>& rhs)
   return lhs.second < rhs.second; 
 } 
 
-ScoreList sortFrames(Skeleton s, const std::vector<SkeleVideoFrame>& vidRecord, const Limbrary& limbrary, unsigned int limbid, int limit, bool sort, int weightType){
+ScoreList sortFrames(Skeleton s, const std::vector<SkeleVideoFrame>& vidRecord, Limbrary& limbrary, unsigned int limbid, int limit, bool sort, int weightType){
 	
 	float bestScore = -1;
 	cv::Mat b = normalizeSkeleton(s.points);

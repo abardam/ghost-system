@@ -16,7 +16,7 @@
 //parallelization
 //#include <ppl.h>
 
-void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int wtType, const std::vector<SkeleVideoFrame>& vidRecord, const std::vector<Skeleton>& wcSkeletons, const CylinderBody& cylinderBody, const Limbrary& limbrary, cv::Vec3f a_arr[NUMLIMBS], cv::Vec3f b_arr[NUMLIMBS], float facing[NUMLIMBS], ScoreList scoreList[NUMLIMBS], cv::Point offsets[NUMLIMBS], cv::Mat fromPixels[NUMLIMBS], std::vector<cv::Vec3s>& fromPixels_2d_v, int limits[NUMLIMBS]){
+void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int wtType, const std::vector<SkeleVideoFrame>& vidRecord, const std::vector<Skeleton>& wcSkeletons, const CylinderBody& cylinderBody, Limbrary& limbrary, cv::Vec3f a_arr[NUMLIMBS], cv::Vec3f b_arr[NUMLIMBS], float facing[NUMLIMBS], ScoreList scoreList[NUMLIMBS], cv::Point offsets[NUMLIMBS], cv::Mat fromPixels[NUMLIMBS], std::vector<cv::Vec3s>& fromPixels_2d_v, int limits[NUMLIMBS]){
 
 	if(!wcSkeletons[frame].offsetPointsCalculated){
 		std::cerr << "error! offset points not calculated\n";
@@ -112,14 +112,14 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 					continue;
 				}
 				cv::Rect r = cv::boundingRect(segments_to_points(pts2));
-
+				r.width *= 4;
 
 				//transform the space:
 				cv::Vec3f cyl_axis = b - a;
 
 				float height = cv::norm(cyl_axis);
-				cv::Mat transformation = segmentZeroTransformation(a,b);
-				cv::Mat transformation_inv = transformation.inv();
+				cv::Mat transformation_inv;
+				cv::Mat transformation = segmentZeroTransformation(a,b,&transformation_inv);
 
 
 				//cv::Vec3f origin_trans = mat_to_vec(transformation.col(3)); //mat_to_vec3(transformation * vec3_to_mat4(cv::Vec3f(0,0,0)));
@@ -137,10 +137,6 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 				if (limbpicWidth <= 0 || limbpicHeight <= 0 || limbpicWidth * limbpicHeight * 4 <= 0 ) continue;
 
-				cv::Rect boundingBox(0,0,limbpicWidth, limbpicHeight);
-				LerpCorners lc = generateLerpCorners(boundingBox);
-
-
 				cv::Mat rayMat;
 				try{
 					rayMat = cv::Mat (4, limbpicHeight*limbpicWidth, CV_32F);
@@ -149,23 +145,20 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 					continue;
 				}
 
-				for(int _x = 0; _x < limbpicWidth; ++_x){
-					for(int _y = 0; _y < limbpicHeight; ++_y){
+				for (int _x = 0; _x < limbpicWidth; ++_x){
+					for (int _y = 0; _y < limbpicHeight; ++_y){
 						int y = _y + r.y;
 						int x = _x + r.x;
-						cv::Vec3f ray = lerpPoint(x+source.offset.x,y+source.offset.y,boundingBox,lc);
 
-						rayMat.ptr<float>(0)[_y*limbpicWidth+_x] = ray(0);
-						rayMat.ptr<float>(1)[_y*limbpicWidth+_x] = ray(1);
-						rayMat.ptr<float>(2)[_y*limbpicWidth+_x] = 1;
-						rayMat.ptr<float>(3)[_y*limbpicWidth+_x] = 1;
-
-						cv::Mat temp = getCameraMatrix()*vec3_to_mat4(ray);
-						//std::cout << "x: " << temp.ptr<float>(0)[0]/temp.ptr<float>(2)[0] - x << " y: " << temp.ptr<float>(1)[0]/temp.ptr<float>(2)[0] - y << std::endl;
+						rayMat.ptr<float>(0)[_y*limbpicWidth + _x] = x + source.offset.x;
+						rayMat.ptr<float>(1)[_y*limbpicWidth + _x] = y + source.offset.y;
+						rayMat.ptr<float>(2)[_y*limbpicWidth + _x] = 1;
+						rayMat.ptr<float>(3)[_y*limbpicWidth + _x] = 1;
 					}
 				}
 
-				rayMat = transformation * rayMat;
+				rayMat = transformation * getInvCameraMatrix() * rayMat;
+
 
 				std::vector<float> fromPixels_f(limbpicHeight*limbpicWidth*4);
 				int valid_count = 0;
@@ -242,13 +235,13 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 				ret = transformation_inv * ret;
 				cv::Mat m2DPoints = getCameraMatrix() * ret;
+				std::vector<cv::Vec3s> fromPixels_2d_v2;
 
 				//cv::divide(ret.row(0), ret.row(3), ret.row(0)); //somehow the last row is already 1
 				//cv::divide(ret.row(1), ret.row(3), ret.row(1));
 				//cv::divide(ret.row(2), ret.row(3), ret.row(2));
 				//cv::divide(ret.row(3), ret.row(3), ret.row(3));
 
-				std::vector<cv::Vec3s> fromPixels_2d_v2;
 
 				for(int j=0;j<ret.cols;++j){
 					int ind = j+lastLimbLimit;
@@ -257,13 +250,14 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 					int x = m2DPoints.ptr<float>(0)[j] / m2DPoints.ptr<float>(2)[j];
 					int y = m2DPoints.ptr<float>(1)[j] / m2DPoints.ptr<float>(2)[j];
 					int depth = ret.ptr<float>(2)[j] * FLOAT_TO_DEPTH;
-
+					
 					cv::Vec3s xyDepth(x, y, depth); 
-					fromPixels_2d_v2.push_back(xyDepth);
-
+					//fromPixels_2d_v2.push_back(xyDepth);
+					fromPixels_2d_v[ind](0) = x;
+					fromPixels_2d_v[ind](1) = y;
 				}
 				
-				std::cout << fromPixels_2d_v[lastLimbLimit] - fromPixels_2d_v2[0] << std::endl;
+				//std::cout << fromPixels_2d_v[lastLimbLimit] - fromPixels_2d_v2[0] << std::endl;
 				//ret.create(4,fromPixels_v.size(),CV_32F);
 				//for(int j=0;j<4;++j){
 				//	float * retptr = ret.ptr<float>(j);

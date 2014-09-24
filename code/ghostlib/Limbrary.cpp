@@ -53,7 +53,7 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 			std::vector<cv::Vec3s> fpv;
 			PixelPolygon p;
 			cv::Mat cylPts = cylinder_to_pts(it->videoFrame.origWidth, it->videoFrame.origHeight, a, b, cylinderBody->newPartRadii_cyl[i], cv::Point(0,0), &p, &fp, &fpv);
-			int limbpicWidth = p.hi.size();
+			int limbpicWidth = p.hi.size()*4;
 
 			//***DEBUG***
 			//cv::Mat projectedCylPts = getCameraMatrix() * cylPts;
@@ -202,6 +202,8 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 }
 
 void Limbrary::cluster(std::vector<SkeleVideoFrame> * vidRecord, unsigned int K, unsigned int iterations){
+
+	if (K > vidRecord->size()) K = vidRecord->size();
 
 	for(int limb=0;limb<NUMLIMBS;++limb)
 	{
@@ -355,7 +357,7 @@ void Limbrary::removeBadFrames(){
 	}
 }
 
-std::vector<int> Limbrary::getAvailableFramesForLimb(int limbid) const {
+std::vector<int>& Limbrary::getAvailableFramesForLimb(int limbid)  {
 	return framesForLimb[limbid];
 }
 

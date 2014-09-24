@@ -212,7 +212,7 @@ cv::Vec2f _toScreen(cv::Vec3f v){
 }
 
 //todo: make more official
-#define NEAR 1.5
+#define NEAR 0.75
 
 std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f offset){
 #if GHOST_CAPTURE == CAPTURE_KINECT2

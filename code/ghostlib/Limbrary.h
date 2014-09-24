@@ -23,7 +23,7 @@ public:
 
 	//after clustering, we will delete every non-cluster limb image;
 	//use this function to get a list of all the valid frame indices per limb id
-	std::vector<int> getAvailableFramesForLimb(int limbid) const;
+	std::vector<int>& getAvailableFramesForLimb(int limbid) ;
 
 	//should be the same vidRecord used to build
 	//maybe its safer to put this as private
