@@ -13,7 +13,7 @@
 
 
 
-cv::Mat cylinder_to_pts(unsigned int imgWidth, unsigned int imgHeight, cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff, PixelPolygon * p, std::vector<cv::Vec3f> * fromPixels, std::vector<cv::Vec3s> * fromPixels_2d_v){
+cv::Mat cylinder_to_pts(unsigned int imgWidth, unsigned int imgHeight, cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff, PixelPolygon * p, std::vector<cv::Vec3f> * fromPixels, std::vector<cv::Vec3s> * fromPixels_2d_v, cv::Mat& cameraMatrix){
 	
 	cv::Mat ret(4, 0, CV_32F, cv::Scalar(1));
 
@@ -32,7 +32,7 @@ cv::Mat cylinder_to_pts(unsigned int imgWidth, unsigned int imgHeight, cv::Vec3f
 	//*p = polygon_contains_pixels(pts2);
 
 	std::vector<Segment3f> pts = cylinder_to_segments(a, b, radius,8);
-	std::vector<Segment2f> pts2 = segment3f_to_2f(pts, cv::Vec2f(voff.x, voff.y));
+	std::vector<Segment2f> pts2 = segment3f_to_2f(pts, cv::Vec2f(voff.x, voff.y), cameraMatrix);
 	if(pts2.empty()) return ret;
 	*p = polygon_contains_pixels(pts2);
 			
@@ -51,48 +51,27 @@ cv::Mat cylinder_to_pts(unsigned int imgWidth, unsigned int imgHeight, cv::Vec3f
 
 	float C = origin_trans[0]*origin_trans[0] + origin_trans[1]*origin_trans[1] - radius*radius;
 
-	int limbpicWidth = p->hi.size();
+	int limbpicWidth = p->hi.size()*4;
 	int limbpicHeight = p->hi_y-p->lo_y;
 	
 	//std::cout << p->x_offset << " " << limbpicWidth << " " << p->lo_y << " " << limbpicHeight << std::endl;
 	cv::Mat rayMat(4, limbpicHeight*limbpicWidth, CV_32F);
 
-#if 1
-
-	cv::Rect boundingBox(0,0,imgWidth,imgHeight);
-	LerpCorners lc = generateLerpCorners(boundingBox);
-	
 	for(int _x = 0; _x < limbpicWidth; ++_x){
 		for(int _y = 0; _y < limbpicHeight; ++_y){
 			int y = _y + p->lo_y;
 			int x = _x + p->x_offset;
-			cv::Vec3f ray = lerpPoint(x+voff.x,y+voff.y,boundingBox,lc);
 
-			rayMat.ptr<float>(0)[_y*limbpicWidth+_x] = ray(0);
-			rayMat.ptr<float>(1)[_y*limbpicWidth+_x] = ray(1);
+			rayMat.ptr<float>(0)[_y*limbpicWidth+_x] = x+voff.x;
+			rayMat.ptr<float>(1)[_y*limbpicWidth+_x] = y+voff.y;
 			rayMat.ptr<float>(2)[_y*limbpicWidth+_x] = 1;
 			rayMat.ptr<float>(3)[_y*limbpicWidth+_x] = 1;
 
 		}
 	}
 
-#else
 
-	cv::Mat pts2D(2, limbpicWidth * limbpicHeight, CV_32F);
-	for(int i=0;i<limbpicWidth * limbpicHeight;++i){
-		int _x = i%limbpicWidth;
-		int _y = i/limbpicWidth;
-		int x = _x + p->x_offset+voff.x;
-		int y = _y + p->lo_y+voff.y;
-		pts2D.ptr<float>(0)[i] = x;
-		pts2D.ptr<float>(1)[i] = y;
-	}
-
-	rayMat = KINECT::makeRays(pts2D);
-
-#endif
-
-	rayMat = transformation * rayMat;
+	rayMat = transformation * invertCameraMatrix(cameraMatrix) * rayMat;
 
 	for(int _x = 0; _x < limbpicWidth; ++_x){
 		for(int _y = 0; _y < limbpicHeight; ++_y){
@@ -135,7 +114,7 @@ cv::Mat cylinder_to_pts(unsigned int imgWidth, unsigned int imgHeight, cv::Vec3f
 
 
 //copy of cylinder_to_pts that involves a cv::Rect instead of a PixelPolygon
-cv::Mat cylinder_to_pts(unsigned int imgWidth, unsigned int imgHeight, cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff, cv::Rect * r, std::vector<cv::Vec3f> * fromPixels, std::vector<cv::Vec3s> * fromPixels_2d_v){
+cv::Mat cylinder_to_pts(unsigned int imgWidth, unsigned int imgHeight, cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff, cv::Rect * r, std::vector<cv::Vec3f> * fromPixels, std::vector<cv::Vec3s> * fromPixels_2d_v, cv::Mat& cameraMatrix){
 	
 	cv::Mat ret(4, 0, CV_32F, cv::Scalar(1));
 	cv::Vec3f a,b;
@@ -153,7 +132,7 @@ cv::Mat cylinder_to_pts(unsigned int imgWidth, unsigned int imgHeight, cv::Vec3f
 	//*p = polygon_contains_pixels(pts2);
 
 	std::vector<Segment3f> pts = cylinder_to_segments(a, b, radius,8);
-	std::vector<Segment2f> pts2 = segment3f_to_2f(pts, cv::Vec2f(voff.x, voff.y));
+	std::vector<Segment2f> pts2 = segment3f_to_2f(pts, cv::Vec2f(voff.x, voff.y), cameraMatrix);
 	if(pts2.empty()) return ret;
 	*r = cv::boundingRect(segments_to_points(pts2));
 			
@@ -177,26 +156,22 @@ cv::Mat cylinder_to_pts(unsigned int imgWidth, unsigned int imgHeight, cv::Vec3f
 	
 	//std::cout << p->x_offset << " " << limbpicWidth << " " << p->lo_y << " " << limbpicHeight << std::endl;
 
-	cv::Rect boundingBox(0,0,imgWidth,imgHeight);
-	LerpCorners lc = generateLerpCorners(boundingBox);
-	
 	cv::Mat rayMat(4, limbpicHeight*limbpicWidth, CV_32F);
 
 	for(int _x = 0; _x < limbpicWidth; ++_x){
 		for(int _y = 0; _y < limbpicHeight; ++_y){
 			int y = _y + r->y;
 			int x = _x + r->x;
-			cv::Vec3f ray = lerpPoint(x+voff.x,y+voff.y,boundingBox,lc);
 
-			rayMat.ptr<float>(0)[_y*limbpicWidth+_x] = ray(0);
-			rayMat.ptr<float>(1)[_y*limbpicWidth+_x] = ray(1);
+			rayMat.ptr<float>(0)[_y*limbpicWidth+_x] = x+voff.x;
+			rayMat.ptr<float>(1)[_y*limbpicWidth+_x] = y+voff.y;
 			rayMat.ptr<float>(2)[_y*limbpicWidth+_x] = 1;
 			rayMat.ptr<float>(3)[_y*limbpicWidth+_x] = 1;
 
 		}
 	}
 
-	rayMat = transformation * rayMat;
+	rayMat = transformation * invertCameraMatrix(cameraMatrix) * rayMat;
 
 	for(int _x = 0; _x < limbpicWidth; ++_x){
 		for(int _y = 0; _y < limbpicHeight; ++_y){
@@ -592,14 +567,13 @@ cv::Mat pts_to_zBuffer(std::vector<cv::Vec3s>& cylPts, cv::Point offset, unsigne
 }
 
 //first version
-cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigned int width, unsigned int height){
+cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigned int width, unsigned int height, cv::Mat& cameraMatrix){
 
 	cv::Mat zBufferLocal(height, width, CV_16U, cv::Scalar(MAXDEPTH));
 #if GHOST_CAPTURE == CAPTURE_OPENNI
-	cv::Mat cameraMatrix = getCameraMatrixScene();
 #elif GHOST_CAPTURE == CAPTURE_KINECT2
 	//cv::Mat convertedDepthPoints = KINECT::mapCameraPointsToColorPoints(cylPts);
-	cv::Mat convertedDepthPoints = getCameraMatrix()*cylPts;
+	cv::Mat convertedDepthPoints = cameraMatrix*cylPts;
 #endif
 
 	for(int i=0;i<cylPts.cols;++i){

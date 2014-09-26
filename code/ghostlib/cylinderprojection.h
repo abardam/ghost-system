@@ -9,12 +9,12 @@
 
 typedef std::pair<std::vector<cv::Point>,std::vector<cv::Point>> PixelMap;
 
-cv::Mat cylinder_to_pts(unsigned int width, unsigned int height, cv::Vec3f a, cv::Vec3f b, float radius, cv::Point voff, PixelPolygon * p, std::vector<cv::Vec3f> * fromPixels, std::vector<cv::Vec3s> * fromPixels_2d_v);
+cv::Mat cylinder_to_pts(unsigned int width, unsigned int height, cv::Vec3f a, cv::Vec3f b, float radius, cv::Point voff, PixelPolygon * p, std::vector<cv::Vec3f> * fromPixels, std::vector<cv::Vec3s> * fromPixels_2d_v, cv::Mat& cameraMatrix);
 cv::Mat cylinder_to_pts(unsigned int width, unsigned int height, cv::Vec3f a, cv::Vec3f b, float radius, cv::Point voff, std::vector<cv::Vec3f> * fromPixels, std::vector<cv::Vec3s> * fromPixels_2d_v);
 //copy of cylinder_to_pts that involves a cv::Rect instead of a PixelPolygon
-cv::Mat cylinder_to_pts(unsigned int width, unsigned int height, cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff, cv::Rect * r, std::vector<cv::Vec3f> * fromPixels, std::vector<cv::Vec3s> * fromPixels_2d_v);
+cv::Mat cylinder_to_pts(unsigned int width, unsigned int height, cv::Vec3f a_, cv::Vec3f b_, float radius, cv::Point voff, cv::Rect * r, std::vector<cv::Vec3f> * fromPixels, std::vector<cv::Vec3s> * fromPixels_2d_v, cv::Mat& cameraMatrix);
 
-cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigned int width, unsigned int height);
+cv::Mat pts_to_zBuffer(cv::Mat cylPts, cv::Point voff, cv::Point offset, unsigned int width, unsigned int height, cv::Mat& cameraMatrix);
 
 //new skool
 cv::Mat pts_to_zBuffer(std::vector<cv::Vec3s>& cylPts, cv::Point offset, unsigned int width, unsigned int height);

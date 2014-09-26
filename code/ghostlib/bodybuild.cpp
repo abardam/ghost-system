@@ -214,7 +214,7 @@ cv::Vec2f _toScreen(cv::Vec3f v){
 //todo: make more official
 #define NEAR 0.75
 
-std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f offset){
+std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f offset, cv::Mat& cameraMatrix){
 #if GHOST_CAPTURE == CAPTURE_KINECT2
 	cv::Mat mPts(4, pts.size()*2, CV_32F);
 	for(int i=0;i<pts.size();++i){
@@ -230,7 +230,7 @@ std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f off
 	}
 
 	//cv::Mat mTransformedPts = KINECT::mapCameraPointsToColorPoints(mPts);
-	cv::Mat mTransformedPts = getCameraMatrix() * mPts;
+	cv::Mat mTransformedPts = cameraMatrix * mPts;
 #endif
 
 	std::vector<Segment2f> pts2(pts.size());
@@ -238,8 +238,8 @@ std::vector<Segment2f> segment3f_to_2f(std::vector<Segment3f> pts, cv::Vec2f off
 		if(pts[i].first(2) < NEAR || pts[i].second(2) < NEAR) return std::vector<Segment2f>(); //opencv bugs out when things are clip thru
 
 #if GHOST_CAPTURE == CAPTURE_OPENNI
-		pts2[i].first  = mat4_to_vec2(getCameraMatrixTexture()*vec3_to_mat4(pts[i].first) ) - offset;
-		pts2[i].second = mat4_to_vec2(getCameraMatrixTexture()*vec3_to_mat4(pts[i].second)) - offset;
+		pts2[i].first  = mat4_to_vec2(cameraMatrix*vec3_to_mat4(pts[i].first) ) - offset;
+		pts2[i].second = mat4_to_vec2(cameraMatrix*vec3_to_mat4(pts[i].second)) - offset;
 #elif GHOST_CAPTURE == CAPTURE_KINECT2
 		pts2[i].first = cv::Vec2f(mTransformedPts.ptr<float>(0)[i*2]/
 			mTransformedPts.ptr<float>(2)[i * 2],
@@ -273,7 +273,7 @@ std::vector<cv::Vec2f> vec3f_to_2f(std::vector<cv::Vec3f> pts, cv::Vec2f offset,
 
 static int countPixels_cyl(cv::Mat im, Cylinder cyl, bool (*cmpFnc)(cv::Vec3b), cv::Vec2f offset){
 	std::vector<Segment3f> pts = cylinder_to_segments(cyl.pt1, cyl.pt2, cyl.radius);
-	std::vector<Segment2f> pts2 = segment3f_to_2f(pts, offset);
+	std::vector<Segment2f> pts2 = segment3f_to_2f(pts, offset, getCameraMatrixTexture());
 
 	int cnt = 0;
 

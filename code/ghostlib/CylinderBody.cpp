@@ -370,15 +370,15 @@ void CylinderBody::regularizeLimbs(){
 #undef min
 
 	for(int i=0;i<8;i+=2){
-		srad = std::max(partRadii[pairs[i]], partRadii[pairs[i+1]]);
-		sleft = std::min(leftOffset[pairs[i]], leftOffset[pairs[i+1]]);
-		sright = std::max(rightOffset[pairs[i]], rightOffset[pairs[i+1]]);
-		partRadii[pairs[i]] = srad;
-		partRadii[pairs[i+1]] = srad;
-		leftOffset[pairs[i]] = sleft;
-		leftOffset[pairs[i+1]] = sleft;
-		rightOffset[pairs[i]] = sright;
-		rightOffset[pairs[i+1]] = sright;
+		srad = std::max  (newPartRadii_cyl[pairs[i]],   newPartRadii_cyl[pairs[i+1]]);
+		sleft = std::min (newLeftOffset_cyl[pairs[i]],  newLeftOffset_cyl[pairs[i+1]]);
+		sright = std::max(newRightOffset_cyl[pairs[i]], newRightOffset_cyl[pairs[i+1]]);
+		newPartRadii_cyl[pairs[i]] = srad;
+		newPartRadii_cyl[pairs[i+1]] = srad;
+		newLeftOffset_cyl[pairs[i]] = sleft;
+		newLeftOffset_cyl[pairs[i+1]] = sleft;
+		newRightOffset_cyl[pairs[i]] = sright;
+		newRightOffset_cyl[pairs[i+1]] = sright;
 	}
 
 #pragma pop_macro min
@@ -388,6 +388,14 @@ void CylinderBody::regularizeLimbs(){
 
 	//partRadii[HEAD] *= 2;
 
+	//head
+	newRightOffset_cyl[HEAD] += 0.4;
+
+	//arms
+	newRightOffset_cyl[LOWERARM_LEFT] += 0.2;
+	newRightOffset_cyl[LOWERARM_RIGHT] += 0.2;
+	newPartRadii_cyl[LOWERARM_LEFT] += 0.03;
+	newPartRadii_cyl[LOWERARM_RIGHT] += 0.03;
 }
 
 

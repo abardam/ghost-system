@@ -420,7 +420,11 @@ namespace KINECT{
 	const float nOffsetX = ((nRatio * CAPTURE_SIZE_X_COLOR) - CAPTURE_SIZE_X)/2;
 
 	bool doCalib(){
+#if GHOST_INPUT == INPUT_KINECT2
 		return true;
+#else
+		return false;
+#endif
 	}
 
 	bool init(){
@@ -683,10 +687,10 @@ namespace KINECT{
 		//double cleg = ((llegVA > rlegVA)?-1000:1000);
 
 		//convert to 2D
-		cv::Vec2f a1 = toScreen(mat_to_vec3(kinectPoints.points.col(JointType_AnkleLeft)));
-		cv::Vec2f b1 = toScreen(mat_to_vec3(kinectPoints.points.col(JointType_HipLeft)));
-		cv::Vec2f a2 = toScreen(mat_to_vec3(kinectPoints.points.col(JointType_AnkleRight)));
-		cv::Vec2f b2 = toScreen(mat_to_vec3(kinectPoints.points.col(JointType_HipRight)));
+		cv::Vec2f a1 = mat4_to_vec2(getCameraMatrixTexture()*(kinectPoints.points.col(JointType_AnkleLeft)));
+		cv::Vec2f b1 = mat4_to_vec2(getCameraMatrixTexture()*(kinectPoints.points.col(JointType_HipLeft)));
+		cv::Vec2f a2 = mat4_to_vec2(getCameraMatrixTexture()*(kinectPoints.points.col(JointType_AnkleRight)));
+		cv::Vec2f b2 = mat4_to_vec2(getCameraMatrixTexture()*(kinectPoints.points.col(JointType_HipRight)));
 
 		float lambda1, lambda2;
 

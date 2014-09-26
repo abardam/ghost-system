@@ -16,7 +16,7 @@
 //parallelization
 //#include <ppl.h>
 
-void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int wtType, const std::vector<SkeleVideoFrame>& vidRecord, const std::vector<Skeleton>& wcSkeletons, const CylinderBody& cylinderBody, Limbrary& limbrary, cv::Vec3f a_arr[NUMLIMBS], cv::Vec3f b_arr[NUMLIMBS], float facing[NUMLIMBS], ScoreList scoreList[NUMLIMBS], cv::Point offsets[NUMLIMBS], cv::Mat fromPixels[NUMLIMBS], std::vector<cv::Vec3s>& fromPixels_2d_v, int limits[NUMLIMBS]){
+void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int wtType, const std::vector<SkeleVideoFrame>& vidRecord, const std::vector<Skeleton>& wcSkeletons, const CylinderBody& cylinderBody, Limbrary& limbrary, cv::Vec3f a_arr[NUMLIMBS], cv::Vec3f b_arr[NUMLIMBS], float facing[NUMLIMBS], ScoreList scoreList[NUMLIMBS], cv::Point offsets[NUMLIMBS], cv::Mat fromPixels[NUMLIMBS], std::vector<cv::Vec3s>& fromPixels_2d_v, int limits[NUMLIMBS], std::vector<cv::Rect>* boundingRects){
 
 	if(!wcSkeletons[frame].offsetPointsCalculated){
 		std::cerr << "error! offset points not calculated\n";
@@ -106,13 +106,15 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 
 				std::vector<Segment3f> pts = cylinder_to_segments(a-radius*a_b, b+radius*a_b, radius,8);
-				std::vector<Segment2f> pts2 = segment3f_to_2f(pts, cv::Vec2f(source.offset.x, source.offset.y));
+				std::vector<Segment2f> pts2 = segment3f_to_2f(pts, cv::Vec2f(source.offset.x, source.offset.y), getCameraMatrixScene());
 				if(pts2.empty()){
 					fromPixels[limb] = cv::Mat(4, 0, CV_32F, cv::Scalar(1));;
 					continue;
 				}
 				cv::Rect r = cv::boundingRect(segments_to_points(pts2));
-				r.width *= 4;
+				if (boundingRects != NULL){
+					boundingRects->push_back(r);
+				}
 
 				//transform the space:
 				cv::Vec3f cyl_axis = b - a;
@@ -234,8 +236,8 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 				//}
 
 				ret = transformation_inv * ret;
-				cv::Mat m2DPoints = getCameraMatrixScene() * ret;
-				std::vector<cv::Vec3s> fromPixels_2d_v2;
+				//cv::Mat m2DPoints = getCameraMatrixScene() * ret;
+				//std::vector<cv::Vec3s> fromPixels_2d_v2;
 
 				//cv::divide(ret.row(0), ret.row(3), ret.row(0)); //somehow the last row is already 1
 				//cv::divide(ret.row(1), ret.row(3), ret.row(1));
@@ -247,16 +249,16 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 					int ind = j+lastLimbLimit;
 					fromPixels_2d_v[ind](2) = ret.ptr<float>(2)[j] * FLOAT_TO_DEPTH;
 
-					int x = m2DPoints.ptr<float>(0)[j] / m2DPoints.ptr<float>(2)[j];
-					int y = m2DPoints.ptr<float>(1)[j] / m2DPoints.ptr<float>(2)[j];
-					int depth = ret.ptr<float>(2)[j] * FLOAT_TO_DEPTH;
-					
-					cv::Vec3s xyDepth(x, y, depth); 
-					//fromPixels_2d_v2.push_back(xyDepth);
-					fromPixels_2d_v[ind](0) = x;
-					fromPixels_2d_v[ind](1) = y;
+					//int x = m2DPoints.ptr<float>(0)[j] / m2DPoints.ptr<float>(2)[j];
+					//int y = m2DPoints.ptr<float>(1)[j] / m2DPoints.ptr<float>(2)[j];
+					//int depth = ret.ptr<float>(2)[j] * FLOAT_TO_DEPTH;
+					//
+					//cv::Vec3s xyDepth(x, y, depth); 
+					////fromPixels_2d_v2.push_back(xyDepth);
+					//fromPixels_2d_v[ind](0) = x;
+					//fromPixels_2d_v[ind](1) = y;
 				}
-				
+
 				//std::cout << fromPixels_2d_v[lastLimbLimit] - fromPixels_2d_v2[0] << std::endl;
 				//ret.create(4,fromPixels_v.size(),CV_32F);
 				//for(int j=0;j<4;++j){
@@ -324,12 +326,25 @@ void ghostdraw_parallel(int frame, cv::Mat transform, std::vector<SkeleVideoFram
 
 	int limits[NUMLIMBS];
 
+	std::vector<cv::Rect> boundingRects;
+
 	if(options & GD_DRAW)
 	{
-		ghostdraw_prep(frame, transform, texSearchDepth, wtType, vidRecord, wcSkeletons, cylinderBody, limbrary, a, b, facing, scoreList, offsets, fromPixels, fromPixels_2d_v, limits);
+		ghostdraw_prep(frame, transform, texSearchDepth, wtType, vidRecord, wcSkeletons, cylinderBody, limbrary, a, b, facing, scoreList, offsets, fromPixels, fromPixels_2d_v, limits, &boundingRects);
 
-		cylinderMapPixelsColor_parallel_orig(a, b, facing, scoreList, offsets, 
-			&vidRecord, &cylinderBody, &limbrary, blendType, fromPixels, fromPixels_2d_v, limits, draw, zBuf /*from_color*/);
+		if (options&GD_NOCOLOR){
+			for (auto it = fromPixels_2d_v.begin(); it != fromPixels_2d_v.end(); ++it){
+				if (CLAMP_SIZE((*it)(0), (*it)(1), draw.cols, draw.rows)){
+					float depthRatio = ((*it)(2) + 0.0) / MAXDEPTH;
+					draw.ptr<cv::Vec4b>((*it)(1))[(*it)(0)] = cv::Vec4b(depthRatio * 255, 100 + depthRatio * 155, 200 + depthRatio * 55, 255);
+				}
+			}
+		}
+		else{
+
+			cylinderMapPixelsColor_parallel_orig(a, b, facing, scoreList, offsets,
+				&vidRecord, &cylinderBody, &limbrary, blendType, fromPixels, fromPixels_2d_v, limits, draw, zBuf /*from_color*/);
+		}
 	}
 
 
@@ -368,6 +383,8 @@ void ghostdraw_parallel(int frame, cv::Mat transform, std::vector<SkeleVideoFram
 			
 				cv::line(draw, cv::Point(mat4_to_vec2(getCameraMatrixScene()*vec3_to_mat4(it->first))), cv::Point(mat4_to_vec2(getCameraMatrixScene()*vec3_to_mat4(it->second))), cv::Scalar(0,0,255,255));
 			}
+
+			cv::rectangle(draw, boundingRects[i], cv::Scalar(0, 255, 255, 255), 1);
 		}
 	}
 

@@ -24,7 +24,7 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 	
 	for(auto it=vidRecord->begin(); it!=vidRecord->end(); ++it){
 		//const CroppedCvMat& iVideoFrame = it->videoFrame;
-		const cv::Mat& iFullVideoFrame = uncrop(it->videoFrame);
+		const cv::Mat iFullVideoFrame = uncrop(it->videoFrame);
 		cv::Mat iDebugDraw = iFullVideoFrame.clone();
 
 		//cv::Mat zBuffer(it->videoFrame.mat.rows, it->videoFrame.mat.cols, cv::DataType<unsigned short>::type, cv::Scalar(8000));
@@ -52,11 +52,11 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 			std::vector<cv::Vec3f> fp;
 			std::vector<cv::Vec3s> fpv;
 			PixelPolygon p;
-			cv::Mat cylPts = cylinder_to_pts(it->videoFrame.origWidth, it->videoFrame.origHeight, a, b, cylinderBody->newPartRadii_cyl[i], cv::Point(0,0), &p, &fp, &fpv);
+			cv::Mat cylPts = cylinder_to_pts(it->videoFrame.origWidth, it->videoFrame.origHeight, a, b, cylinderBody->newPartRadii_cyl[i], cv::Point(0,0), &p, &fp, &fpv, getCameraMatrixTexture());
 			int limbpicWidth = p.hi.size()*4;
 
 			//***DEBUG***
-			//cv::Mat projectedCylPts = getCameraMatrix() * cylPts;
+			//cv::Mat projectedCylPts = getCameraMatrixTexture() * cylPts;
 			//for(int j=0;j<cylPts.cols;++j){
 			//	cv::Point pt2d(projectedCylPts.ptr<float>(0)[j]/projectedCylPts.ptr<float>(2)[j],
 			//		projectedCylPts.ptr<float>(1)[j]/projectedCylPts.ptr<float>(2)[j]);
@@ -72,7 +72,7 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 			cv::Point2i offset = cv::Point(p.x_offset, p.lo_y);
 			//cv::Mat zBufferLocal = pts_to_zBuffer(fpv, offset - voff, limbpicWidth + 1, p.hi_y - p.lo_y + 1);
 			//cv::Mat zBufferLocal = pts_to_zBuffer(cylPts, iVideoFrame.offset, offset, limbpicWidth + 1, p.hi_y - p.lo_y + 1);
-			cv::Mat zBufferLocal = pts_to_zBuffer(cylPts, cv::Point(0,0), offset, limbpicWidth + 1, p.hi_y - p.lo_y + 1);
+			cv::Mat zBufferLocal = pts_to_zBuffer(cylPts, cv::Point(0,0), offset, limbpicWidth + 1, p.hi_y - p.lo_y + 1, getCameraMatrixTexture());
 
 
 
