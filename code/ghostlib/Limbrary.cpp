@@ -10,6 +10,7 @@
 #include "cylinderprojection.h"
 #include "tinyxml.h"
 #include "texturesearch.h"
+#include "ghostutil.h"
 
 #define OCCL_NONE 0
 #define OCCL_UNOCCLUDED 1
@@ -18,13 +19,21 @@
 Limbrary::Limbrary():framesForLimb(NUMLIMBS){	
 }
 
-void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cylinderBody, bool verbose){
+void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cylinderBody, bool verbose, int startFrame, int endFrame){
 
 	if(verbose) std::cout << "Building limbrary...\n";
+	if(startFrame == -1) startFrame = 0;
+	if(endFrame == -1) endFrame = vidRecord->size();
+
+	frames.resize(vidRecord->size());
+
+	for(int i=0;i<vidRecord->size();++i){
+		frames[i] = FrameLimbs(NUMLIMBS);
+	}
 	
-	for(auto it=vidRecord->begin(); it!=vidRecord->end(); ++it){
+	for(int frame = startFrame; frame < endFrame; ++frame){
 		//const CroppedCvMat& iVideoFrame = it->videoFrame;
-		const cv::Mat iFullVideoFrame = uncrop(it->videoFrame);
+		const cv::Mat iFullVideoFrame = uncrop((*vidRecord)[frame].videoFrame);
 		cv::Mat iDebugDraw = iFullVideoFrame.clone();
 
 		//cv::Mat zBuffer(it->videoFrame.mat.rows, it->videoFrame.mat.cols, cv::DataType<unsigned short>::type, cv::Scalar(8000));
@@ -34,7 +43,8 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 		CroppedCvMat occlBuffer[NUMLIMBS]; 
 		FrameLimbs individualLimbMat(NUMLIMBS);
 
-		if (it->videoFrame.origWidth == 0 || it->videoFrame.origHeight == 0) continue;
+		if ((*vidRecord)[frame].videoFrame.origWidth == 0 
+			|| (*vidRecord)[frame].videoFrame.origHeight == 0) continue;
 
 
 		for(int i=0;i<NUMLIMBS;++i){
@@ -42,8 +52,8 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 			int f = getLimbmap()[i].first;
 			int s = getLimbmap()[i].second;
 
-			cv::Vec3f _a = mat_to_vec3(it->kinectPoints.points.col(f));
-			cv::Vec3f _b = mat_to_vec3(it->kinectPoints.points.col(s));
+			cv::Vec3f _a = mat_to_vec3((*vidRecord)[frame].kinectPoints.points.col(f));
+			cv::Vec3f _b = mat_to_vec3((*vidRecord)[frame].kinectPoints.points.col(s));
 
 			cv::Vec3f a = _b + cylinderBody->newLeftOffset_cyl[i] * (_a-_b);
 			cv::Vec3f b = _a + cylinderBody->newRightOffset_cyl[i] * (_b-_a);
@@ -52,8 +62,9 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 			std::vector<cv::Vec3f> fp;
 			std::vector<cv::Vec3s> fpv;
 			PixelPolygon p;
-			cv::Mat cylPts = cylinder_to_pts(it->videoFrame.origWidth, it->videoFrame.origHeight, a, b, cylinderBody->newPartRadii_cyl[i], cv::Point(0,0), &p, &fp, &fpv, getCameraMatrixTexture());
-			int limbpicWidth = p.hi.size()*4;
+			cv::Mat cylPts = cylinder_to_pts((*vidRecord)[frame].videoFrame.origWidth,
+				(*vidRecord)[frame].videoFrame.origHeight, a, b, cylinderBody->newPartRadii_cyl[i], cv::Point(0,0), &p, &fp, &fpv, getCameraMatrixTexture());
+			int limbpicWidth = p.hi.size()+25;
 
 			//***DEBUG***
 			//cv::Mat projectedCylPts = getCameraMatrixTexture() * cylPts;
@@ -193,10 +204,14 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 				}
 			}
 
+			fillHoles(individualLimbMat[i].mat.clone(), individualLimbMat[i].mat, 3);
+			removeIslands(individualLimbMat[i].mat.clone(), individualLimbMat[i].mat, 3);
+			framesForLimb[i].push_back(frame);
 		}
 
-		frames.push_back(individualLimbMat);
-		if(verbose) std::cout << frames.size() << std::endl;
+
+		frames[frame] = (individualLimbMat);
+		if(verbose) std::cout << frame << std::endl;
 
 	}
 }
@@ -275,9 +290,13 @@ void Limbrary::cluster(std::vector<SkeleVideoFrame> * vidRecord, unsigned int K,
 		}
 
 		//assign the closests to the clusters
-		framesForLimb[limb].clear();
-		framesForLimb[limb].resize(K);
-		for(int k=0;k<K;++k){
+
+		if(useAllFrames){
+			framesForLimb[limb].clear();
+			framesForLimb[limb].resize(K);
+		}
+
+		for(int k=0;k<framesForLimb.size();++k){
 			float dist=-1;
 			int closest;
 			for(int _i=0;_i<frameMax;++_i){
@@ -322,8 +341,9 @@ void Limbrary::clean(){
 //right now, counts number of colored pixels vs number of occluded pixels; if its more than half occluded, discards that image
 void Limbrary::removeBadFrames(){
 	for(auto it=frames.begin(); it!=frames.end(); ++it){
+		if(it->empty()) continue;
 		for(int l=0;l<NUMLIMBS;++l){
-			int numpix = 0, numgood = 0;
+			int numpix = 0, numgood = 0, numwhite = 0;
 			cv::Mat m = (*it)[l].mat;
 			for(int r=0;r<m.rows;++r){
 				const cv::Vec3b * rowPtr = m.ptr<cv::Vec3b>(r);
@@ -336,6 +356,8 @@ void Limbrary::removeBadFrames(){
 						if(pt != cv::Vec3b(255,0,0)){
 							++numgood;
 						}
+					}else{
+						++numwhite;
 					}
 
 					/*
@@ -349,8 +371,7 @@ void Limbrary::removeBadFrames(){
 				}
 			}
 
-			float good_ratio = (numgood+0.0f)/(numpix);
-			if(good_ratio < FL_GOOD_RATIO){
+			if(numpix == 0 || (numgood+0.0f)/(numpix) < FL_GOOD_RATIO || (numpix+0.0f)/(numpix+numwhite) < FL_WHITE_RATIO ){
 				(*it)[l] = CroppedCvMat();
 			}
 		}
@@ -382,6 +403,9 @@ void Limbrary::Save(std::string path){
 	framesElement->SetAttribute("numframes", frames.size());
 
 	for(int i=0; i<frames.size(); ++i){
+
+		if(frames[i].empty()) continue;
+
 		TiXmlElement * frame = new TiXmlElement("Frame");
 		framesElement->LinkEndChild(frame);
 		frame->SetAttribute("frameid", i);
