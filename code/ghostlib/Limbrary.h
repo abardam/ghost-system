@@ -5,6 +5,7 @@
 
 #define MIN_DELTA 10
 #define FL_GOOD_RATIO 0.65
+#define FL_WHITE_RATIO 0.1
 
 #define DEFAULT_WIDTH 640
 #define DEFAULT_HEIGHT 480
@@ -15,7 +16,7 @@ typedef std::vector<CroppedCvMat> FrameLimbs;
 class Limbrary{
 public:
 	Limbrary();
-	void build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cb, bool verbose = false);
+	void build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cb, bool verbose = false, int startFrame = -1, int endFrame = -1);
 	void Save(std::string path);
 	void Load(std::string path);
 
