@@ -18,6 +18,8 @@
 Limbrary::Limbrary():framesForLimb(NUMLIMBS){	
 }
 
+#define DIFFERENCE_THRESHOLD 0.1f
+
 void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cylinderBody, bool verbose){
 
 	if(verbose) std::cout << "Building limbrary...\n";
@@ -36,14 +38,55 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 
 		if (it->videoFrame.origWidth == 0 || it->videoFrame.origHeight == 0) continue;
 
+		bool valid[NUMLIMBS];
 
-		for(int i=0;i<NUMLIMBS;++i){
+		for (int i = 0; i < NUMLIMBS; ++i){
+			valid[i] = true;
+		}
+
+		for (int i = 0; i < NUMLIMBS; ++i){
 
 			int f = getLimbmap()[i].first;
 			int s = getLimbmap()[i].second;
 
 			cv::Vec3f _a = mat_to_vec3(it->kinectPoints.points.col(f));
 			cv::Vec3f _b = mat_to_vec3(it->kinectPoints.points.col(s));
+
+
+			if (it != vidRecord->begin()){
+				auto prevIt = it - 1;
+
+				cv::Vec3f prev_a = mat_to_vec3(prevIt->kinectPoints.points.col(f));
+				cv::Vec3f prev_b = mat_to_vec3(prevIt->kinectPoints.points.col(s));
+
+				float difference = cv::norm(prev_a - _a) + (cv::norm(prev_b - _b));
+				if (difference > DIFFERENCE_THRESHOLD){
+
+					for (int limbid = 0; limbid < NUMLIMBS; ++limbid){
+
+						float * weights = getPartWeights(limbid);
+
+						if (weights[i]>0){
+							valid[limbid] = false;
+						}
+					}
+
+				}
+			}
+		}
+
+
+		for(int i=0;i<NUMLIMBS;++i){
+
+			if (!valid[i]) continue;
+
+			int f = getLimbmap()[i].first;
+			int s = getLimbmap()[i].second;
+
+			cv::Vec3f _a = mat_to_vec3(it->kinectPoints.points.col(f));
+			cv::Vec3f _b = mat_to_vec3(it->kinectPoints.points.col(s));
+			
+
 
 			cv::Vec3f a = _b + cylinderBody->newLeftOffset_cyl[i] * (_a-_b);
 			cv::Vec3f b = _a + cylinderBody->newRightOffset_cyl[i] * (_b-_a);
@@ -53,7 +96,7 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 			std::vector<cv::Vec3s> fpv;
 			PixelPolygon p;
 			cv::Mat cylPts = cylinder_to_pts(it->videoFrame.origWidth, it->videoFrame.origHeight, a, b, cylinderBody->newPartRadii_cyl[i], cv::Point(0,0), &p, &fp, &fpv, getCameraMatrixTexture());
-			int limbpicWidth = p.hi.size()*4;
+			int limbpicWidth = p.hi.size()+25;
 
 			//***DEBUG***
 			//cv::Mat projectedCylPts = getCameraMatrixTexture() * cylPts;
@@ -322,36 +365,43 @@ void Limbrary::clean(){
 //right now, counts number of colored pixels vs number of occluded pixels; if its more than half occluded, discards that image
 void Limbrary::removeBadFrames(){
 	for(auto it=frames.begin(); it!=frames.end(); ++it){
-		for(int l=0;l<NUMLIMBS;++l){
+		for (int l = 0; l < NUMLIMBS; ++l){
 			int numpix = 0, numgood = 0;
 			cv::Mat m = (*it)[l].mat;
-			for(int r=0;r<m.rows;++r){
+			for (int r = 0; r < m.rows; ++r){
 				const cv::Vec3b * rowPtr = m.ptr<cv::Vec3b>(r);
-				for(int c=0;c<m.cols;++c){
+				for (int c = 0; c < m.cols; ++c){
 					const cv::Vec3b& pt = rowPtr[c];
 
-					if(pt != cv::Vec3b(255,255,255)){
+					if (pt != cv::Vec3b(255, 255, 255)){
 						++numpix;
 
-						if(pt != cv::Vec3b(255,0,0)){
+						if (pt != cv::Vec3b(255, 0, 0)){
 							++numgood;
 						}
 					}
 
 					/*
 					if(m.at<cv::Vec3b>(r,c) != cv::Vec3b(255,255,255)){
-						++numpix;
+					++numpix;
 
-						if(m.at<cv::Vec3b>(r,c) != cv::Vec3b(255,0,0)){
-							++numgood;
-						}
+					if(m.at<cv::Vec3b>(r,c) != cv::Vec3b(255,0,0)){
+					++numgood;
+					}
 					}*/
 				}
 			}
 
-			float good_ratio = (numgood+0.0f)/(numpix);
-			if(good_ratio < FL_GOOD_RATIO){
+			if (numpix == 0){
 				(*it)[l] = CroppedCvMat();
+
+			}
+			else{
+
+				float good_ratio = (numgood + 0.0f) / (numpix);
+				if (good_ratio < FL_GOOD_RATIO){
+					(*it)[l] = CroppedCvMat();
+				}
 			}
 		}
 	}

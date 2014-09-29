@@ -9,6 +9,7 @@
 #define DEFAULT_WIDTH 640
 #define DEFAULT_HEIGHT 480
 
+
 typedef std::vector<CroppedCvMat> FrameLimbs;
 
 class Limbrary{
