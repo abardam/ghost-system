@@ -179,7 +179,7 @@ void applyMask(const cv::Mat& src, const cv::Mat& mask, cv::Mat& dst, int morph_
 							if(representative_color == cv::Vec3b(255,0,0)){
 								++occludedcount;
 							}
-							if (representative_color != cv::Vec3b(255, 255, 255)){
+							else if (representative_color != cv::Vec3b(255, 255, 255)){
 								c1 += representative_color(0);
 								c2 += representative_color(1);
 								c3 += representative_color(2);

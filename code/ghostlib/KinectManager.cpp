@@ -24,11 +24,11 @@ namespace KINECT{
 	}
 }
 
-namespace KINECT{
 #if GHOST_DEF == DEF_OPENNI
 #include <OpenNI.h>
 #include <NiTE.h>
 
+namespace KINECT{
 	float getSkeletonGoodness(Skeleton * s){
 		float mult = s->states[KINECT::getCenterJoint()];
 		if(mult <0.3) mult = 0.3;
@@ -45,7 +45,7 @@ namespace KINECT{
 
 
 
-	
+
 	void initMapping(Mapping * mapping){
 		mapping->limbmap[HEAD]				= lmap(nite::JOINT_HEAD,				nite::JOINT_NECK)			;
 		mapping->limbmap[UPPERARM_LEFT]		= lmap(nite::JOINT_LEFT_SHOULDER,		nite::JOINT_LEFT_ELBOW)		;
@@ -116,7 +116,7 @@ namespace KINECT{
 			}
 		}
 
-		
+
 		for(int i=0; i<NUMLIMBS; ++i){
 			mapping->partWeights[i][getLimbmap()[i].first] = 1;
 			mapping->partWeights[i][getLimbmap()[i].second] = 1;
@@ -129,7 +129,7 @@ namespace KINECT{
 		mapping->partWeights[UPPERARM_RIGHT][nite::JOINT_RIGHT_HAND] = 1;
 		mapping->partWeights[LOWERARM_LEFT]	[nite::JOINT_LEFT_SHOULDER] = 1;
 		mapping->partWeights[LOWERARM_RIGHT][nite::JOINT_RIGHT_SHOULDER] = 1;
-		
+
 
 		mapping->partWeights[CHEST][nite::JOINT_LEFT_SHOULDER] = 1;
 		mapping->partWeights[CHEST][nite::JOINT_RIGHT_SHOULDER] = 1;
@@ -145,7 +145,7 @@ namespace KINECT{
 	}
 
 	cv::Vec3f calculateFacing(Skeleton * _s){
-		
+
 		Skeleton s = *_s;
 
 		//calculate torso normalized vector
@@ -159,24 +159,24 @@ namespace KINECT{
 
 		//subtract from right shoulder
 		cv::Vec3f projplane = JFS(s,nite::JOINT_RIGHT_SHOULDER) - dotp;
-		
+
 
 		//repeat for left
 		cv::Vec3f vl = JFS(s,nite::JOINT_LEFT_SHOULDER) - JFS(s,nite::JOINT_NECK);
 		cv::Vec3f dotpl = tnorm * (vl.dot(tnorm));
 		cv::Vec3f projplanel = JFS(s,nite::JOINT_LEFT_SHOULDER) - dotpl;
-		
+
 
 		//find angle bisectors
 		cv::Vec3f angr = cv::normalize(projplane - JFS(s,nite::JOINT_NECK));
 		cv::Vec3f angl = cv::normalize(projplanel - JFS(s,nite::JOINT_NECK));
-		   
+
 		cv::Vec3f bis = cv::normalize(angr + angl);
 
 		return bis;
 	}
 
-	
+
 	int initSkeletonScore(Skeleton kinectPoints){
 		//return a score of how good this skeleton is for building from
 
@@ -189,13 +189,13 @@ namespace KINECT{
 		double rarmVA = atan2(rarmV[1], rarmV[0]);
 
 		//arms must be away from the body: the further the better
-	
+
 		//cv::Vec3f llegV = kinectPoints[nite::JOINT_LEFT_FOOT] - kinectPoints[nite::JOINT_LEFT_HIP];
 		//cv::Vec3f rlegV = kinectPoints[nite::JOINT_RIGHT_FOOT] - kinectPoints[nite::JOINT_RIGHT_HIP];
 
 		//double llegVA = atan2(llegV[1], llegV[0]);
 		//double rlegVA = atan2(rlegV[1], rlegV[0]);
-		
+
 		//double cleg = ((llegVA > rlegVA)?-1000:1000);
 
 		//convert to 2D
@@ -236,15 +236,16 @@ namespace KINECT{
 		cv::Mat extraJoint = (s->points.col(nite::JOINT_LEFT_HIP) + s->points.col(nite::JOINT_RIGHT_HIP))/2;
 		for(int i=0;i<4;++i){
 			s->points.at<float>(i, JOINT_CENTER_HIP) = extraJoint.at<float>(i);
-			
+
 		}
 
 		s->states[JOINT_CENTER_HIP] = (s->states[nite::JOINT_LEFT_HIP]  + s->states[nite::JOINT_RIGHT_HIP])/2;
 	}
 
-
+}
 #elif GHOST_DEF == DEF_KINECT2
 #include <Kinect.h>
+namespace KINECT{
 
 	float getSkeletonGoodness(Skeleton * s){
 		return 0;
@@ -415,8 +416,8 @@ namespace KINECT{
 	void augmentSkeleton(Skeleton * s){
 		//nothing to do here
 	}
-#endif
 }
+#endif
 
 
 #if GHOST_CAPTURE == CAPTURE_OPENNI
@@ -604,8 +605,6 @@ namespace KINECT{
 
 #elif GHOST_CAPTURE == CAPTURE_KINECT2
 #include "Kinect2Starter.h"
-
-
 
 namespace KINECT{
 
