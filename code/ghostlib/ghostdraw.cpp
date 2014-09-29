@@ -66,12 +66,10 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 		float radius = cylinderBody.newPartRadii_cyl[limb] * cylinderBody.radiusModifier;
 
-		CroppedCvMat source = limbrary.frames[frame][limb];
 		//Skeleton skele = vidRecord[frame].kinectPoints;
 			
 		facing [limb] = tempCalcFacing(limb, skele); //13 us
-		source.offset = cv::Point(0,0);
-		offsets[limb] = source.offset;
+		offsets[limb] = cv::Point(0,0);
 
 			//fromPixels_v.clear(); //not using it
 			//std::vector<cv::Vec3f> fromPixels_v;
@@ -106,7 +104,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 
 
 				std::vector<Segment3f> pts = cylinder_to_segments(a-radius*a_b, b+radius*a_b, radius,8);
-				std::vector<Segment2f> pts2 = segment3f_to_2f(pts, cv::Vec2f(source.offset.x, source.offset.y), getCameraMatrixScene());
+				std::vector<Segment2f> pts2 = segment3f_to_2f(pts, cv::Vec2f(0,0), getCameraMatrixScene());
 				if(pts2.empty()){
 					fromPixels[limb] = cv::Mat(4, 0, CV_32F, cv::Scalar(1));;
 					continue;
@@ -152,8 +150,8 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 						int y = _y + r.y;
 						int x = _x + r.x;
 
-						rayMat.ptr<float>(0)[_y*limbpicWidth + _x] = x + source.offset.x;
-						rayMat.ptr<float>(1)[_y*limbpicWidth + _x] = y + source.offset.y;
+						rayMat.ptr<float>(0)[_y*limbpicWidth + _x] = x;
+						rayMat.ptr<float>(1)[_y*limbpicWidth + _x] = y;
 						rayMat.ptr<float>(2)[_y*limbpicWidth + _x] = 1;
 						rayMat.ptr<float>(3)[_y*limbpicWidth + _x] = 1;
 					}
@@ -384,7 +382,10 @@ void ghostdraw_parallel(int frame, cv::Mat transform, std::vector<SkeleVideoFram
 				cv::line(draw, cv::Point(mat4_to_vec2(getCameraMatrixScene()*vec3_to_mat4(it->first))), cv::Point(mat4_to_vec2(getCameraMatrixScene()*vec3_to_mat4(it->second))), cv::Scalar(0,0,255,255));
 			}
 
-			cv::rectangle(draw, boundingRects[i], cv::Scalar(0, 255, 255, 255), 1);
+
+			if(options & GD_DRAW){
+				cv::rectangle(draw, boundingRects[i], cv::Scalar(0, 255, 255, 255), 1);
+			}
 		}
 	}
 

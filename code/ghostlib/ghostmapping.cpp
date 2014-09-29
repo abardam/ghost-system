@@ -638,7 +638,7 @@ void cylinderMapPixelsColor_parallel_orig(
 			blendPixel *= 1.f/totalAlpha;
 
 			//blend threshold; if alpha adds up to 0.5 or less, does not render the pixel
-			if(colorAlpha > 0.5){
+			if(colorAlpha > 0.25){
 				//pixelColors[i] = (blendPixel);
 
 				//immediately draw

@@ -38,15 +38,15 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 		const cv::Mat iFullVideoFrame = uncrop((*vidRecord)[frame].videoFrame);
 		cv::Mat iDebugDraw = iFullVideoFrame.clone();
 
-		//cv::Mat zBuffer(it->videoFrame.mat.rows, it->videoFrame.mat.cols, cv::DataType<unsigned short>::type, cv::Scalar(8000));
-		cv::Mat zBuffer(iFullVideoFrame.rows, iFullVideoFrame.cols, cv::DataType<unsigned short>::type, cv::Scalar(8000));
-		//cv::Mat partBuffer(it->videoFrame.mat.rows, it->videoFrame.mat.cols, CV_8U, cv::Scalar(NUMLIMBS));
-		cv::Mat partBuffer(iFullVideoFrame.rows, iFullVideoFrame.cols, CV_8U, cv::Scalar(NUMLIMBS));
+		//cv::Mat zBuffer(iFullVideoFrame.rows, iFullVideoFrame.cols, cv::DataType<unsigned short>::type, cv::Scalar(8000));
+
+		//cv::Mat partBuffer(iFullVideoFrame.rows, iFullVideoFrame.cols, CV_8U, cv::Scalar(NUMLIMBS));
 		CroppedCvMat occlBuffer[NUMLIMBS]; 
 		FrameLimbs individualLimbMat(NUMLIMBS);
 
 		if ((*vidRecord)[frame].videoFrame.origWidth == 0 
-			|| (*vidRecord)[frame].videoFrame.origHeight == 0) continue;
+			|| (*vidRecord)[frame].videoFrame.origHeight == 0
+			|| (*vidRecord)[frame].videoFrame.mat.empty()) continue;
 
 		bool valid[NUMLIMBS];
 
@@ -85,6 +85,7 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 			}
 		}
 
+		CroppedCvMat zBuffersLocal[NUMLIMBS];
 
 		for(int i=0;i<NUMLIMBS;++i){
 
@@ -126,46 +127,44 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 			//cv::Mat zBufferLocal = pts_to_zBuffer(fpv, offset - voff, limbpicWidth + 1, p.hi_y - p.lo_y + 1);
 			//cv::Mat zBufferLocal = pts_to_zBuffer(cylPts, iVideoFrame.offset, offset, limbpicWidth + 1, p.hi_y - p.lo_y + 1);
 			cv::Mat zBufferLocal = pts_to_zBuffer(cylPts, cv::Point(0,0), offset, limbpicWidth + 1, p.hi_y - p.lo_y + 1, getCameraMatrixTexture());
+			zBuffersLocal[i].mat = zBufferLocal;
+			zBuffersLocal[i].offset = offset;
+		}
 
+		for(int i=0;i<NUMLIMBS;++i){
+			
+			individualLimbMat[i].mat = cv::Mat(zBuffersLocal[i].mat.rows, zBuffersLocal[i].mat.cols, CV_8UC3, cv::Scalar(255,255,255));
+			individualLimbMat[i].offset = zBuffersLocal[i].offset;
 
+			occlBuffer[i].mat = cv::Mat(zBuffersLocal[i].mat.rows, zBuffersLocal[i].mat.cols, CV_8U, cv::Scalar(OCCL_NONE)); //0 = no pixel, 1 = pixel unoccluded, 2 = pixel occluded
+			occlBuffer[i].offset = zBuffersLocal[i].offset;
 
-			individualLimbMat[i].mat = cv::Mat(p.hi_y-p.lo_y+1,limbpicWidth+1, CV_8UC3, cv::Scalar(255,255,255));
-			//individualLimbMat[i].offset = iVideoFrame.offset + cv::Point2i(p.x_offset, p.lo_y);
-			individualLimbMat[i].offset = cv::Point2i(p.x_offset, p.lo_y);
-
-			occlBuffer[i].mat = cv::Mat(p.hi_y-p.lo_y+1, limbpicWidth+1, CV_8U, cv::Scalar(OCCL_NONE)); //0 = no pixel, 1 = pixel unoccluded, 2 = pixel occluded
-			//occlBuffer[i].offset = iVideoFrame.offset + cv::Point2i(p.x_offset, p.lo_y);
-			occlBuffer[i].offset = cv::Point2i(p.x_offset, p.lo_y);
-
-			for(int x=0; x<zBufferLocal.cols; ++x){
-				for(int y=0; y<zBufferLocal.rows; ++y){
+			for(int x=0; x<zBuffersLocal[i].mat.cols; ++x){
+				for(int y=0; y<zBuffersLocal[i].mat.rows; ++y){
 
 					cv::Point2i zBufferLocalPixLoc(x,y);
-					//cv::Point2i zBufferPixLoc = zBufferLocalPixLoc - iVideoFrame.offset + offset;
-					cv::Point2i zBufferPixLoc = zBufferLocalPixLoc + offset;
+					cv::Point2i zBufferPixLoc = zBufferLocalPixLoc + zBuffersLocal[i].offset;
 
-					unsigned short new_depth = zBufferLocal.at<unsigned short>(zBufferLocalPixLoc); //zBufferLocal.ptr<unsigned short>(zBufferLocalPixLoc.y)[zBufferLocalPixLoc.x]; //zBufferLocal.at<unsigned short>(zBufferLocalPixLoc);
+					unsigned short newDepth = zBuffersLocal[i].mat.at<unsigned short>(zBufferLocalPixLoc); //zBufferLocal.ptr<unsigned short>(zBufferLocalPixLoc.y)[zBufferLocalPixLoc.x]; //zBufferLocal.at<unsigned short>(zBufferLocalPixLoc);
 
-					if(new_depth == MAXDEPTH) continue;
+					if(newDepth == MAXDEPTH) continue;
 
-					if(CLAMP_SIZE(zBufferPixLoc.x, zBufferPixLoc.y, zBuffer.cols, zBuffer.rows)){
-						unsigned short old_depth = zBuffer.at<unsigned short>(zBufferPixLoc);
-						unsigned char old_part = partBuffer.at<unsigned char>(zBufferPixLoc);
-						if(old_depth > new_depth){
-							zBuffer.at<unsigned short>(zBufferPixLoc) = new_depth;
-							partBuffer.at<unsigned char>(zBufferPixLoc) = i;
-							occlBuffer[i].mat.at<unsigned char>(zBufferLocalPixLoc) = OCCL_UNOCCLUDED;
-							if(old_part != NUMLIMBS){
-								cv::Point2i pixLoc_off_old = zBufferPixLoc - individualLimbMat[old_part].offset;
-								occlBuffer[old_part].mat.at<unsigned char>(pixLoc_off_old) = OCCL_OCCLUDED;
+					occlBuffer[i].mat.at<unsigned char>(zBufferLocalPixLoc) = OCCL_UNOCCLUDED;
+
+					for(int j = 0; j < NUMLIMBS; ++j){
+
+						if(!getLimbOccludes(j, i) || j==i) continue;
+
+						cv::Point2i zBufferOldPixLoc = zBufferPixLoc - zBuffersLocal[j].offset;
+
+						if(CLAMP_SIZE(zBufferOldPixLoc.x, zBufferOldPixLoc.y, occlBuffer[j].mat.cols, occlBuffer[j].mat.rows)){
+							unsigned short oldDepth = zBuffersLocal[j].mat.at<unsigned short>(zBufferOldPixLoc);
+
+							if(oldDepth < newDepth){
+								occlBuffer[i].mat.at<unsigned char>(zBufferLocalPixLoc) = OCCL_OCCLUDED;
 							}
-
-							//color buffer assign
-							//cv::circle(draw, pixLoc, 1, getLimbColor(i));
-						}else{
-								
-							occlBuffer[i].mat.at<unsigned char>(zBufferLocalPixLoc) = OCCL_OCCLUDED;
 						}
+
 					}
 				}
 
@@ -220,27 +219,36 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 		//cv::imshow("color", iFullVideoFrame);
 		//cv::waitKey();
 
-		for(int x=0;x<partBuffer.cols;++x){
-			for(int y=0;y<partBuffer.rows;++y){
-				unsigned char i = partBuffer.at<unsigned char>(cv::Point2d(x,y));
-				if(i<0 || i>=NUMLIMBS) continue;
-				//cv::Point2i offset = individualLimbMat[i].offset - iVideoFrame.offset;
-				cv::Point2i offset = individualLimbMat[i].offset;
-				cv::Point2i pt(x,y);
-				cv::Point2i ilmPt = pt - offset;
-
-
-				if(CLAMP_SIZE(ilmPt.x, ilmPt.y, individualLimbMat[i].mat.cols, individualLimbMat[i].mat.rows))
-					individualLimbMat[i].mat.at<cv::Vec3b>(ilmPt) = iFullVideoFrame.ptr<cv::Vec3b>(pt.y)[pt.x];
-			}
-		}
+		//not using part buffer any more
+		//for(int x=0;x<partBuffer.cols;++x){
+		//	for(int y=0;y<partBuffer.rows;++y){
+		//		unsigned char i = partBuffer.at<unsigned char>(cv::Point2d(x,y));
+		//		if(i<0 || i>=NUMLIMBS) continue;
+		//		//cv::Point2i offset = individualLimbMat[i].offset - iVideoFrame.offset;
+		//		cv::Point2i offset = individualLimbMat[i].offset;
+		//		cv::Point2i pt(x,y);
+		//		cv::Point2i ilmPt = pt - offset;
+		//
+		//
+		//		if(CLAMP_SIZE(ilmPt.x, ilmPt.y, individualLimbMat[i].mat.cols, individualLimbMat[i].mat.rows))
+		//			individualLimbMat[i].mat.at<cv::Vec3b>(ilmPt) = iFullVideoFrame.ptr<cv::Vec3b>(pt.y)[pt.x];
+		//	}
+		//}
 
 		for(int i=0;i<NUMLIMBS;++i){
 
 			for(int x=0;x<occlBuffer[i].mat.cols;++x){
 				for(int y=0;y<occlBuffer[i].mat.rows;++y){
-					if(occlBuffer[i].mat.at<unsigned char>(cv::Point(x,y)) == OCCL_OCCLUDED){
+					unsigned char occlId = occlBuffer[i].mat.at<unsigned char>(cv::Point(x,y));
+					if(occlId == OCCL_OCCLUDED){
 						individualLimbMat[i].mat.at<cv::Vec3b>(cv::Point(x,y)) = cv::Vec3b(255,0,0);
+					}else if(occlId == OCCL_UNOCCLUDED){
+						cv::Point2i offset = individualLimbMat[i].offset;
+						cv::Point2i ilmPt(x,y);
+						cv::Point2i framePt = ilmPt + offset;
+
+						if(CLAMP_SIZE(framePt.x, framePt.y, iFullVideoFrame.cols, iFullVideoFrame.rows))
+							individualLimbMat[i].mat.at<cv::Vec3b>(ilmPt) = iFullVideoFrame.at<cv::Vec3b>(framePt);
 					}
 
 				}
