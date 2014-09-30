@@ -653,6 +653,21 @@ namespace KINECT{
 		return m_resized(cv::Rect(nOffsetX, 0, CAPTURE_SIZE_X, CAPTURE_SIZE_Y)).clone();
 	}
 
+	template<typename T>
+	cv::Mat_<T> scaleAndCropDiscrete(cv::Mat_<T>& m){
+		float tempWidth = nRatio * getColorWidth();
+		cv::Mat_<T> m_resized(CAPTURE_SIZE_Y, tempWidth);
+
+		float nRatioR = 1./nRatio;
+		for(int r=0;r<CAPTURE_SIZE_Y;++r){
+			for(int c=0;c<tempWidth;++c){
+				m_resized(r,c) = m(r*nRatioR, c*nRatioR);
+			}
+		}
+
+		return m_resized(cv::Rect(nOffsetX, 0, CAPTURE_SIZE_X, CAPTURE_SIZE_Y)).clone();
+	}
+
 	cv::Mat getColorFrame(){
 		if(bAutoUpdate) UpdateColor();
 
@@ -779,7 +794,7 @@ namespace KINECT{
 			}
 		}
 
-		cv::Mat mpPoints = scaleAndCrop(mpPoints_);
+		cv::Mat mpPoints = scaleAndCropDiscrete(mpPoints_);
 
 		for(int y=0;y<CAPTURE_SIZE_Y;++y){
 			for(int x=0;x<CAPTURE_SIZE_X;++x){
