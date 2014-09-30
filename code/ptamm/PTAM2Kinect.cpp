@@ -9,8 +9,6 @@
 #include "util.h"
 
 namespace KINECT{
-	
-	
 
 	template<int T>
 	cv::Vec<double, 3> TooN2openCV3(TooN::Vector<T> v){
@@ -35,175 +33,69 @@ namespace KINECT{
 
 	TooN::Matrix<4,4> PTAMfromKinect;
 	
-
 	cv::Mat getPTAMfromKinect_mat(){
 		return TooN2openCV(PTAMfromKinect);
 	}
 
-	void calcPTAMfromKinect(std::vector<TooN::Vector<4>> camPointVector, cv::Mat dmap){
-
-		cv::Mat mPTAMPoints(4, camPointVector.size(), CV_32F),
-			mKinectPoints(4, camPointVector.size(), CV_32F);
-
-		for (int i = 0; i < camPointVector.size(); ++i){
-			mPTAMPoints.ptr<float>(0)[i] = camPointVector[i][0];
-			mPTAMPoints.ptr<float>(1)[i] = camPointVector[i][1];
-			mPTAMPoints.ptr<float>(2)[i] = camPointVector[i][2];
-			mPTAMPoints.ptr<float>(3)[i] = camPointVector[i][3];
-		}
-
-		cv::Mat mProjectedPTAMPoints;
-		cv::Mat mProjectedPTAMPoints3 = getCameraMatrixScene() * mPTAMPoints;
-		cv::vconcat(mProjectedPTAMPoints3, cv::Mat::ones(1, camPointVector.size(), CV_32F), mProjectedPTAMPoints);
-		cv::divide(mProjectedPTAMPoints.row(0), mProjectedPTAMPoints.row(2), mProjectedPTAMPoints.row(0));
-		cv::divide(mProjectedPTAMPoints.row(1), mProjectedPTAMPoints.row(2), mProjectedPTAMPoints.row(1));
-
-		std::vector<unsigned short> vDepthValues(camPointVector.size());
-
-		for (int i = 0; i < camPointVector.size(); ++i){
-			int x = mProjectedPTAMPoints.ptr<float>(0)[i];
-			int y = mProjectedPTAMPoints.ptr<float>(1)[i];
-
-			if (CLAMP_SIZE(x, y, dmap.cols, dmap.rows)){
-
-				unsigned short depth = dmap.ptr<unsigned short>(y)[x];
-				vDepthValues[i] = (depth);
-
-				mProjectedPTAMPoints.ptr<float>(2)[i] = 1;
-				mProjectedPTAMPoints.ptr<float>(3)[i] = 1;
-			}
-			else{
-				//mProjectedPTAMPoints.ptr<float>(0)[i] = 0;
-				//mProjectedPTAMPoints.ptr<float>(1)[i] = 0;
-				//mProjectedPTAMPoints.ptr<float>(2)[i] = 0;
-				//mProjectedPTAMPoints.ptr<float>(3)[i] = 0;
-
-				mPTAMPoints.ptr<float>(0)[i] = 0;
-				mPTAMPoints.ptr<float>(1)[i] = 0;
-				mPTAMPoints.ptr<float>(2)[i] = 0;
-				mPTAMPoints.ptr<float>(3)[i] = 0;
-
-				vDepthValues[i] = 0;
-				mProjectedPTAMPoints.ptr<float>(2)[i] = 1;
-				mProjectedPTAMPoints.ptr<float>(3)[i] = 1;
-			}
-		}
-
-		mKinectPoints = getInvCameraMatrixScene() * mProjectedPTAMPoints;
-		cv::divide(mKinectPoints.row(0), mKinectPoints.row(2), mKinectPoints.row(0));
-		cv::divide(mKinectPoints.row(1), mKinectPoints.row(2), mKinectPoints.row(1));
-
-
-		for (int i = 0; i < camPointVector.size(); ++i){
-			float depth = (vDepthValues[i] + 0.0) / 1000;
-			mKinectPoints.ptr<float>(0)[i] *= depth;
-			mKinectPoints.ptr<float>(1)[i] *= depth;
-			mKinectPoints.ptr<float>(2)[i] = depth;
-			mKinectPoints.ptr<float>(3)[i] = 1;
-		}
-
-		cv::Mat mPfK = mPTAMPoints*mKinectPoints.t()*((mKinectPoints*mKinectPoints.t()).inv());
-
-		mPfK.ptr<float>(0)[0] *= -1;
-		mPfK.ptr<float>(1)[1] *= -1;
-
-		for (int r = 0; r < 4; ++r){
-			for (int c = 0; c < 4; ++c){
-				PTAMfromKinect(r, c) = mPfK.at<float>(r, c);
-			}
-		}
-	}
-
-	void calcPTAMfromKinect(std::vector<TooN::Vector<4>> camPointVector, DepthXY * dmap){
-		
-
-		std::vector<cv::Vec3d> ptamvec_;
-		std::vector<cv::Vec3d> kinectvec_;
-		std::vector<double> sumvec;
-
-		TooN::Vector<4> summer = TooN::makeVector(1,1,1,1);
+	void calcPTAMfromKinect(cv::Mat& mvPTAM3DPoints, DepthXY * dDepthMap){
+    
+    std::vector<cv::Vec3f> vPTAM3DPoints;
+		std::vector<cv::Vec3f> vKinect3DPoints;
 
 		double minDist = 10000;
 		
-		//ptam point mean
-		cv::Vec3d pmean(0,0,0);
+		cv::Vec3f pPTAMMean(0,0,0);
+		cv::Vec3f pKinectMean(0,0,0);
+    
+    cv::Mat mvPTAM2DPoints;
+    
+    {
+      PTAMM::ATANCamera cam("Camera");
 
-		//kinect point mean
-		cv::Vec3d qmean(0,0,0);
+      TooN::Vector<5> camParams = cam.GetParams();
+      
+      cv::Mat mCameraMatrix = cv::Mat::zeros(4,4,CV_32F);
+      
+      mCameraMatrix.at<float>(0,0) = camParams[0] * CAPTURE_SIZE_X;
+      mCameraMatrix.at<float>(1,1) = camParams[1] * CAPTURE_SIZE_Y;
+      mCameraMatrix.at<float>(0,2) = camParams[2] * CAPTURE_SIZE_X - 0.5;
+      mCameraMatrix.at<float>(1,2) = camParams[3] * CAPTURE_SIZE_Y - 0.5;
+      mCameraMatrix.at<float>(2,2) = 1;
+      mCameraMatrix.at<float>(3,3) = 1;
+      
+      mvPTAM2DPoints = mCameraMatrix * mvPTAM3DPoints;
+      cv::divide(mvPTAM2DPoints.row(0), mvPTAM2DPoints.row(2), mvPTAM2DPoints.row(0));
+      cv::divide(mvPTAM2DPoints.row(1), mvPTAM2DPoints.row(2), mvPTAM2DPoints.row(1));
+    }
+    
+    for(int i=0; i<mvPTAM2DPoints.cols; ++i){
+      int x = mvPTAM2DPoints.ptr<float>(0)[i];
+      int y = mvPTAM2DPoints.ptr<float>(1)[i];
+      
+      if(CLAMP_SIZE(x,y,CAPTURE_SIZE_X,CAPTURE_SIZE_Y)){
+        DepthXY dDepthPoint = dDepthMap[x + y*CAPTURE_SIZE_X];
+        cv::Vec3f pKinectPoint = KINECT::mapDepthToSkeletonPoint(dDepthPoint);
+        cv::Vec3f pPTAMPoint = mat4_to_vec3(mvPTAM3DPoints.col(i));
+        
+        vPTAM3DPoints.push_back(pPTAMPoint);
+        vKinect3DPoints.push_back(pKinectPoint);
+      }
+    }
 
-		PTAMM::ATANCamera cam("Camera");
-
-		TooN::Vector<5> camParams = cam.GetParams();
-
-		TooN::Matrix<4,4> camMatrix = TooN::Zeros;
-		camMatrix(0,0) = camParams[0] * CAPTURE_SIZE_X;
-		camMatrix(1,1) = camParams[1] * CAPTURE_SIZE_Y;
-		camMatrix(0,2) = camParams[2] * CAPTURE_SIZE_X - 0.5;
-		camMatrix(1,2) = camParams[3] * CAPTURE_SIZE_Y - 0.5;
-		camMatrix(2,2) = 1;
-		camMatrix(3,3) = 1;
-
-		for(auto it = camPointVector.begin(); it!=camPointVector.end(); ++it){
-			TooN::Vector<4> PTAMpoint = *it;//3d point from camera POV
-			
-			//project this point
-			TooN::Vector<4> xy = camMatrix*PTAMpoint;
-			xy[0] /= xy[2];
-			xy[1] /= xy[2];
-
-			if(xy[0] >= CAPTURE_SIZE_X || xy[0] < 0 ||
-				xy[1] >= CAPTURE_SIZE_Y || xy[1] < 0)
-				continue;
-
-			DepthXY depthPt = dmap[CAPTURE_SIZE_X - 1 - (int)xy[0] + ((int)xy[1])*CAPTURE_SIZE_X];
-
-			cv::Vec4f screenPt(depthPt.x, depthPt.y, 1, 1);
-			cv::Mat unprojScreenPt = getInvCameraMatrixScene() * cv::Mat(screenPt);
-			float z = (depthPt.depth + 0.0) / 1000.;
-			cv::Vec3f skelPt(unprojScreenPt.ptr<float>(0)[0] / unprojScreenPt.ptr<float>(2)[0],
-				unprojScreenPt.ptr<float>(1)[0] / unprojScreenPt.ptr<float>(2)[0],
-				1);
-			skelPt *= z;
-
-			if(skelPt[2] > 0.01)
-			{
-				TooN::Vector<4> skelspace = TooN::makeVector(skelPt[0], skelPt[1], skelPt[2], 1);
-
-				ptamvec_.push_back(TooN2openCV3(PTAMpoint));
-				kinectvec_.push_back(TooN2openCV3(skelspace));
-				
-				TooN::Vector<4> sqsum = (PTAMpoint - skelspace);
-				for(int dim=0;dim<4;++dim){
-					sqsum[dim] *= sqsum[dim];
-				}
-
-				double sum = sqsum*summer;
-				sumvec.push_back(sum);
-
-
-				cv::Vec3d cvPTAMpoint = TooN2openCV3(PTAMpoint);
-				cv::Vec3d cvSkelpoint = TooN2openCV3(skelspace);
-
-				pmean += cvPTAMpoint;
-				qmean += cvSkelpoint;
-			}
-		}
-
-
-		int M = ptamvec_.size();
+		int M = vPTAM3DPoints.size();
 
 		//average
-		pmean /= M;
-		qmean /= M;
+		pPTAMMean    /= M;
+		pKinectMean  /= M;
 
 		//std::cout << "p-mean " <<  pmean << std::endl << "q-mean " << qmean << std::endl;
 		
 		//covariance
-		cv::Mat sigma = cv::Mat::zeros(3,3,CV_64FC1);
+		cv::Mat sigma = cv::Mat::zeros(3,3,CV_32F);
 		
 		for(int i=0;i<M;++i){
-			cv::Vec3d a_ = ptamvec_[i]-pmean;
-			cv::Vec3d b_ = kinectvec_[i]-qmean;
+			cv::Vec3f a_ = vPTAM3DPoints[i]-pPTAMMean;
+			cv::Vec3f b_ = vKinect3DPoints[i]-pKinectMean;
 
 			cv::Mat a (a_);
 			cv::Mat b (b_);
@@ -212,35 +104,34 @@ namespace KINECT{
 
 			sigma += (c);
 		}
-
+    
 		sigma /= M;
-
+    
 		PTAMfromKinect = TooN::Zeros;
 		PTAMfromKinect(3,3) = 1;
 
 		cv::SVD solver(sigma);
 
-		cv::Mat detmat = cv::Mat::eye(3,3,CV_64FC1);
+		cv::Mat detmat = cv::Mat::eye(3,3,CV_32F);
 		detmat.at<double>(2,2) = cv::determinant(solver.u * solver.vt);
 		
 
 		cv::Mat R = solver.u * detmat * solver.vt;
 
-
 		double s = 0;
 		
 		for(int i=0;i<M;++i){
-			cv::Vec3d a_ = ptamvec_[i]-pmean;
-			cv::Vec3d b_ = kinectvec_[i]-qmean;
-			cv::Mat a (a_);
-			cv::Mat  b(b_);
+			cv::Vec3f a_ = vPTAM3DPoints[i]-pPTAMMean;
+			cv::Vec3f b_ = vKinect3DPoints[i]-pKinectMean;
+			cv::Mat a(a_);
+			cv::Mat b(b_);
 			cv::Mat c = (a.t()*R*b);
 			s += c.at<double>(0,0);
 		}
 
 		double denom = 0;
 		for(int i=0;i<M;++i){
-			cv::Vec3d b_ = kinectvec_[i]-qmean;
+			cv::Vec3d b_ = vKinect3DPoints[i]-pKinectMean;
 			double val2 = cv::norm(b_);
 			denom += val2*val2;
 		}
@@ -249,15 +140,10 @@ namespace KINECT{
 
 		R *= s;
 
-		cv::Mat a(pmean);
-		cv::Mat b (qmean);
-
-		cv::Mat scaleOnly = s * cv::Mat::eye(3,3,CV_64F);
-		scaleOnly.at<double>(0,0) *= -1;
-		scaleOnly.at<double>(1,1) *= -1;
-
+		cv::Mat a(pPTAMMean);
+		cv::Mat b(pKinectMean);
+    
 		cv::Mat t = (-1)*R*b + a;
-		//cv::Mat t_sonly = (-1)*scaleOnly*b + a;
 
 		for(int i=0;i<3;++i){
 			for(int j=0;j<3;++j){

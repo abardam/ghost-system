@@ -772,11 +772,20 @@ namespace KINECT{
 		cv::Mat depthFrame_ = cv::Mat(getColorHeight(), getColorWidth(), CV_16U, GetDepthMappedToColor());
 		cv::Mat depthFrame = scaleAndCrop(depthFrame_);
 
+		cv::Mat_<cv::Point> mpPoints_(getColorHeight(), getColorWidth());
+		for(int y=0;y<getColorHeight();++y){
+			for(int x=0;x<getColorWidth();++x){
+				mpPoints_.ptr<cv::Point>(y)[x] = cv::Point(x,y);
+			}
+		}
+
+		cv::Mat mpPoints = scaleAndCrop(mpPoints_);
+
 		for(int y=0;y<CAPTURE_SIZE_Y;++y){
 			for(int x=0;x<CAPTURE_SIZE_X;++x){
 				depthPoints[x + CAPTURE_SIZE_X*y].depth = depthFrame.ptr<unsigned short>()[x + CAPTURE_SIZE_X*y];
-				depthPoints[x + CAPTURE_SIZE_X*y].x = x;
-				depthPoints[x + CAPTURE_SIZE_X*y].y = y;
+				depthPoints[x + CAPTURE_SIZE_X*y].x = mpPoints.ptr<cv::Point>(y)[x].x;
+				depthPoints[x + CAPTURE_SIZE_X*y].y = mpPoints.ptr<cv::Point>(y)[x].y;
 			}
 		}
 	}

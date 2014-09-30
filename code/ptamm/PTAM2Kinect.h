@@ -30,7 +30,6 @@ namespace KINECT
 namespace KINECT
 {
 	void calcPTAMfromKinect(PTAMM::KeyFrame*, DepthXY *);
-	void calcPTAMfromKinect(std::vector<TooN::Vector<4>> camPointVector, cv::Mat dmap);
 	void calcPTAMfromKinect(std::vector<TooN::Vector<4>>, DepthXY *);
 	TooN::Matrix<4,4> getPTAMfromKinect();
 	cv::Mat getPTAMfromKinect_mat();
