@@ -141,14 +141,35 @@ namespace KINECT{
 			DepthXY * _depthdata = new DepthXY[CAPTURE_SIZE_X*CAPTURE_SIZE_Y];
 			KINECT::getKinectData_depth_raw(_depthdata);
 
-			std::vector<TooN::Vector<4>> ptampoints;
-			for(auto it=points.begin();it!=points.end();++it){
-				Vector<3> worldPos = (*it)->v3WorldPos;
-				Vector<4> worldPosHom = TooN::makeVector(worldPos[0], worldPos[1], worldPos[2], 1);
-				ptampoints.push_back(mse3CfW*worldPosHom);
-			}
+			//std::vector<TooN::Vector<4>> ptampoints;
+			//for(auto it=points.begin();it!=points.end();++it){
+			//	Vector<3> worldPos = (*it)->v3WorldPos;
+			//	Vector<4> worldPosHom = TooN::makeVector(worldPos[0], worldPos[1], worldPos[2], 1);
+			//	ptampoints.push_back(mse3CfW*worldPosHom);
+			//}
 
-			KINECT::calcPTAMfromKinect(ptampoints, _depthdata);
+			cv::Mat mvPTAMPoints(4, points.size(), CV_32F);
+			for (int i = 0; i < points.size(); ++i){
+				Vector<3> worldPos = points[i]->v3WorldPos;
+				mvPTAMPoints.ptr<float>(0)[i]=worldPos[0];
+				mvPTAMPoints.ptr<float>(1)[i]=worldPos[1];
+				mvPTAMPoints.ptr<float>(2)[i]=worldPos[2];
+				mvPTAMPoints.ptr<float>(3)[i] = 1;
+			}
+			
+
+			TooN::Matrix<3, 3, double> sorot = mse3CfW.get_rotation().get_matrix();
+			TooN::Vector<3, double> sotrans = mse3CfW.get_translation();
+
+			float mparts[] = { sorot(0, 0), sorot(0, 1), sorot(0, 2), sotrans[0],
+				sorot(1, 0), sorot(1, 1), sorot(1, 2), sotrans[1],
+				sorot(2, 0), sorot(2, 1), sorot(2, 2), sotrans[2],
+				0, 0, 0, 1 };
+
+			cv::Mat matCfW = cv::Mat(4, 4, cv::DataType<float>::type, mparts).clone();
+			mvPTAMPoints = matCfW*mvPTAMPoints;
+
+			KINECT::calcPTAMfromKinect(mvPTAMPoints, _depthdata);
 
 			//cv::Mat dmap = KINECT::getDepthFrame();
 

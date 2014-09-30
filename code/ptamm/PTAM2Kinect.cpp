@@ -2,6 +2,7 @@
 #include "KinectManager.h"
 #include "ghostutil.h"
 #include "ghostcam.h"
+#include "cvutil.h"
 
 #include <TooN\TooN.h>
 
@@ -75,7 +76,7 @@ namespace KINECT{
       if(CLAMP_SIZE(x,y,CAPTURE_SIZE_X,CAPTURE_SIZE_Y)){
         DepthXY dDepthPoint = dDepthMap[x + y*CAPTURE_SIZE_X];
         cv::Vec3f pKinectPoint = KINECT::mapDepthToSkeletonPoint(dDepthPoint);
-        cv::Vec3f pPTAMPoint = mat4_to_vec3(mvPTAM3DPoints.col(i));
+        cv::Vec3f pPTAMPoint = mat_to_vec3(mvPTAM3DPoints.col(i));
         
         vPTAM3DPoints.push_back(pPTAMPoint);
         vKinect3DPoints.push_back(pKinectPoint);
