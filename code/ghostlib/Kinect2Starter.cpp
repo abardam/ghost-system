@@ -40,6 +40,8 @@ namespace KINECT{
     RGBQUAD * m_pColorRGBX;
 	DepthSpacePoint * m_pColorDepthMap;
 	USHORT * m_pDepthMappedToColor;
+	int * m_pDepthXMappedToColor;
+	int * m_pDepthYMappedToColor;
 	RGBQUAD * m_pBodyColorRGBX;
 
 	Joint * m_pJoints;
@@ -62,6 +64,8 @@ namespace KINECT{
 		m_pDepth = new USHORT[CAPTURE_SIZE_X_DEPTH * CAPTURE_SIZE_Y_DEPTH];
 		m_pColorRGBX = new RGBQUAD[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
 		m_pColorDepthMap = new DepthSpacePoint[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
+		m_pDepthXMappedToColor = new int[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
+		m_pDepthYMappedToColor = new int[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
 		m_pDepthMappedToColor = new USHORT[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
 		m_pBodyColorRGBX = new RGBQUAD[CAPTURE_SIZE_X_COLOR * CAPTURE_SIZE_Y_COLOR];
 
@@ -94,6 +98,12 @@ namespace KINECT{
 		}
 		if(m_pDepthMappedToColor){
 			delete[] m_pDepthMappedToColor;
+		}
+		if (m_pDepthXMappedToColor){
+			delete[] m_pDepthXMappedToColor;
+		}
+		if (m_pDepthYMappedToColor){
+			delete[] m_pDepthYMappedToColor;
 		}
 		if(m_pBodyColorRGBX){
 			delete [] m_pBodyColorRGBX;
@@ -360,6 +370,8 @@ namespace KINECT{
 
 		if(pDepthBuffer && pColorDepthMap){
 			USHORT * pDepthMappedToColor = m_pDepthMappedToColor;
+			int * pDepthXMappedToColor = m_pDepthXMappedToColor;
+			int * pDepthYMappedToColor = m_pDepthYMappedToColor;
 
 			const DepthSpacePoint * pBufferEnd = pColorDepthMap + colorSize;
 
@@ -367,9 +379,13 @@ namespace KINECT{
 				DepthSpacePoint depthSpacePoint = *pColorDepthMap;
 				int pointerValue = depthSpacePoint.X + depthSpacePoint.Y * nDepthWidth;
 				*pDepthMappedToColor = pDepthBuffer[pointerValue];
+				*pDepthXMappedToColor = depthSpacePoint.X;
+				*pDepthYMappedToColor = depthSpacePoint.Y;
 
 				++pColorDepthMap;
 				++pDepthMappedToColor;
+				++pDepthXMappedToColor;
+				++pDepthYMappedToColor;
 			}
 		}
 	}
@@ -679,6 +695,13 @@ namespace KINECT{
 
 	USHORT * GetDepthMappedToColor(){
 		return m_pDepthMappedToColor;
+	}
+
+	int * GetDepthXMappedToColor(){
+		return m_pDepthXMappedToColor;
+	}
+	int * GetDepthYMappedToColor(){
+		return m_pDepthYMappedToColor;
 	}
 
 	RGBQUAD * GetBodyColorRGBX(){
