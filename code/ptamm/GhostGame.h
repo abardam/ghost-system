@@ -17,7 +17,7 @@
 
 namespace GHOST{
 	
-#define FRAMERATE 30.0
+#define FRAMERATE 10.0
 using namespace PTAMM;
 
 class GhostGame:public Game{

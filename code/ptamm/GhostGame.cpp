@@ -56,7 +56,7 @@ GhostGame::GhostGame():Game("Ghost"),version(1.5),
 
 	initDefinitions();
 
-	setCameraMatrix(camParams[0], camParams[1], camParams[2], camParams[3], CAPTURE_SIZE_X, CAPTURE_SIZE_Y);
+	setCameraMatrixScene(camParams[0], camParams[1], camParams[2], camParams[3], CAPTURE_SIZE_X, CAPTURE_SIZE_Y);
 	//cylinderBody.calculateCameraMatrix();
 
 	//gvars
@@ -511,7 +511,51 @@ void GhostGame::ProjectGrid(){
 	if(!mapLoaded) return;
 	//skeleton.ProjectGrid(mse3CfW);
 
-	KINECT::GridProjection(mse3CfW, &skeleton.gridpts, &skeleton.gridpts2, mnWindowWidth, mnWindowHeight);
+	//KINECT::GridProjection(mse3CfW, &skeleton.gridpts, &skeleton.gridpts2, mnWindowWidth, mnWindowHeight);
+
+
+	skeleton.gridpts.clear();
+	skeleton.gridpts2.clear();
+
+	KINECT::DepthXY * _depthdata = new KINECT::DepthXY[CAPTURE_SIZE_X * CAPTURE_SIZE_Y];
+
+	getKinectData_depth_raw(_depthdata);
+
+	TooN::SE3<> cam2world = mse3CfW.inverse();
+	TooN::Matrix<4, 4> K2P = KINECT::getPTAMfromKinect();
+
+	const int width = CAPTURE_SIZE_X;
+	const int height = CAPTURE_SIZE_Y;
+
+	for (int x = 64; x<width; x += 64){
+		for (int y = 64; y<height; y += 64){
+			float dX = x;
+			float dY = height - 1 - y;
+			float depth = _depthdata[(int)dX + (int)dY*width].depth;
+			if (depth == 0) continue;
+
+			cv::Vec3f skeletonPt_cv = mapDepthToSkeletonPoint(_depthdata[(int)dX + (int)dY*width]);
+			TooN::Vector<4> skeletonPt = TooN::makeVector(skeletonPt_cv(0), skeletonPt_cv(1), skeletonPt_cv(2), 1);
+
+			skeleton.gridpts.push_back(cam2world * K2P * (skeletonPt));
+
+			/*skeletonPt /= skeletonPt[2];
+			skeletonPt[3] = 1;
+			gridpts2->push_back(cam2world * (skeletonPt));*/
+
+			TooN::Vector<4, float> temp = K2P * (skeletonPt);
+			temp /= temp[2];
+			temp[3] = 1;
+			skeleton.gridpts2.push_back(cam2world * temp);
+
+
+			//std::cout << _depthdata[x+y*WIDTH] << ", (" << x << ", " << y << ") -> " << gridpts2->back() << std::endl;
+
+		}
+	}
+	std::cout << "Grid size: " << skeleton.gridpts.size() << std::endl;
+
+	delete[] _depthdata;
 };
 
 void GhostGame::setStartFrame(){
@@ -583,10 +627,10 @@ void GhostGame::HandleKeyPress(std::string sKey){
 	}
 	else if(sKey == "C" || sKey == "c"){
 		//grid projection
-		/**gridproj = !*gridproj;
+		*gridproj = !*gridproj;
 		if(*gridproj){
 			ProjectGrid();
-		}*/
+		}
 	}
 	else if(sKey == "V" || sKey == "v"){
 		//2d draw
@@ -596,7 +640,7 @@ void GhostGame::HandleKeyPress(std::string sKey){
 		//save vid
 		//skeleton.processVideo(&flesh);
 		//skeleton.SaveVideo();
-		SaveVideo(&vidRecord, getCameraMatrix());
+		SaveVideo(&vidRecord, getCameraMatrixScene());
 	}
 	else if(sKey == "N" || sKey == "n"){
 		//load from vid
@@ -767,6 +811,7 @@ void GhostGame::Advance(){
 				good = true;
 
 				Skeleton newSkeleton = KINECT::getSkeleton();
+
 				KINECT::augmentSkeleton( &newSkeleton );
 				cv::Mat origPoints = newSkeleton.points.clone();
 
@@ -870,14 +915,14 @@ std::string GhostGame::Save(std::string mapPath){
 		}
 	}
 
-	if(!getCameraMatrix().empty()){
+	if(!getCameraMatrixScene().empty()){
 		TiXmlElement * capCamMatNode = new TiXmlElement("CaptureCameraMatrix");
 		rootNode->LinkEndChild(capCamMatNode);
 		for(int r=0;r<3;++r){
 			for(int c=0;c<4;++c){
 				TiXmlElement * matcell = new TiXmlElement("MatEntry");
 				capCamMatNode->LinkEndChild(matcell);
-				matcell->SetDoubleAttribute("value", getCameraMatrix().at<float>(r,c));
+				matcell->SetDoubleAttribute("value", getCameraMatrixScene().at<float>(r,c));
 			}
 		}
 	}
@@ -911,7 +956,7 @@ std::string GhostGame::Save(std::string mapPath){
 	rootNode->LinkEndChild(vidNode);
 	vidNode->SetAttribute("path", "/video/");
 
-	SaveVideo(&vidRecord, getCameraMatrix(), mapPath + "/video/");
+	SaveVideo(&vidRecord, getCameraMatrixScene(), mapPath + "/video/");
 
 	TiXmlElement * vidSegmentsNode = new TiXmlElement("VideoSegments");
 	rootNode->LinkEndChild(vidSegmentsNode);
@@ -1011,7 +1056,7 @@ void GhostGame::Load(std::string dataFileName){
 			++i;
 		}
 
-		setCameraMatrix(camMat);
+		setCameraMatrixTexture(camMat);
 	}
 
 	TiXmlHandle vidSegmentsNode = root.FirstChild("VideoSegments");
@@ -1159,8 +1204,17 @@ void GhostGame::Load(std::string dataFileName){
 	cylinderBody.radiusModifier = -(KINECT::getPTAMfromKinect_mat()).ptr<float>()[0];
 
 	//SHIT
-	limbrary.Load("map000000/");
+	std::string limbraryDirectory;
 
+	{
+		int lastSlash = dataFileName.find_last_of("/\\");
+		limbraryDirectory = dataFileName.substr(0, lastSlash+1);
+	}
+
+	limbrary.Load(limbraryDirectory);
+
+	//SHIT!!
+	setCameraMatrixTexture(KINECT::loadCameraParameters());
 
 #if ON_TABLET
 	//clear depth images, we don't need them anymore, we shouldn't save on tablet

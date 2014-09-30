@@ -98,8 +98,6 @@ namespace KINECT{
 
 #else
 
-#include <OpenNI.h>
-
 #include <iostream>
 #include <vector>
 #include <set>
@@ -138,6 +136,8 @@ namespace KINECT{
 		
 		if(!ptamcalib && doCalib())
 		{
+			std::cout << "calibrating PTAM to Kinect!\n";
+
 			DepthXY * _depthdata = new DepthXY[CAPTURE_SIZE_X*CAPTURE_SIZE_Y];
 			KINECT::getKinectData_depth_raw(_depthdata);
 
@@ -148,7 +148,11 @@ namespace KINECT{
 				ptampoints.push_back(mse3CfW*worldPosHom);
 			}
 
-			KINECT::calcPTAMfromKinect(ptampoints,_depthdata);
+			KINECT::calcPTAMfromKinect(ptampoints, _depthdata);
+
+			//cv::Mat dmap = KINECT::getDepthFrame();
+
+			//KINECT::calcPTAMfromKinect(ptampoints, dmap);
 
 			ptamcalib = true;
 			delete [] _depthdata;
@@ -166,7 +170,8 @@ namespace KINECT{
 		
 		if(!ptamcalib) return;
 		//KINECT::GridProjection(mse3CfW
-/*
+
+		/*
 		gridpts.clear();
 		gridpts2.clear();
 
@@ -179,6 +184,9 @@ namespace KINECT{
 
 		INuiCoordinateMapper* mapper;
 		sensor->NuiGetCoordinateMapper(&mapper);
+
+		const int WIDTH = CAPTURE_SIZE_X;
+		const int HEIGHT = CAPTURE_SIZE_Y;
 
 		for(int x=64;x<WIDTH;x+=64){
 			for(int y=64;y<HEIGHT;y+=64){
