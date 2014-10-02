@@ -9,10 +9,10 @@
 //openNI
 #include "util.h"
 
+#ifndef isinf
 #include <math.h>
-#define isnan(x) _isnan(x)
 #define isinf(x) (!_finite(x))
-#define fpu_error(x) (isinf(x) || isnan(x))
+#endif
 
 namespace KINECT{
 
