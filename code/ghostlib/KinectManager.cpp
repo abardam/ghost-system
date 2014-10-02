@@ -443,6 +443,15 @@ namespace KINECT{
 		return initNI();
 	}
 
+	bool release(){
+		shutdownNI();
+		return true;
+	}
+
+	void updateFrames(){
+		//nothing to do here
+	}
+
 	cv::Mat getColorFrame(){
 		unsigned char buffer[CAPTURE_SIZE_X * CAPTURE_SIZE_Y * 3];
 		getColorData(buffer);

@@ -38,13 +38,14 @@
 
 using namespace GVars3;
 using std::cout;
+using std::pair;
 
 namespace GHOST{
 
 
 Matrix<4,4> camMatrix;
 
-GhostGame::GhostGame():Game("Ghost"),version(1.5),
+GhostGame::GhostGame():Game("Ghost"),version(1.6),
 	camera("Camera"),
 	camParams(camera.GetParams())
 {
@@ -567,14 +568,8 @@ void GhostGame::setStartFrame(){
 	if(currentDivision < 0){
 		currentDivision = 0;
 	}
-
 	
-	if(currentDivision <= 0){
-		currAnim = 0;
-		currentDivision = 0;
-	}else{
-		currAnim = vidDivisions[currentDivision-1];
-	}
+	currAnim = vidDivisions[currentDivision].first;
 	currAnimF = currAnim;
 }
 
@@ -591,8 +586,10 @@ void GhostGame::HandleKeyPress(std::string sKey){
 			//processVideo();
 			//we do it separately now
 
+			int divisionStart=currentDivision==0?0:vidDivisions[currentDivision-1].second;
+
+			vidDivisions.push_back(pair<int,int>(divisionStart, vidRecord.size()));
 			++currentDivision;
-			vidDivisions.push_back(vidRecord.size());
 			dumpVideo();
 		}
 
@@ -876,7 +873,7 @@ void GhostGame::Advance(){
 					}
 				}else{
 					if( currAnim >= vidRecord.size() || 
-						(currentDivision < vidDivisions.size() && currAnim >= vidDivisions[currentDivision])){
+						(currentDivision < vidDivisions.size() && currAnim >= vidDivisions[currentDivision].second)){
 						
 						setStartFrame();
 
@@ -966,7 +963,8 @@ std::string GhostGame::Save(std::string mapPath){
 		TiXmlElement * vidSegmentStartFrameNode = new TiXmlElement("StartFrame");
 		vidSegmentsNode->LinkEndChild(vidSegmentStartFrameNode);
 
-		vidSegmentStartFrameNode->SetAttribute("frame", vidDivisions[i]);
+		vidSegmentStartFrameNode->SetAttribute("first", vidDivisions[i].first);
+		vidSegmentStartFrameNode->SetAttribute("last", vidDivisions[i].second);
 	}
 
 	/*
@@ -1059,17 +1057,36 @@ void GhostGame::Load(std::string dataFileName){
 		setCameraMatrixTexture(camMat);
 	}
 
+
 	TiXmlHandle vidSegmentsNode = root.FirstChild("VideoSegments");
+
 	if(vidSegmentsNode.ToElement()){
 		vidDivisions.clear();
-		int i=0;
-		for(TiXmlElement * elem = vidSegmentsNode.FirstChild().Element(); elem != NULL; elem = elem->NextSiblingElement()){
-			int segIn;
-			elem->QueryIntAttribute("frame", &segIn);
 
-			vidDivisions.push_back(segIn);
+		if(fileVersion <= 1.5){
 
-			++i;
+			int i=0, lastSegIn = 0;
+			for(TiXmlElement * elem = vidSegmentsNode.FirstChild().Element(); elem != NULL; elem = elem->NextSiblingElement()){
+				int segIn;
+				elem->QueryIntAttribute("frame", &segIn);
+
+				vidDivisions.push_back(pair<int,int>(lastSegIn, segIn));
+
+				lastSegIn = segIn;
+
+				++i;
+			}
+		}else{
+			int i=0;
+			for(TiXmlElement * elem = vidSegmentsNode.FirstChild().Element(); elem != NULL; elem = elem->NextSiblingElement()){
+				int first, last;
+				elem->QueryIntAttribute("first", &first);
+				elem->QueryIntAttribute("last", &last);
+
+				vidDivisions.push_back(pair<int,int>(first, last));
+
+				++i;
+			}
 		}
 	}
 

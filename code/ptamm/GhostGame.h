@@ -19,6 +19,8 @@ namespace GHOST{
 	
 #define FRAMERATE 10.0
 using namespace PTAMM;
+using std::pair;
+using std::vector;
 
 class GhostGame:public Game{
 public:
@@ -52,9 +54,9 @@ private:
 	Limbrary limbrary;
 
 	std::array<Skeleton, MAXUSERS> currSkeleton;
-	std::vector<SkeleVideoFrame> vidRecord;
-	std::vector<Skeleton> wcSkeletons;
-	std::vector<int> vidDivisions; //the last frames of the current section
+	vector<SkeleVideoFrame> vidRecord;
+	vector<Skeleton> wcSkeletons;
+	vector<pair<int,int>> vidDivisions; //the last frames of the current section
 	int currentDivision; //to get the first frame: vidDivisions[currentDivision-1]+1 (unless currentDivision=0 in which case 0)
 	//std::vector<Skeleton> animRecord;
 	Skeleton* drawSkeleton;
