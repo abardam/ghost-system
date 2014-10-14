@@ -107,11 +107,16 @@ GhostGame::~GhostGame(){
 };
 
 
+SYSTEMTIME lastTime;
+int numFPS = 0;
+float currAveFPS = 0;
 
 void GhostGame::Draw2D(const GLWindow2 &glWindow, Map &map){
 	glEnable(GL_BLEND);
 
 	glColor3f(1.0,1.0,1.0);
+
+#if !TABLET_GUI
 
 	std::string pout;
 	if(recording){
@@ -148,10 +153,32 @@ void GhostGame::Draw2D(const GLWindow2 &glWindow, Map &map){
 
 	glWindow.PrintString( CVD::ImageRef(10, glWindow.size().y - 20), pout);
 
-	char temp[40];
-	sprintf(temp, "chosenBest: %d", chosenBest);
+#endif
 
-	glWindow.PrintString( CVD::ImageRef(10, glWindow.size().y - 40), temp);
+	//FPS
+	std::stringstream FPSss;
+
+	//check FPS
+
+	SYSTEMTIME thisTime;
+	GetSystemTime(&thisTime);
+	double seconds = thisTime.wSecond - lastTime.wSecond + (thisTime.wMilliseconds - lastTime.wMilliseconds)/1000.;
+	lastTime = thisTime;
+	double FPSnow = 1./seconds;
+
+	FPSss << "FPS: " << FPSnow;
+	
+	double sumFPS = 0;
+	sumFPS = currAveFPS*numFPS;
+
+	sumFPS += FPSnow;
+	++numFPS;
+
+	currAveFPS = sumFPS/numFPS;
+	
+	FPSss << " average: " << currAveFPS;
+
+	glWindow.PrintString( CVD::ImageRef(10, glWindow.size().y - 40), FPSss.str());
 
 	glWindow.PrintString( CVD::ImageRef(10, glWindow.size().y - 60), dispstring);
 
