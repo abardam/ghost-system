@@ -82,18 +82,28 @@ GhostGame::GhostGame():Game("Ghost"),version(1.6),
 	GUI.RegisterCommand("GH_PrevSection", GUICommandCallBack, this);
 	GUI.RegisterCommand("GH_StartFrame", GUICommandCallBack, this);
 
+	static bool menusAdded = false;
 
-	GUI.ParseLine("GLWindow.AddMenu GhostMenu AR_Reenactment");
-	GUI.ParseLine("GhostMenu.AddMenuButton Root \"Next Section\" GH_NextSection Root");
-	GUI.ParseLine("GhostMenu.AddMenuButton Root \"Prev Section\" GH_PrevSection Root");
-	GUI.ParseLine("GhostMenu.AddMenuButton Root \"Start Frame\" GH_StartFrame Root");
-	GUI.ParseLine("GhostMenu.AddMenuToggle Root \"Pause\" GH_Pause Root");
+	if (!menusAdded){
+		GUI.ParseLine("GLWindow.AddMenu GhostMenu AR_Reenactment");
+		GUI.ParseLine("GhostMenu.AddMenuButton Root \"Next Section\" GH_NextSection Root");
+		GUI.ParseLine("GhostMenu.AddMenuButton Root \"Prev Section\" GH_PrevSection Root");
+		GUI.ParseLine("GhostMenu.AddMenuButton Root \"Start Frame\" GH_StartFrame Root");
+		GUI.ParseLine("GhostMenu.AddMenuToggle Root \"Pause\" GH_Pause Root");
+		menusAdded = true;
+	}
 };
 
 GhostGame::~GhostGame(){
 	Reset();
 	gluDeleteQuadric(quadric);
 	glDestroy();
+
+
+	GUI.UnRegisterCommand("GH_NextSection");
+	GUI.UnRegisterCommand("GH_PrevSection");
+	GUI.UnRegisterCommand("GH_StartFrame");
+
 };
 
 
