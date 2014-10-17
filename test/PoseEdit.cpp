@@ -29,7 +29,7 @@ cv::Vec3f calcSkeleCenter(Skeleton s){
 
 int main(){
 
-	initAndLoad(cv::Mat::eye(4,4,CV_32F), cv::Mat::eye(4,4,CV_32F), &vidRecord, &wcSkeletons, "map000000_aoto2/video/", true);
+	initAndLoad(cv::Mat::eye(4,4,CV_32F), cv::Mat::eye(4,4,CV_32F), &vidRecord, &wcSkeletons, "map000000_aoto2_edit/video/", true);
 	zeroWorldCoordinateSkeletons(cv::Mat::eye(4,4,CV_32F), &vidRecord, &wcSkeletons);
 	setCameraMatrixTexture(KINECT::loadCameraParameters());
 	setCameraMatrixScene(KINECT::loadCameraParameters());
@@ -80,6 +80,11 @@ int main(){
 				cv::circle(_3d,pj,6,cv::Scalar(50,200,250),-1);
 			}
 		}
+		std::stringstream frameSS;
+		frameSS << frame;
+
+		cv::putText(tex, frameSS.str(), cv::Point(30, 30), CV_FONT_HERSHEY_PLAIN, 2, cv::Scalar(0, 255, 0), 3);
+		cv::putText(_3d, frameSS.str(), cv::Point(30, 30), CV_FONT_HERSHEY_PLAIN, 2, cv::Scalar(255, 0, 255), 3);
 
 		cv::imshow("rgb", tex);
 		cv::imshow("3d", _3d);
@@ -97,10 +102,11 @@ int main(){
 			break;
 		case 'x':
 			++frame;
+			if (frame >= vidRecord.size()) frame = vidRecord.size() - 1;
 			while(vidRecord[frame].videoFrame.mat.empty()){
 				++frame;
+				if (frame >= vidRecord.size()) frame = vidRecord.size() - 1;
 			}
-			if(frame >= vidRecord.size()) frame = vidRecord.size()-1;
 			break;
 		case 'r':
 			angle_y = 0;

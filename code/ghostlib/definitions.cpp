@@ -157,14 +157,14 @@ void initDefinitions(){
 	limbWeights[CHEST][LOWERARM_RIGHT]=0;
 	limbWeights[CHEST][CHEST]=1;
 	limbWeights[CHEST][ABS]=1;
-	limbWeights[CHEST][UPPERLEG_LEFT]=1;
-	limbWeights[CHEST][UPPERLEG_RIGHT]=1;
+	limbWeights[CHEST][UPPERLEG_LEFT]=0;
+	limbWeights[CHEST][UPPERLEG_RIGHT]=0;
 	limbWeights[CHEST][LOWERLEG_LEFT]=0;
 	limbWeights[CHEST][LOWERLEG_RIGHT]=0;
 
 	limbWeights[ABS][HEAD]=0;
-	limbWeights[ABS][UPPERARM_LEFT]=1;
-	limbWeights[ABS][UPPERARM_RIGHT]=1;
+	limbWeights[ABS][UPPERARM_LEFT]=0;
+	limbWeights[ABS][UPPERARM_RIGHT]=0;
 	limbWeights[ABS][LOWERARM_LEFT]=0;
 	limbWeights[ABS][LOWERARM_RIGHT]=0;
 	limbWeights[ABS][CHEST]=1;

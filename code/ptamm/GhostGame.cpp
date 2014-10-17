@@ -1136,7 +1136,7 @@ void GhostGame::Load(std::string dataFileName){
 	std::vector<bool> loadStatus;
 	if (fileVersion < 1.5){
 
-		loadStatus = LoadVideo(cv::Mat::eye(4, 4, cv::DataType<float>::type), KINECT::getPTAMfromKinect_mat(), &vidRecord, &wcSkeletons, vidNode.ToElement()->Attribute("path"));
+		loadStatus = LoadVideo(cv::Mat::eye(4, 4, cv::DataType<float>::type), KINECT::getPTAMfromKinect_mat(), &vidRecord, &wcSkeletons, vidNode.ToElement()->Attribute("path"), false);
 	}
 	else{
 		int basePathLastIndex = dataFileName.find_last_of('/');
