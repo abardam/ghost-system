@@ -12,6 +12,7 @@ const int HEIGHT = 480;
 const int WIDTH = 640;
 
 int frame;
+int lastjoint=-1;
 float angle_y;
 float angle_x;
 cv::Mat trans;
@@ -29,7 +30,7 @@ cv::Vec3f calcSkeleCenter(Skeleton s){
 
 int main(){
 
-	initAndLoad(cv::Mat::eye(4,4,CV_32F), cv::Mat::eye(4,4,CV_32F), &vidRecord, &wcSkeletons, "map000000_aoto2_edit/video/", true);
+	initAndLoad(cv::Mat::eye(4,4,CV_32F), cv::Mat::eye(4,4,CV_32F), &vidRecord, &wcSkeletons, "map000000_aoto4_edit/video/", true);
 	zeroWorldCoordinateSkeletons(cv::Mat::eye(4,4,CV_32F), &vidRecord, &wcSkeletons);
 	setCameraMatrixTexture(KINECT::loadCameraParameters());
 	setCameraMatrixScene(KINECT::loadCameraParameters());
@@ -62,14 +63,23 @@ int main(){
 		ghostdraw_parallel(frame, cv::Mat::eye(4,4,CV_32F), vidRecord, wcSkeletons, cylinderBody, Limbrary(), tex, cv::Mat(), GD_CYL);
 		ghostdraw_parallel(frame, trans, vidRecord, wcSkeletons, cylinderBody, Limbrary(), _3d, cv::Mat(), GD_CYL);
 
+		cv::Scalar goodColor(50, 200, 250);
+		cv::Scalar badColor(20, 20, 250);
+
 		for(int joint=0;joint<NUMJOINTS;++joint)
 		{
+			cv::Scalar color;
+			if (wcSkeletons[frame].states[joint] < 1)
+				color = badColor;
+			else
+				color = goodColor;
+
 			{
 				cv::Vec3f jv = mat_to_vec3(wcSkeletons[frame].points.col(joint));
 				cv::Vec2f jv2 = mat4_to_vec2(getCameraMatrixScene() * vec3_to_mat4(jv));
 				cv::Point pj(jv2(0), jv2(1));
 
-				cv::circle(tex,pj,6,cv::Scalar(50,200,250),-1);
+				cv::circle(tex,pj,2,color,-1);
 			}
 
 			{
@@ -77,7 +87,7 @@ int main(){
 				cv::Vec2f jv2 = mat4_to_vec2(getCameraMatrixScene() * vec3_to_mat4(jv));
 				cv::Point pj(jv2(0), jv2(1));
 
-				cv::circle(_3d,pj,6,cv::Scalar(50,200,250),-1);
+				cv::circle(_3d,pj,3,color,-1);
 			}
 		}
 		std::stringstream frameSS;
@@ -108,6 +118,15 @@ int main(){
 				if (frame >= vidRecord.size()) frame = vidRecord.size() - 1;
 			}
 			break;
+		case 'd':
+			if (lastjoint != -1){
+				if (wcSkeletons[frame].states[lastjoint] < 1){
+					wcSkeletons[frame].states[lastjoint] = 1;
+				}
+				else{
+					wcSkeletons[frame].states[lastjoint] = 0.5;
+				}
+			}
 		case 'r':
 			angle_y = 0;
 			angle_x = 0;
@@ -126,7 +145,7 @@ int main(){
 				//}
 			}
 
-			SaveVideo(&vidRecord, getCameraMatrixScene(),  "map000000_aoto2_edit/video/");
+			SaveVideo(&vidRecord, getCameraMatrixScene(),  "map000000_aoto4_edit/video/");
 			break;
 		}
 	}
@@ -215,6 +234,7 @@ void onMouse(int e, int x, int y, int, void *){
 					cjoint = joint;
 				}
 			}
+			lastjoint = cjoint;
 			break;
 		}
 	case cv::EVENT_RBUTTONUP:
