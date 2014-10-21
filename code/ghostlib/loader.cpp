@@ -29,7 +29,7 @@ void initLoader(){
 }
 
 
-std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoFrame> * vidRecord, std::vector<Skeleton> * wcSkeletons, std::string path, bool loadRGB){
+std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoFrame> * vidRecord, std::vector<Skeleton> * wcSkeletons, std::string path, bool loadRGB, bool loadDepth){
 	cv::Mat cam2World = matCfW.inv();
 
 	path += "/";
@@ -138,7 +138,7 @@ std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoF
 			}
 			
 
-			if(elem->Attribute("framedepth") != NULL)
+			if(loadDepth&&elem->Attribute("framedepth") != NULL)
 			{
 				std::string dfilename = path + elem->Attribute("framedepth");
 

@@ -16,6 +16,8 @@
 #define OCCL_UNOCCLUDED 1
 #define OCCL_OCCLUDED 2
 
+#define OCCL_DEPTH 50
+
 Limbrary::Limbrary():framesForLimb(NUMLIMBS){	
 }
 
@@ -157,10 +159,11 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 
 						cv::Point2i zBufferOldPixLoc = zBufferPixLoc - zBuffersLocal[j].offset;
 
-						if(CLAMP_SIZE(zBufferOldPixLoc.x, zBufferOldPixLoc.y, occlBuffer[j].mat.cols, occlBuffer[j].mat.rows)){
+
+						if (CLAMP_SIZE(zBufferOldPixLoc.x, zBufferOldPixLoc.y, zBuffersLocal[j].mat.cols, zBuffersLocal[j].mat.rows)){
 							unsigned short oldDepth = zBuffersLocal[j].mat.at<unsigned short>(zBufferOldPixLoc);
 
-							if(oldDepth < newDepth){
+							if(newDepth - oldDepth > OCCL_DEPTH){
 								occlBuffer[i].mat.at<unsigned char>(zBufferLocalPixLoc) = OCCL_OCCLUDED;
 							}
 						}
@@ -236,6 +239,11 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 		//}
 
 		for(int i=0;i<NUMLIMBS;++i){
+			int f = getLimbmap()[i].first;
+			int s = getLimbmap()[i].second;
+
+			if ((*vidRecord)[frame].kinectPoints.states[i] < 1)
+				continue;
 
 			for(int x=0;x<occlBuffer[i].mat.cols;++x){
 				for(int y=0;y<occlBuffer[i].mat.rows;++y){
@@ -269,6 +277,8 @@ void Limbrary::build(std::vector<SkeleVideoFrame> * vidRecord, CylinderBody * cy
 void Limbrary::cluster(std::vector<SkeleVideoFrame> * vidRecord, unsigned int K, unsigned int iterations){
 
 	if (K > vidRecord->size()) K = vidRecord->size();
+
+	std::cout << "Clustering (K=" << K << ")...\n";
 
 	for(int limb=0;limb<NUMLIMBS;++limb)
 	{
@@ -341,16 +351,16 @@ void Limbrary::cluster(std::vector<SkeleVideoFrame> * vidRecord, unsigned int K,
 
 		//assign the closests to the clusters
 
-		if(useAllFrames){
-			framesForLimb[limb].clear();
-			framesForLimb[limb].resize(K);
-		}
+		auto tempFFL = framesForLimb;
 
-		for(int k=0;k<framesForLimb.size();++k){
+		framesForLimb[limb].clear();
+		framesForLimb[limb].resize(K);
+
+		for(int k=0;k<framesForLimb[limb].size();++k){
 			float dist=-1;
 			int closest;
 			for(int _i=0;_i<frameMax;++_i){
-				int i = useAllFrames?_i:framesForLimb[limb][_i];
+				int i = useAllFrames?_i:tempFFL[limb][_i];
 	
 				cv::Mat tlskel = jointbasedSkeletonMatrix((*vidRecord)[i].kinectPoints2P, limb);
 				float tdist = sqrSum(tlskel-centers[k]);
