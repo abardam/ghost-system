@@ -1280,6 +1280,7 @@ void GhostGame::Load(std::string dataFileName){
 #endif
 	currentDivision = 0;
 
+	setStartFrame();
 };
 
 SkeleVideoFrame * GhostGame::getBestSkeletonScore(bool removeElse){
@@ -1312,10 +1313,11 @@ void GhostGame::removeUnnecessaryDepthFrames(){
 
 void GhostGame::refreshVidDirectory(){
 	time_t t = time(0);
-    struct tm * now = localtime( & t );
+	tm now;
+	localtime_s(&now, &t);
 	char buf[100];
 
-	sprintf(buf, "videodump-%d-%d-%d-%02d%02d", now->tm_year+1900, now->tm_mon+1, now->tm_mday, now->tm_hour, now->tm_sec);
+	sprintf(buf, "videodump-%d-%d-%d-%02d%02d", now.tm_year+1900, now.tm_mon+1, now.tm_mday, now.tm_hour, now.tm_sec);
 
 	vidpath = std::string(buf);
 };
