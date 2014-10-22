@@ -53,14 +53,14 @@ struct CroppedCvMat{
 cv::Mat uncrop(CroppedCvMat);
 
 
-#if GHOST_CAPTURE == CAPTURE_OPENNI
+#if GHOST_DEF == DEF_OPENNI
 
 #define NUMLIMBS 11
 #define NUMJOINTS 16
 
 #define JOINT_CENTER_HIP 15
 
-#elif GHOST_CAPTURE == CAPTURE_KINECT2
+#elif GHOST_DEF == DEF_KINECT2
 
 #define NUMLIMBS 11
 #define NUMJOINTS 25
@@ -122,7 +122,10 @@ std::vector<int> * getJointmap();
 std::vector<std::vector<int>> getCombineParts();
 int * getCombinePartsMap();
 float * getPartWeights(int i);
-unsigned int getLimbWeight(unsigned int jt, unsigned int jt2);
+unsigned int getLimbWeight(unsigned int l1, unsigned int l2);
+
+//does limb l1 occlude limb l2?
+bool getLimbOccludes(unsigned int l1, unsigned int l2);
 
 //for debugging
 cv::Scalar getLimbColor(int limb, int numChannels=3);

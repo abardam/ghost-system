@@ -440,14 +440,14 @@ void cylinderMapPixelsColor_parallel_orig(
 			cv::Mat transformedPixelsMat = cylinderFacingTransform(from_a[i], from_b[i], tempCalcFacing(i, (*vidRecord)[*it].kinectPoints), to_a, to_b, facing[i], cylRatio) * fromPixels[i];
 
 #if  GHOST_CAPTURE == CAPTURE_OPENNI
-			transformedPixelsMat = getCameraMatrix() * transformedPixelsMat;
+			transformedPixelsMat = getCameraMatrixTexture() * transformedPixelsMat;
 			//predivide
 			cv::divide(transformedPixelsMat.row(0), transformedPixelsMat.row(2), transformedPixelsMat.row(0));
 			cv::divide(transformedPixelsMat.row(1), transformedPixelsMat.row(2), transformedPixelsMat.row(1));
 #elif GHOST_CAPTURE == CAPTURE_KINECT2
 
 			//transformedPixelsMat = KINECT::mapCameraPointsToColorPoints(transformedPixelsMat);
-			transformedPixelsMat = getCameraMatrix() * transformedPixelsMat;
+			transformedPixelsMat = getCameraMatrixTexture() * transformedPixelsMat;
 			//predivide
 			cv::divide(transformedPixelsMat.row(0), transformedPixelsMat.row(2), transformedPixelsMat.row(0));
 			cv::divide(transformedPixelsMat.row(1), transformedPixelsMat.row(2), transformedPixelsMat.row(1));
@@ -638,7 +638,7 @@ void cylinderMapPixelsColor_parallel_orig(
 			blendPixel *= 1.f/totalAlpha;
 
 			//blend threshold; if alpha adds up to 0.5 or less, does not render the pixel
-			if(colorAlpha > 0.5){
+			if(colorAlpha > 0.25){
 				//pixelColors[i] = (blendPixel);
 
 				//immediately draw

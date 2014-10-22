@@ -4,7 +4,7 @@
 #include <opencv2\opencv.hpp>
 
 cv::Vec3f raycast(cv::Vec2f pt, cv::Mat invCameraMatrix){
-	cv::Vec3f pt3(pt(0), pt(1), 1);
+	cv::Vec4f pt3(pt(0), pt(1), 1,1);
 	cv::Vec3f repro = mat_to_vec3(invCameraMatrix * cv::Mat(pt3));
 	return cv::normalize(repro);
 }

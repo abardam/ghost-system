@@ -4,10 +4,10 @@
 #include "KinectManager.h"
 #include "ghostcam.h"
 
-void initAndLoad(cv::Mat mse3CfW, cv::Mat K2P, std::vector<SkeleVideoFrame> * vidRecord, std::vector<Skeleton> * wcSkeletons, std::string path, bool loadRGB){
+void initAndLoad(cv::Mat mse3CfW, cv::Mat K2P, std::vector<SkeleVideoFrame> * vidRecord, std::vector<Skeleton> * wcSkeletons, std::string path, bool loadRGB, bool loadDepth){
 	initLoader();
 	initDefinitions();
-	LoadVideo(mse3CfW, K2P, vidRecord, wcSkeletons, path, loadRGB);
+	LoadVideo(mse3CfW, K2P, vidRecord, wcSkeletons, path, loadRGB, loadDepth);
 	if(vidRecord->empty()) {
 		std::cout << "no frames loaded... check file path\n";
 		return;

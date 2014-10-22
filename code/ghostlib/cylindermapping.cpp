@@ -231,12 +231,12 @@ int partSwap(int i){
 }
 
 
-void drawSkeletonOn(cv::Vec3f * pts, cv::Mat img, cv::Point2d offset){
-	cv::Vec2f offsetV(offset.x, offset.y);
-	for(int i=0;i<NUMLIMBS;++i){
-		lineAt(img, toScreen(pts[getLimbmap()[i].first])-offsetV, toScreen(pts[getLimbmap()[i].second])-offsetV, IMGPIXEL(0,255,0,255));
-	}
-}
+//void drawSkeletonOn(cv::Vec3f * pts, cv::Mat img, cv::Point2d offset){
+//	cv::Vec2f offsetV(offset.x, offset.y);
+//	for(int i=0;i<NUMLIMBS;++i){
+//		lineAt(img, toScreen(pts[getLimbmap()[i].first])-offsetV, toScreen(pts[getLimbmap()[i].second])-offsetV, IMGPIXEL(0,255,0,255));
+//	}
+//}
 
 SYSTEMTIME lastTime;
 int numFPS = 0;

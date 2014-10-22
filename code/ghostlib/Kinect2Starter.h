@@ -55,6 +55,8 @@ namespace KINECT{
 	USHORT * GetDepth();
 	RGBQUAD * GetColorRGBX();
 	USHORT * GetDepthMappedToColor();
+	int * GetDepthXMappedToColor();
+	int * GetDepthYMappedToColor();
 	RGBQUAD * GetBodyColorRGBX();
 	Joint * GetJoints();
 

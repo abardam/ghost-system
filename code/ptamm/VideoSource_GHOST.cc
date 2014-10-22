@@ -118,12 +118,10 @@ void VideoSource::GetAndFillFrameBWandRGB(Image<CVD::byte> &imBW, Image<CVD::Rgb
 
 		//m_buffer = input.ptr();
 
-		cv::Mat video_ = KINECT::getColorFrame();
+		cv::Mat video = KINECT::getColorFrame();
 
-		if (video_.empty()) return;
-		cv::Mat video;
+		if (video.empty()) return;
 
-		cv::resize(video_, video, cv::Size(mirSize.x, mirSize.y));
 		//getDepthData(m_buffer);
 		//getRandomData(m_buffer);
 
@@ -215,11 +213,9 @@ ImageRef VideoSource::Size()
 #include <Ole2.h>
 #include <Windows.h>
 
+
 #include "VideoSource.h"
 #include <cvd/utility.h>
-
-#include "KinectStarter.h"
-#include "NuiApi.h"
 
 #include "videoInput.h"
 
@@ -230,9 +226,6 @@ using namespace std;
 #define CAPTURE_SIZE_Y	480
 #define FPS				30
 
-// Kinect variables
-HANDLE rgbStream;              // The identifier of the Kinect's RGB Camera
-INuiSensor* sensor;            // The kinect sensor
 
 bool useKinect = false;
 bool VIinit = false;

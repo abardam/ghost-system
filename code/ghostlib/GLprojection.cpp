@@ -32,7 +32,7 @@ void reshape (int w, int h) {
 
 	glOrtho(0,640,480,0,1,100);
 	
-	cv::Mat camMat_t = mat3_to_mat4(getCameraMatrix()).t();
+	cv::Mat camMat_t = mat3_to_mat4(getCameraMatrixScene()).t();
 	cv::Mat camMat2_t = camMat_t.clone();
 	camMat2_t.ptr<float>(2)[0] *= -1;
 	camMat2_t.ptr<float>(2)[1] *= -1;
