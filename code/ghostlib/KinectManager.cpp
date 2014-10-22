@@ -5,6 +5,10 @@
 #include "ghostcam.h"
 #include "cvutil.h"
 
+#ifndef isinf
+bool isinf(double x) { return !_isnan(x) && _isnan(x - x); }
+#endif 
+
 //#if !INIT_KINECT
 //#endif
 
@@ -950,14 +954,6 @@ namespace KINECT{
 		}
 
 		return mColorPoints*mCameraPoints.t()*((mCameraPoints*mCameraPoints.t()).inv());
-	}
-
-	cv::Mat loadCameraParameters(){
-		cv::FileStorage fs;
-		fs.open("kinect2camera.yml", cv::FileStorage::READ);
-		cv::Mat camparam;
-		fs["kinect2camera"] >> camparam;
-		return camparam;
 	}
 
 	std::pair<int, int> facingHelper(int s){

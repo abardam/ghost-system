@@ -79,14 +79,6 @@ void calculateCameraMatrix(){
 }*/
 
 
-<<<<<<< HEAD
-cv::Mat& getCameraMatrix(){
-	return cameraMatrix;
-}
-
-cv::Mat& getInvCameraMatrix(){
-	return invCameraMatrix;
-=======
 cv::Mat& getCameraMatrixScene(){
 	return cameraMatrixScene;
 }
@@ -101,7 +93,6 @@ cv::Mat& getCameraMatrixTexture(){
 
 cv::Mat& getInvCameraMatrixTexture(){
 	return invCameraMatrixTexture;
->>>>>>> viddivide
 }
 
 //cv::Vec2f toScreen(cv::Vec3f v){

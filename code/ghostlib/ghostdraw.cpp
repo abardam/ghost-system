@@ -202,8 +202,8 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 							//fromPixels_v.push_back(ptProj);
 							////cv::Vec3s xyDepth(pt(0)-voff.x, pt(1)-voff.y, ptProj(2) * FLOAT_TO_DEPTH);
 							//cv::Vec3s xyDepth(x, y, ptProj(2) * FLOAT_TO_DEPTH);
-							//cv::Vec3s xyDepth(x, y, 0); //lets try projecting the 3d points to 2d and using that instead
-							//fromPixels_2d_v.push_back(xyDepth);
+							cv::Vec3s xyDepth(x, y, 0); //lets try projecting the 3d points to 2d and using that instead
+							fromPixels_2d_v.push_back(xyDepth);
 
 							fromPixels_f[valid_count*4+0] = retf[0];
 							fromPixels_f[valid_count*4+1] = retf[1];
@@ -237,7 +237,7 @@ void ghostdraw_prep(int frame, const cv::Mat& transform, int texSearchDepth, int
 				//cv::Mat m2DPoints = getCameraMatrixScene() * ret;
 				//std::vector<cv::Vec3s> fromPixels_2d_v2;
         
-				cv::Mat m2DPoints = getCameraMatrix() * ret;
+				//cv::Mat m2DPoints = getCameraMatrix() * ret;
 				//cv::divide(ret.row(0), ret.row(3), ret.row(0)); //somehow the last row is already 1
 				//cv::divide(ret.row(1), ret.row(3), ret.row(1));
 				//cv::divide(ret.row(2), ret.row(3), ret.row(2));
