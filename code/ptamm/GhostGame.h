@@ -18,6 +18,7 @@
 namespace GHOST{
 	
 #define FRAMERATE 10.0
+
 using namespace PTAMM;
 using std::pair;
 using std::vector;
@@ -49,6 +50,8 @@ private:
     Map * mpMap;                                  // The associated map
     SE3<> mse3CfW;                                // The camera postion
     cv::Mat matCfW;                                // The camera (openCV)
+
+	cv::Mat draw_;
 	
 	CylinderBody cylinderBody;
 	Limbrary limbrary;
@@ -86,6 +89,8 @@ private:
 	GVars3::gvar3<int> cyl_indivLimbs;
 	GVars3::gvar3<int> cyl_shittyOption;
 	GVars3::gvar3<int> writecmp;
+	GVars3::gvar3<int> log_pixels;
+	GVars3::gvar3<int> log_fps;
 
 	float _capx;
 
@@ -124,6 +129,16 @@ private:
 	void refreshVidDirectory();
 
 	static void GUICommandCallBack(void *ptr, string sCommand, string sParams);
+	
+	SYSTEMTIME lastTime;
+	int numFPS;
+	float currAveFPS;
+	double FPSnow;
+	int numPixels;
+
+	void LogPerformance();
+
+	std::ofstream logfile;
 };
 }
 

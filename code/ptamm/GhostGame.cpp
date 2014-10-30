@@ -76,6 +76,8 @@ GhostGame::GhostGame():Game("Ghost"),version(1.6),
 	GV2.Register(cyl_norot,				"GH_NoRotation", 0, SILENT);
 	GV2.Register(cyl_shittyOption,		"GH_ShittyOption", 0, SILENT);
 	GV2.Register(writecmp,				"GH_WriteCmp", 0, SILENT);
+	GV2.Register(log_fps,				"GH_LogFPS", 1, SILENT);
+	GV2.Register(log_pixels,			"GH_LogPixels", 1, SILENT);
 
 	//gui
 	GUI.RegisterCommand("GH_NextSection", GUICommandCallBack, this);
@@ -107,9 +109,6 @@ GhostGame::~GhostGame(){
 };
 
 
-SYSTEMTIME lastTime;
-int numFPS = 0;
-float currAveFPS = 0;
 
 void GhostGame::Draw2D(const GLWindow2 &glWindow, Map &map){
 	glEnable(GL_BLEND);
@@ -155,30 +154,17 @@ void GhostGame::Draw2D(const GLWindow2 &glWindow, Map &map){
 
 #endif
 
-	//FPS
-	std::stringstream FPSss;
+	//FPS+
 
-	//check FPS
+	if(*log_fps)
+	{
+		std::stringstream FPSss;
 
-	SYSTEMTIME thisTime;
-	GetSystemTime(&thisTime);
-	double seconds = thisTime.wSecond - lastTime.wSecond + (thisTime.wMilliseconds - lastTime.wMilliseconds)/1000.;
-	lastTime = thisTime;
-	double FPSnow = 1./seconds;
+		FPSss << "FPS: " << FPSnow;
+		FPSss << " average: " << currAveFPS;
 
-	FPSss << "FPS: " << FPSnow;
-	
-	double sumFPS = 0;
-	sumFPS = currAveFPS*numFPS;
-
-	sumFPS += FPSnow;
-	++numFPS;
-
-	currAveFPS = sumFPS/numFPS;
-	
-	FPSss << " average: " << currAveFPS;
-
-	glWindow.PrintString( CVD::ImageRef(10, glWindow.size().y - 40), FPSss.str());
+		glWindow.PrintString( CVD::ImageRef(10, glWindow.size().y - 40), FPSss.str());
+	}
 
 	glWindow.PrintString( CVD::ImageRef(10, glWindow.size().y - 60), dispstring);
 
@@ -287,7 +273,7 @@ void GhostGame::Draw3D(const GLWindow2 &glWindow, Map &map, TooN::SE3<> se3Cfrom
 	}
 #elif 1
 	if(playing){
-		cv::Mat draw_(CAPTURE_SIZE_Y, CAPTURE_SIZE_X, CV_8UC4, cv::Scalar(0,0,0,0));
+		draw_ = cv::Mat(CAPTURE_SIZE_Y, CAPTURE_SIZE_X, CV_8UC4, cv::Scalar(0,0,0,0));
 		cv::Mat zBuf;
 
 		cv::FileStorage fs("ptammat.yml", cv::FileStorage::WRITE);
@@ -295,7 +281,6 @@ void GhostGame::Draw3D(const GLWindow2 &glWindow, Map &map, TooN::SE3<> se3Cfrom
 		fs.release();
 
 		ghostdraw_parallel(currAnim, /*getScaleMatrix(1,-1,1)*/matCfW, vidRecord, wcSkeletons, cylinderBody, limbrary, draw_, zBuf, GD_DRAW);
-
 
 		cv::Mat draw;
 		cv::flip(draw_, draw, 0);
@@ -792,10 +777,18 @@ void GhostGame::Reset(){
 	skeleton.Reset();
 	vidDivisions.clear();
 	currentDivision = 0;
+	draw_ = cv::Mat(CAPTURE_SIZE_Y, CAPTURE_SIZE_X, CV_8UC4, cv::Scalar(0,0,0,0));
 	
 	invprojcalc = false;
 
 	_capx = 560;
+
+	GetSystemTime(&lastTime);
+	numFPS = 0;
+	currAveFPS = 0;
+	FPSnow = 0;
+
+
 };
 
 void GhostGame::processVideo(){
@@ -811,6 +804,8 @@ void GhostGame::Init(){
 	initLoader();
 	//calcInvProjMat(CAPTURE_SIZE_X, CAPTURE_SIZE_Y);
 	glInit();
+
+	logfile.open("PTAMM_log.txt");
 
 	refreshVidDirectory();
 };
@@ -920,7 +915,51 @@ void GhostGame::Advance(){
 		}
 	}
 	
+	LogPerformance();
 
+};
+
+void GhostGame::LogPerformance(){
+	
+	if(*log_fps){
+		//check FPS
+
+		SYSTEMTIME thisTime;
+		GetSystemTime(&thisTime);
+		double seconds = thisTime.wSecond - lastTime.wSecond + (thisTime.wMilliseconds - lastTime.wMilliseconds)/1000.;
+		lastTime = thisTime;
+		FPSnow = 1./seconds;
+	
+		double sumFPS = 0;
+		sumFPS = currAveFPS*numFPS;
+
+		sumFPS += FPSnow;
+		++numFPS;
+
+		currAveFPS = sumFPS/numFPS;
+		
+		if(logfile.is_open()){
+			logfile << numFPS << " " << FPSnow << " " << currAveFPS << " ";
+		}
+	}
+
+	if(*log_pixels){
+		int S = draw_.cols * draw_.rows;
+		numPixels = 0;
+		for(int s=0;s<S;++s){
+			if(draw_.ptr<cv::Scalar>()[s] != cv::Scalar(0,0,0,0)){
+				++numPixels;
+			}
+		}
+		if(logfile.is_open()){
+			logfile << numPixels << " ";
+		}
+	}
+
+	
+	if(logfile.is_open()){
+		logfile << "\n";
+	}
 };
 
 
