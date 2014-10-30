@@ -1118,6 +1118,7 @@ void GhostGame::Load(std::string dataFileName){
 			for(TiXmlElement * elem = vidSegmentsNode.FirstChild().Element(); elem != NULL; elem = elem->NextSiblingElement()){
 				int first, last;
 				elem->QueryIntAttribute("first", &first);
+				last = first + 1;
 				elem->QueryIntAttribute("last", &last);
 
 				vidDivisions.push_back(pair<int,int>(first, last));
