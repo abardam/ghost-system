@@ -286,7 +286,7 @@ void GhostGame::Draw3D(const GLWindow2 &glWindow, Map &map, TooN::SE3<> se3Cfrom
 	
 	}
 #elif 1
-	if(playing){
+	if(playing && vidRecord[currAnim].valid){
 		cv::Mat draw_(CAPTURE_SIZE_Y, CAPTURE_SIZE_X, CV_8UC4, cv::Scalar(0,0,0,0));
 		cv::Mat zBuf;
 
@@ -838,22 +838,26 @@ void GhostGame::Advance(){
 		if(!playing){ 
 			
 			elapsed = 0;
+			Skeleton newSkeleton;
+			cv::Mat origPoints;
 
 			if(KINECT::skeletonIsGood())
 			{
 				KINECT::setRefresh(false);
 				good = true;
 
-				Skeleton newSkeleton = KINECT::getSkeleton();
+				newSkeleton = KINECT::getSkeleton();
 
 				KINECT::augmentSkeleton( &newSkeleton );
-				cv::Mat origPoints = newSkeleton.points.clone();
+				origPoints = newSkeleton.points.clone();
 
 				newSkeleton.points = KINECT::getPTAMfromKinect_mat() * newSkeleton.points;
 				currSkeleton[0] = newSkeleton;
 				chosenSkeleton = 0;
 				hasCurrentSkeleton = true;
+			}
 
+			if(KINECT::skeletonIsGood() || FORCE_VIDEO_CAPTURE){
 				
 				if(recording){
 					//vid record . push things
@@ -862,16 +866,16 @@ void GhostGame::Advance(){
 					
 					//reworked. PROCESS
 
-#if 0 
-					for(int i=0;i<NUMJOINTS;++i){
-						svf.kinectPoints[i] = mat_to_vec(origPoints.col(i));
+					if(KINECT::skeletonIsGood()){
+						svf.kinectPoints.points = origPoints;
+						svf.kinectPoints.states = newSkeleton.states;
+						//extract person color
+						svf.videoFrame = KINECT::getPlayerColorFrame();
+						svf.valid = true;
 					}
-					svf.skeleton.points = matCfW.inv() * newSkeleton.points;
-					svf.skeleton.states = newSkeleton.states;
-					svf.kinectPoints2P = normalizeSkeleton( newSkeleton.points );
-#endif
-					svf.kinectPoints.points = origPoints;
-					svf.kinectPoints.states = newSkeleton.states;
+					else{
+						svf.valid = false;
+					}
 					svf.cam2World = matCfW.inv();
 
 #if FULL_VIDEO_CAPTURE
@@ -881,8 +885,6 @@ void GhostGame::Advance(){
 #endif
 #endif
 
-					//extract person color
-					svf.videoFrame = KINECT::getPlayerColorFrame();
 					svf.depthFrame = KINECT::getDepthFrame();
 
 					vidRecord.push_back(svf);
@@ -961,30 +963,6 @@ std::string GhostGame::Save(std::string mapPath){
 		}
 	}
 	
-	//reworked. PROCESS
-
-#if 0
-	TiXmlElement * animationNode = new TiXmlElement("Animation");
-	rootNode->LinkEndChild(animationNode);
-	animationNode->SetAttribute("size", vidRecord.size());
-
-		char buff[10];
-
-	for(int i=0;i<vidRecord.size();++i){
-		TiXmlElement * skeletonNode = new TiXmlElement("Skeleton");
-		animationNode->LinkEndChild(skeletonNode);
-
-
-		for(int j=0;j<NUMJOINTS;++j){
-			TiXmlElement * jointNode = new TiXmlElement("Joint");
-			skeletonNode->LinkEndChild(jointNode);
-			for(int k=0;k<4;++k){
-				jointNode->SetDoubleAttribute((std::string("point")+std::string(itoa(k, buff, 10))).c_str(), vidRecord[i].skeleton.points.at<float>(k,j));
-			}
-			jointNode->SetDoubleAttribute("state", vidRecord[i].skeleton.states[j]);
-		}
-	}
-#endif
 
 	TiXmlElement * vidNode = new TiXmlElement( "Video" );
 	rootNode->LinkEndChild(vidNode);
@@ -1003,25 +981,6 @@ std::string GhostGame::Save(std::string mapPath){
 		vidSegmentStartFrameNode->SetAttribute("first", vidDivisions[i].first);
 		vidSegmentStartFrameNode->SetAttribute("last", vidDivisions[i].second);
 	}
-
-	/*
-	TiXmlElement * mapperNode = new TiXmlElement("CoordinateMapper");
-	rootNode->LinkEndChild(mapperNode);
-	std::string cmpath = mapPath+"/cmParameters.bin";
-	mapperNode->SetAttribute("path", cmpath);
-
-	std::ofstream cmfile(cmpath.c_str(), ios::binary|ios::out);
-
-	ULONG numBytes;
-	char * dptr;
-	HRESULT ok = KINECT::saveMapper(&numBytes, &dptr);
-
-	if(FAILED(ok)) std::cout << "saving kinect parameters failed!\n";
-
-	mapperNode->SetAttribute("numBytes", numBytes);
-
-	cmfile.write((char*)dptr, numBytes);
-	cmfile.close();*/
 
 	TiXmlElement * oniNode = new TiXmlElement("ONI");
 	rootNode->LinkEndChild(oniNode);
