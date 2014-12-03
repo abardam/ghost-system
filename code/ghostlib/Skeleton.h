@@ -46,6 +46,7 @@ struct SkeleVideoFrame{
 	cv::Mat fullVideoFrame;
 	int cluster;
 	bool allPartsIn;
+	bool valid; //contains a valid skeleton. if false, this is good only for the video frame (maybe the depth frame as well)
 
 	SkeleVideoFrame(){}
 	SkeleVideoFrame(const SkeleVideoFrame& svf){
@@ -58,5 +59,6 @@ struct SkeleVideoFrame{
 		fullVideoFrame = svf.fullVideoFrame;
 		cluster = svf.cluster;
 		allPartsIn = svf.allPartsIn;
+		valid = false;
 	}
 };

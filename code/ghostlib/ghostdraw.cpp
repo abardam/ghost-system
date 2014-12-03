@@ -384,8 +384,11 @@ void ghostdraw_parallel(int frame, cv::Mat transform, std::vector<SkeleVideoFram
 			}
 
 
-			if(options & GD_DRAW){
-				cv::rectangle(draw, boundingRects[i], cv::Scalar(0, 255, 255, 255), 1);
+			if(options & GD_DRAW && boundingRects.size() == NUMLIMBS &&
+				boundingRects[i].x >= 0 && boundingRects[i].y >= 0 && 
+				boundingRects[i].x + boundingRects[i].width < draw.cols &&
+				boundingRects[i].y + boundingRects[i].height < draw.rows){
+					cv::rectangle(draw, boundingRects[i], cv::Scalar(0, 255, 255, 255), 1);
 			}
 		}
 	}
