@@ -1,16 +1,17 @@
 #include "ghost.h"
 
 #define USERINPUT 0
-#define VID_DIRECTORY "map000000_whitesweater_edit/video/"
-#define CB_DIRECTORY "map000000-custCB/"
-#define LB_LOAD_DIRECTORY "map000000_whitesweater/"
-#define LB_SAVE_DIRECTORY "map000000_whitesweater_edit-custCB-clean-test/"
+#define VID_DIRECTORY "___________/video/"
+#define CB_LOAD_DIRECTORY "map000000-custCB/"
+#define CB_SAVE_DIRECTORY "map000000/"
+#define LB_LOAD_DIRECTORY "___________/"
+#define LB_SAVE_DIRECTORY "___________/"
 #define SR_DIRECTORY "map000000/estim/"
 #define BUILD_CB 0
 #define BUILD_LB 1
 #define CLEAN_LB 1
 #define CLUSTER_LB 1
-#define CLUSTER_LB_N 400
+#define CLUSTER_LB_N 500
 #define USE_SR 0
 
 std::vector<SkeleVideoFrame> vidRecord;
@@ -24,7 +25,7 @@ int main(){
 	std::string in;
 	bool valid;
 
-	std::string viddir, cbdir, lbloaddir, lbsavedir, srdir;
+	std::string viddir, cbloaddir, cbsavedir, lbloaddir, lbsavedir, srdir;
 	bool buildCB, buildLB, clusterLB, cleanLB;
 
 #if USERINPUT
@@ -103,7 +104,8 @@ int main(){
 	}
 #else
 	viddir = VID_DIRECTORY;
-	cbdir = CB_DIRECTORY;
+	cbloaddir = CB_LOAD_DIRECTORY;
+	cbsavedir = CB_SAVE_DIRECTORY;
 	lbloaddir = LB_LOAD_DIRECTORY;
 	lbsavedir = LB_SAVE_DIRECTORY;
 	srdir = SR_DIRECTORY;
@@ -130,14 +132,21 @@ int main(){
 	////limbrary.Save("map000000-custCB-clust/");
 
 
-	initAndLoad(cv::Mat::eye(4,4,CV_32F), cv::Mat::eye(4,4,CV_32F), &vidRecord, &wcSkeletons, viddir);
-	
+	initAndLoad(cv::Mat::eye(4,4,CV_32F), cv::Mat::eye(4,4,CV_32F), &vidRecord, &wcSkeletons, viddir, buildLB, buildCB);
+	cv::Mat camMatrix = (KINECT::loadCameraParameters());
+	setCameraMatrixTexture(camMatrix);
+
+	cv::FileStorage fs;
+	fs.open("Kinect2ScaledCameraMatrix.yml", cv::FileStorage::WRITE);
+	fs << "cameraMatrix" << getCameraMatrixTexture();
+	fs.release();
+
 	if(buildCB){
 		buildCylinderBody(&vidRecord, &cylinderBody);
-		cylinderBody.Save(cbdir);
+		cylinderBody.Save(cbsavedir);
 	}
 	else
-		cylinderBody.Load(cbdir);
+		cylinderBody.Load(cbloaddir);
 
 	if(USE_SR){
 		LoadStatusRecord(srdir, estimRecord);

@@ -947,7 +947,7 @@ void GhostGame::LogPerformance(){
 		int S = draw_.cols * draw_.rows;
 		numPixels = 0;
 		for(int s=0;s<S;++s){
-			if(draw_.ptr<cv::Scalar>()[s] != cv::Scalar(0,0,0,0)){
+			if(draw_.ptr<cv::Vec4b>()[s] != cv::Vec4b(0,0,0,0)){
 				++numPixels;
 			}
 		}
@@ -1271,7 +1271,7 @@ void GhostGame::Load(std::string dataFileName){
 
 	if(vidRecord.size() <= 0) return;
 
-	playing = true;
+	playing = false;
 
 	//TiXmlHandle fleshNode = root.FirstChild("Flesh");
 

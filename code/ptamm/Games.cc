@@ -49,6 +49,9 @@ Game * LoadAGame( std::string sName, std::string sGameDataFileName)
   else if ( sName == "Ghost" ) {
 	  pGame = new GHOST::GhostGame();
   }
+  else if (sName == "AR Calibrate") {
+	  pGame = new ARCaptureGame();
+  }
   else
   {
     cout << "ERROR Unknown game: " << sName << endl;
@@ -73,8 +76,9 @@ void InitializeGameMenu()
   GUI.ParseLine("Menu.AddMenuButton Demos None \"LoadGame None\" Root");
   GUI.ParseLine("Menu.AddMenuButton Demos Eyes \"LoadGame Eyes\" Root");
   GUI.ParseLine("Menu.AddMenuButton Demos Shooter \"LoadGame Shooter\" Root");
-  GUI.ParseLine("Menu.AddMenuButton Demos Models \"LoadGame Models\" Root");
+  //GUI.ParseLine("Menu.AddMenuButton Demos Models \"LoadGame Models\" Root");
   GUI.ParseLine("Menu.AddMenuButton Demos GHOST \"LoadGame Ghost\" Root");
+  GUI.ParseLine("Menu.AddMenuButton Demos Calibrate \"LoadGame AR Calibrate\" Root");
   
   ///@TODO Add you games here using this template:
   // GUI.ParseLine("Menu.AddMenuButton Demos BUTTONLABEL \"LoadGame MY_AR_GAME\" Root");

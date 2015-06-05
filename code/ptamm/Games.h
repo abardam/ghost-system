@@ -20,6 +20,7 @@
 #include "GhostGame.h"
 
 ///@TODO Place the header files for your games here.
+#include "ARCaptureGame.h"
 
 namespace PTAMM {
 
