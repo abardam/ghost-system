@@ -76,11 +76,19 @@ std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoF
 	for(TiXmlElement * elem = framesNode.FirstChild().Element(); 
 		elem != NULL; elem = elem->NextSiblingElement()){
 			
-		if (elem->Attribute("frame") == NULL) continue;
+		//if (elem->Attribute("frame") == NULL) continue;
 
 			ret.push_back(false);
 
 			SkeleVideoFrame temp;
+
+			if(fileVersion < 1.5){
+				temp.valid = true;
+			}else{
+				int valid;
+				elem->QueryIntAttribute("valid", &valid);
+				temp.valid = valid==1?true:false;
+			}
 
 			if(loadRGB && elem->Attribute("frame") != NULL)
 			{
@@ -159,28 +167,31 @@ std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoF
 				}
 			}
 
-			TiXmlElement * kinPtsElem = elem->FirstChildElement();
+			if(temp.valid)
+			{
+				TiXmlElement * kinPtsElem = elem->FirstChildElement();
 
-			int i=0;
+				int i=0;
 			
-			float skpoints[4*NUMJOINTS];
+				float skpoints[4*NUMJOINTS];
 
 			
-			for(TiXmlElement * kinPointElem = kinPtsElem->FirstChildElement();
-				kinPointElem != NULL; kinPointElem = kinPointElem->NextSiblingElement()){
-					kinPointElem->QueryFloatAttribute("X", &(skpoints[i+0*NUMJOINTS]));
-					kinPointElem->QueryFloatAttribute("Y", &(skpoints[i+1*NUMJOINTS]));
-					kinPointElem->QueryFloatAttribute("Z", &(skpoints[i+2*NUMJOINTS]));
-					skpoints[i+3*NUMJOINTS] = 1;
+				for(TiXmlElement * kinPointElem = kinPtsElem->FirstChildElement();
+					kinPointElem != NULL; kinPointElem = kinPointElem->NextSiblingElement()){
+						kinPointElem->QueryFloatAttribute("X", &(skpoints[i+0*NUMJOINTS]));
+						kinPointElem->QueryFloatAttribute("Y", &(skpoints[i+1*NUMJOINTS]));
+						kinPointElem->QueryFloatAttribute("Z", &(skpoints[i+2*NUMJOINTS]));
+						skpoints[i+3*NUMJOINTS] = 1;
 
-					float tempstate;
-					kinPointElem->QueryFloatAttribute("state", &tempstate);
-					temp.kinectPoints.states[i] = tempstate;
-					++i;
+						float tempstate;
+						kinPointElem->QueryFloatAttribute("state", &tempstate);
+						temp.kinectPoints.states[i] = tempstate;
+						++i;
+				}
+
+				temp.kinectPoints.points = cv::Mat(4,NUMJOINTS,CV_32F,skpoints).clone();
+				temp.kinectPoints2P = normalizeSkeleton(K2P * temp.kinectPoints.points);
 			}
-
-			temp.kinectPoints.points = cv::Mat(4,NUMJOINTS,CV_32F,skpoints).clone();
-			temp.kinectPoints2P = normalizeSkeleton(K2P * temp.kinectPoints.points);
 
 			//old ver
 			if (elem->Attribute("Cam2World") == NULL){
@@ -198,41 +209,6 @@ std::vector<bool> LoadVideo(cv::Mat matCfW, cv::Mat K2P, std::vector<SkeleVideoF
 					std::cout << "unable to read " << cfilename << "; skipping\n";
 				}
 			}
-
-#if 0 //reworked: PROCESS
-			for(TiXmlElement * kinPointElem = kinPtsElem->FirstChildElement();
-				kinPointElem != NULL; kinPointElem = kinPointElem->NextSiblingElement()){
-					kinPointElem->QueryFloatAttribute("X", &(temp.kinectPoints[i][0]));
-					kinPointElem->QueryFloatAttribute("Y", &(temp.kinectPoints[i][1]));
-					kinPointElem->QueryFloatAttribute("Z", &(temp.kinectPoints[i][2]));
-					//kinPointElem->QueryFloatAttribute("W", &(temp.kinectPoints[i][3]));
-
-					int tempstate;
-
-					kinPointElem->QueryIntAttribute("state", &tempstate);
-					
-					skpoints[i+0*NUMJOINTS] = (temp.kinectPoints[i])[0];
-					skpoints[i+1*NUMJOINTS] = (temp.kinectPoints[i])[1];
-					skpoints[i+2*NUMJOINTS] = (temp.kinectPoints[i])[2];
-					skpoints[i+3*NUMJOINTS] = 1;
-					//skpoints[i+3*NUMJOINTS] = (temp.kinectPoints[i])[3];
-
-					//Vector4 temv = temp.kinectPoints[i];
-					//temp.skeleton.points[i] = cam2World * K2P * KinectFlip(Vector2TooN(temv));
-					temp.skeleton.states[i] = tempstate;
-
-					++i;
-				}
-
-			
-			temp.skeleton.points = cv::Mat(4,NUMJOINTS,cv::DataType<float>::type,skpoints).clone();
-
-			temp.kinectPoints2P = normalizeSkeleton( K2P * temp.skeleton.points );
-
-			temp.skeleton.points = cam2World * K2P /* getScaleMatrix(-1,-1,1) */ * temp.skeleton.points;
-#endif
-			//calculate temp.skeleton.points
-
 
 			vidRecord->push_back(temp);
 
@@ -256,7 +232,7 @@ void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, cv::Mat cameraMatrix, s
 
 	TiXmlElement * rootNode = new TiXmlElement("SkeletonTaker");
 	xmlDoc.LinkEndChild(rootNode);
-	rootNode->SetDoubleAttribute("version", 1.3);
+	rootNode->SetDoubleAttribute("version", 1.5);
 
 	TiXmlElement * cameraMatrixNode = new TiXmlElement("CameraMatrix");
 	rootNode->LinkEndChild(cameraMatrixNode);
@@ -286,6 +262,7 @@ void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, cv::Mat cameraMatrix, s
 			svfNode->SetAttribute("offsetY", (*vidRecord)[i].videoFrame.offset.y);
 			svfNode->SetAttribute("originalWidth", (*vidRecord)[i].videoFrame.origWidth);
 			svfNode->SetAttribute("originalHeight", (*vidRecord)[i].videoFrame.origHeight);
+			svfNode->SetAttribute("valid", (*vidRecord)[i].valid?1:0);
 		}
 
 		if(!(*vidRecord)[i].depthFrame.empty())
@@ -298,19 +275,21 @@ void SaveVideo(std::vector<SkeleVideoFrame> * vidRecord, cv::Mat cameraMatrix, s
 			svfNode->SetAttribute("framedepth", std::string(buffer2));
 		}
 			
-		TiXmlElement * kinectPointsNode = new TiXmlElement("KinectPoints");
-		svfNode->LinkEndChild(kinectPointsNode);
-
 		//kinect points
-		for(int j=0;j<NUMJOINTS;++j){
-			TiXmlElement * kinectPointNode = new TiXmlElement("Point");
-			kinectPointsNode->LinkEndChild(kinectPointNode);
+		if((*vidRecord)[i].valid){
+			TiXmlElement * kinectPointsNode = new TiXmlElement("KinectPoints");
+			svfNode->LinkEndChild(kinectPointsNode);
 
-			kinectPointNode->SetDoubleAttribute("X", (*vidRecord)[i].kinectPoints.points.at<float>(0,j));
-			kinectPointNode->SetDoubleAttribute("Y", (*vidRecord)[i].kinectPoints.points.at<float>(1,j));
-			kinectPointNode->SetDoubleAttribute("Z", (*vidRecord)[i].kinectPoints.points.at<float>(2,j));
-			kinectPointNode->SetDoubleAttribute("W", 1);
-			kinectPointNode->SetDoubleAttribute("state",   (*vidRecord)[i].kinectPoints.states[j]);
+			for(int j=0;j<NUMJOINTS;++j){
+				TiXmlElement * kinectPointNode = new TiXmlElement("Point");
+				kinectPointsNode->LinkEndChild(kinectPointNode);
+
+				kinectPointNode->SetDoubleAttribute("X", (*vidRecord)[i].kinectPoints.points.at<float>(0,j));
+				kinectPointNode->SetDoubleAttribute("Y", (*vidRecord)[i].kinectPoints.points.at<float>(1,j));
+				kinectPointNode->SetDoubleAttribute("Z", (*vidRecord)[i].kinectPoints.points.at<float>(2,j));
+				kinectPointNode->SetDoubleAttribute("W", 1);
+				kinectPointNode->SetDoubleAttribute("state",   (*vidRecord)[i].kinectPoints.states[j]);
+			}
 		}
 
 		if(!(*vidRecord)[i].cam2World.empty())
